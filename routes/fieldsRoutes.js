@@ -1,13 +1,13 @@
 const express = require('express');
 
-const fieldsController = require('../controllers/filedsController');
+const fieldsController = require('../controllers/fieldsController');
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 router
   .route('/')
   .get(fieldsController.getAllFields)
-  .post(fieldsController.createField);
+  .post(fieldsController.setCollectionId, fieldsController.createField);
 
 router
   .route('/:id')

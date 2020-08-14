@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
-const collectionSchema = new mongoose.Schema(
+const collectionsSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, 'A collection must have a name']
     },
+    slug: String,
     label: {
       type: String,
       required: [true, 'A collection must have a label']
@@ -49,11 +51,24 @@ const collectionSchema = new mongoose.Schema(
   }
 );
 
-collectionSchema.pre(/^findOneAnd/, async function(next) {
+collectionsSchema.index({ slug: 1 });
+
+collectionsSchema.virtual('fields', {
+  ref: 'Fields',
+  foreignField: 'collectionID',
+  localField: '_id'
+});
+
+collectionsSchema.pre('save', function(next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+collectionsSchema.pre(/^findOneAnd/, async function(next) {
   this.r = await this.findOne();
   next();
 });
 
-const Collection = mongoose.model('Collection', collectionSchema);
+const Collection = mongoose.model('Collection', collectionsSchema);
 
 module.exports = Collection;

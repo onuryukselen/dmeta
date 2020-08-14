@@ -1,8 +1,11 @@
 const express = require('express');
 
 const collectionsController = require('../controllers/collectionsController');
+const fieldsRouter = require('./fieldsRoutes');
 
 const router = express.Router();
+
+router.use('/:collectionID/fields', fieldsRouter);
 
 router
   .route('/')
