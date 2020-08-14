@@ -13,7 +13,8 @@ const fieldsSchema = new mongoose.Schema(
     },
     collectionID: {
       type: mongoose.Schema.ObjectId,
-      ref: 'Collection'
+      ref: 'Collection',
+      required: [true, 'A field must have a collection']
     },
     required: { type: 'boolean', default: false },
     active: { type: 'boolean', default: true },
