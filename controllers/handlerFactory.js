@@ -70,7 +70,7 @@ exports.getOne = (Model, popOptions) =>
 
 exports.getAll = Model =>
   catchAsync(async (req, res, next) => {
-    // To allow nested GET reviews on tour
+    // To allow nested GET fields on a collection
     let filter = {};
     if (req.params.collectionID)
       filter = { collectionID: req.params.collectionID };
