@@ -61,13 +61,11 @@ app.use((req, res, next) => {
 });
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log(req.cookies);
+  //console.log(req.cookies);
   next();
 });
 
-// 2) ROUTE HANDLERS
-
-// 3) ROUTES
+// 2) ROUTES
 
 app.use('/api/v1/collections', collectionsRouter);
 app.use('/api/v1/fields', fieldsRouter);
