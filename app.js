@@ -56,7 +56,6 @@ app.use(passport.session());
 // Passport configuration
 require('./utils/auth');
 
-console.log(process.env.SESSION_SECRET);
 app.use(
   expressSession({
     saveUninitialized: true,
