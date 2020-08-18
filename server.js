@@ -35,6 +35,9 @@ mongoose
     console.log('DB Connections Successful');
   });
 
+// Build Collections
+require('./utils/buildModels');
+
 process.on('uncaughtException', err => {
   console.log(err);
   console.log(err.name, ':', err.message);

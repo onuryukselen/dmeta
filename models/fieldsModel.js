@@ -11,6 +11,12 @@ const fieldsSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A field must have a label']
     },
+    type: {
+      type: String,
+      required: [true, 'A field must have a label'],
+      default: 'String',
+      enum: ['String', 'Integer', 'Boolean', 'Double', 'Arrays', 'Date', 'Object']
+    },
     collectionID: {
       type: mongoose.Schema.ObjectId,
       ref: 'Collection',
