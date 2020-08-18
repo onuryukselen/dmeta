@@ -4,6 +4,8 @@ const fieldsController = require('../controllers/fieldsController');
 
 const router = express.Router({ mergeParams: true });
 
+router.get('/test', fieldsController.test);
+
 router
   .route('/')
   .get(fieldsController.getAllFields)

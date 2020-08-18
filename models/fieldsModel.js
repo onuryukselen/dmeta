@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-//const Collection = require('../models/collectionsModel');
+const Collection = require('../models/collectionsModel');
 
 const fieldsSchema = new mongoose.Schema(
   {
@@ -14,7 +14,15 @@ const fieldsSchema = new mongoose.Schema(
     collectionID: {
       type: mongoose.Schema.ObjectId,
       ref: 'Collection',
-      required: [true, 'A field must have a collection']
+      required: [true, 'A field must have a collection'],
+      validate: {
+        validator: function(v) {
+          Collection.find({ _id: v }, function(err, docs) {
+            return docs.length !== 0;
+          });
+        },
+        message: 'Collection id is not exist!'
+      }
     },
     required: { type: 'boolean', default: false },
     active: { type: 'boolean', default: true },
