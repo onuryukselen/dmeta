@@ -94,10 +94,10 @@ setInterval(() => {
 }, process.env.TIME_TO_CHECK_EXPIRED_TOKENS * 1000);
 
 // 2) ROUTES
-app.use('/', viewRouter);
 app.use('/api/v1/collections', collectionsRouter);
 app.use('/api/v1/fields', fieldsRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/', viewRouter);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

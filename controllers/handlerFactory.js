@@ -6,9 +6,7 @@ exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
     if (!doc) {
-      return next(
-        new AppError(`No document found with ${req.params.id}!`, 404)
-      );
+      return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
     res.status(200).json({
       status: 'success',
@@ -25,9 +23,7 @@ exports.updateOne = Model =>
       runValidators: true
     });
     if (!doc) {
-      return next(
-        new AppError(`No document found with ${req.params.id}!`, 404)
-      );
+      return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
     res.status(200).json({
       status: 'success',
@@ -54,9 +50,7 @@ exports.getOne = (Model, popOptions) =>
     if (popOptions) query = query.populate(popOptions);
     const doc = await query;
     if (!doc) {
-      return next(
-        new AppError(`No document found with ${req.params.id}!`, 404)
-      );
+      return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
 
     res.status(200).json({
@@ -72,8 +66,7 @@ exports.getAll = Model =>
   catchAsync(async (req, res, next) => {
     // To allow nested GET fields on a collection
     let filter = {};
-    if (req.params.collectionID)
-      filter = { collectionID: req.params.collectionID };
+    if (req.params.collectionID) filter = { collectionID: req.params.collectionID };
     const features = new APIFeatures(Model.find(filter), req.query)
       .filter()
       .sort()
