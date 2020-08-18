@@ -15,4 +15,6 @@ router
   .patch(fieldsController.updateField)
   .delete(fieldsController.deleteField);
 
+router.route('/model/:id');
+
 module.exports = router;

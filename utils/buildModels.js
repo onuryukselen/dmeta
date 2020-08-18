@@ -55,21 +55,22 @@ function createSchema(fields) {
 
     for (let n = 0; n < allCollections.length; n++) {
       const colId = allCollections[n]._id.toString();
-      // const colName = allCollections[n].name;
+      const colName = allCollections[n].name.toString();
       const fields = allFields.filter(f => f.collectionID == colId);
       const schema = createSchema(fields);
-      if (!modelObj[colId]) {
+      console.log(schema);
+      if (!modelObj[colName]) {
         const Schema = new mongoose.Schema(schema);
-        const Model = mongoose.model(colId, Schema);
-        modelObj[colId] = Model;
+        const Model = mongoose.model(colName, Schema);
+        modelObj[colName] = Model;
       }
     }
 
     //test
-    const insertedDoc = await exports.insertDocument('5f3bf40dec4cb6cb72c4f529', {
+    const insertedDoc = await exports.insertDocument('Experiments', {
       overall_design: 'test'
     });
-    const retrievedDoc = await exports.getDocument('5f3bf40dec4cb6cb72c4f529', {
+    const retrievedDoc = await exports.getDocument('Experiments', {
       overall_design: 'test'
     });
 
