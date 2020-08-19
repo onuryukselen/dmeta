@@ -3,56 +3,59 @@ const Collection = require('../models/collectionsModel');
 const Field = require('../models/fieldsModel');
 
 const modelObj = {};
+exports.modelObj = modelObj;
 
-exports.updateModel = () => {
-  // const testSchema = new mongoose.Schema({ name: { type: String } });
-  // const Test = mongoose.model('test', testSchema);
-  // OverwriteModelError: Cannot overwrite `test` model once compiled
-
-  // delete mongoose.connection.models['Book'];
-  //mongoose.connection.models = {}; => will delete all of the models
-  return 'done';
-};
-
-exports.insertDocument = async (modelId, insert) => {
-  console.log(modelId, insert);
-  const doc = new modelObj[modelId](insert);
-  const saveDoc = await doc.save();
-  return saveDoc;
-};
-
-exports.getDocument = async (modelId, filter) => {
-  const doc = await modelObj[modelId].findOne(filter);
-  return doc;
-};
-
-function createSchemaEntry(field) {
-  const entry = {};
-  Object.keys(field.toJSON()).forEach(k => {
-    if (k.toLowerCase() == 'type') {
-      entry[k] = field[k];
-    }
-  });
-  return entry;
-}
-
-//{ name: { type: String } }
+// create schema for given fields
+// returns schema obj e.g. { name: { type: String } }
 function createSchema(fields) {
+  // creates object for each schema entry:
+  // returns: e.g. { type: String }
+  const createSchemaEntry = function(field) {
+    const entry = {};
+    Object.keys(field.toJSON()).forEach(k => {
+      if (k.toLowerCase() == 'type') {
+        entry[k] = field[k];
+      }
+    });
+    return entry;
+  };
+
   const schema = {};
   for (let n = 0; n < fields.length; n++) {
     const name = fields[n].name;
     const entry = createSchemaEntry(fields[n]);
     schema[name] = entry;
   }
-
   return schema;
 }
 
-(async () => {
+// Update mongoose models when collection or field changes
+exports.updateModel = async collectionId => {
+  try {
+    const col = await Collection.findById(collectionId);
+    const fields = await Field.find({ collectionID: collectionId });
+    const colName = col.name.toString();
+    // check if model created before => delete model to prevent OverwriteModelError
+    if (col && mongoose.connection.models[colName]) {
+      delete mongoose.connection.models[colName];
+    }
+    const schema = createSchema(fields);
+    const Schema = new mongoose.Schema(schema);
+    const Model = mongoose.model(colName, Schema);
+    modelObj[colName] = Model;
+    return 'done';
+  } catch (err) {
+    return `modelObj could not be updated: ${err}`;
+  }
+};
+
+// On startup, get allCollections and allFields then prepare all mongoose models
+// Save those models into modelObj
+// modelObj: { experiments: Model { experiments }, projects: Model { projects } }
+exports.buildModels = async () => {
   try {
     const allCollections = await Collection.find({});
     const allFields = await Field.find({});
-
     for (let n = 0; n < allCollections.length; n++) {
       const colId = allCollections[n]._id.toString();
       const colName = allCollections[n].name.toString();
@@ -65,19 +68,9 @@ function createSchema(fields) {
         modelObj[colName] = Model;
       }
     }
-
-    //test
-    const insertedDoc = await exports.insertDocument('Experiments', {
-      overall_design: 'test'
-    });
-    const retrievedDoc = await exports.getDocument('Experiments', {
-      overall_design: 'test'
-    });
-
-    console.log('insertedDoc', insertedDoc);
-    console.log('retrievedDoc', retrievedDoc);
     console.log(modelObj);
   } catch (err) {
-    console.log('ERROR 💥', err);
+    console.log('modelObj could not created', err);
   }
-})();
+};
+exports.buildModels();
