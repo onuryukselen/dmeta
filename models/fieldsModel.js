@@ -22,10 +22,9 @@ const fieldsSchema = new mongoose.Schema(
       ref: 'Collection',
       required: [true, 'A field must have a collection'],
       validate: {
-        validator: function(v) {
-          Collection.find({ _id: v }, function(err, docs) {
-            return docs.length !== 0;
-          });
+        validator: async function(v) {
+          const docs = await Collection.find({ _id: v });
+          return docs.length > 0;
         },
         message: 'Collection id is not exist!'
       }
