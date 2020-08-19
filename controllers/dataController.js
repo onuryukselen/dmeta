@@ -1,20 +1,21 @@
-const buildModels = require('../utils/buildModels');
+const factory = require('./handlerFactory');
+const buildModels = require('./../utils/buildModels');
 
 const modelObj = buildModels.modelObj;
 
-exports.getAllData = '';
-exports.updateData = '';
-exports.deleteData = '';
-
-exports.createData = async (collectionName, data) => {
-  console.log(collectionName, data);
-  const doc = new modelObj[collectionName](data);
-  const saveDoc = await doc.save();
-  return saveDoc;
+//if collectionName is set, then save that Model into req.body.Model
+exports.setModel = (req, res, next) => {
+  if (req.params.collectionName) req.body.Model = modelObj[req.params.collectionName];
+  next();
 };
 
-exports.getData = async (collectionName, filter) => {
-  console.log(collectionName, filter);
-  const doc = await modelObj[collectionName].findOne(filter);
-  return doc;
+exports.getAllData = factory.getAll();
+exports.getData = factory.getOne();
+exports.createData = factory.createOne();
+exports.updateData = factory.updateOne();
+exports.deleteData = factory.deleteOne();
+
+exports.test = (req, res, next) => {
+  console.log('test');
+  next();
 };

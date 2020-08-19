@@ -61,14 +61,12 @@ exports.buildModels = async () => {
       const colName = allCollections[n].name.toString();
       const fields = allFields.filter(f => f.collectionID == colId);
       const schema = createSchema(fields);
-      console.log(schema);
       if (!modelObj[colName]) {
         const Schema = new mongoose.Schema(schema);
         const Model = mongoose.model(colName, Schema);
         modelObj[colName] = Model;
       }
     }
-    console.log(modelObj);
   } catch (err) {
     console.log('modelObj could not created', err);
   }
