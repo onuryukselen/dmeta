@@ -8,6 +8,9 @@ const modelObj = buildModels.modelObj;
 exports.setModel = (req, res, next) => {
   if (req.params.collectionName) {
     req.body.Model = modelObj[req.params.collectionName];
+    if (!modelObj[req.params.collectionName]) {
+      return next(new AppError(`collectionName is not found!`, 404));
+    }
     return next();
   }
   return next(new AppError(`collectionName is not defined!`, 404));

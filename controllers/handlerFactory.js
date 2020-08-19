@@ -43,6 +43,7 @@ exports.createOne = Model =>
     if (req.body.Model) Model = req.body.Model;
     const doc = await Model.create(req.body);
     if (req.body.After) req.body.After();
+
     res.status(201).json({
       status: 'success',
       data: {
