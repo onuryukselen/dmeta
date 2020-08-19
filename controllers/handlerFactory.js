@@ -4,6 +4,8 @@ const APIFeatures = require('./../utils/apiFeatures');
 
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
+    // If req.body.Model is exist, use as Model (for dataRoutes)
+    if (req.body.Model) Model = req.body.Model;
     const doc = await Model.findByIdAndDelete(req.params.id);
     if (!doc) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
@@ -18,6 +20,8 @@ exports.deleteOne = Model =>
 
 exports.updateOne = Model =>
   catchAsync(async (req, res, next) => {
+    // If req.body.Model is exist, use as Model (for dataRoutes)
+    if (req.body.Model) Model = req.body.Model;
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -35,7 +39,10 @@ exports.updateOne = Model =>
 
 exports.createOne = Model =>
   catchAsync(async (req, res, next) => {
+    // If req.body.Model is exist, use as Model (for dataRoutes)
+    if (req.body.Model) Model = req.body.Model;
     const doc = await Model.create(req.body);
+    if (req.body.After) req.body.After();
     res.status(201).json({
       status: 'success',
       data: {
@@ -46,6 +53,8 @@ exports.createOne = Model =>
 
 exports.getOne = (Model, popOptions) =>
   catchAsync(async (req, res, next) => {
+    // If req.body.Model is exist, use as Model (for dataRoutes)
+    if (req.body.Model) Model = req.body.Model;
     let query = Model.findById(req.params.id);
     if (popOptions) query = query.populate(popOptions);
     const doc = await query;
@@ -64,6 +73,8 @@ exports.getOne = (Model, popOptions) =>
 
 exports.getAll = Model =>
   catchAsync(async (req, res, next) => {
+    // If req.body.Model is exist, use as Model (for dataRoutes)
+    if (req.body.Model) Model = req.body.Model;
     // To allow nested GET fields on a collection
     let filter = {};
     if (req.params.collectionID) filter = { collectionID: req.params.collectionID };

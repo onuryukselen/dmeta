@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Collection = require('../models/collectionsModel');
 const Field = require('../models/fieldsModel');
+const AppError = require('./appError');
 
 const modelObj = {};
 exports.modelObj = modelObj;
@@ -32,6 +33,7 @@ function createSchema(fields) {
 // Update mongoose models when collection or field changes
 exports.updateModel = async collectionId => {
   try {
+    console.log('updateModel');
     const col = await Collection.findById(collectionId);
     const fields = await Field.find({ collectionID: collectionId });
     const colName = col.name.toString();
@@ -43,9 +45,10 @@ exports.updateModel = async collectionId => {
     const Schema = new mongoose.Schema(schema);
     const Model = mongoose.model(colName, Schema);
     modelObj[colName] = Model;
+    console.log('updateModel2');
     return 'done';
   } catch (err) {
-    return `modelObj could not be updated: ${err}`;
+    return new AppError(`modelObj could not be updated: ${err}!`, 404);
   }
 };
 
@@ -61,14 +64,13 @@ exports.buildModels = async () => {
       const colName = allCollections[n].name.toString();
       const fields = allFields.filter(f => f.collectionID == colId);
       const schema = createSchema(fields);
-      console.log(schema);
+      console.log(colName, schema);
       if (!modelObj[colName]) {
         const Schema = new mongoose.Schema(schema);
         const Model = mongoose.model(colName, Schema);
         modelObj[colName] = Model;
       }
     }
-    console.log(modelObj);
   } catch (err) {
     console.log('modelObj could not created', err);
   }
