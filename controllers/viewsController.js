@@ -14,7 +14,6 @@ exports.getAccount = (req, res) => {
 
 exports.getLoginForm = (req, res, next) => {
   if (process.env.SSO_LOGIN !== 'true') {
-    console.log('suc');
     res.status(200).render('login', {
       title: 'Log into your account'
     });
