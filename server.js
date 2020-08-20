@@ -6,11 +6,6 @@ const path = require('path');
 
 dotenv.config({ path: './config.env' });
 
-const options = {
-  key: fs.readFileSync(path.join(__dirname, process.env.CERTS_PRIVATE_KEY)),
-  cert: fs.readFileSync(path.join(__dirname, process.env.CERTS_CERTIFICATE))
-};
-
 //This setting is so that certificates will work although they are all self signed
 if (process.env.NODE_ENV === 'development') {
   https.globalAgent.options.rejectUnauthorized = false;
@@ -46,12 +41,25 @@ process.on('uncaughtException', err => {
   process.exit(1);
 });
 
-// Create our HTTPS server.
 const port = process.env.PORT || 3000;
-const server = https.createServer(options, app);
-server.listen(port, function() {
-  console.log(`App running on port ${port}...`);
-});
+let server;
+if (process.env.SSO_LOGIN === 'true') {
+  // Create HTTPS server.
+  const options = {
+    key: fs.readFileSync(path.join(__dirname, process.env.CERTS_PRIVATE_KEY)),
+    cert: fs.readFileSync(path.join(__dirname, process.env.CERTS_CERTIFICATE))
+  };
+  server = https.createServer(options, app);
+  server.listen(port, function() {
+    console.log(`HTTPS server running on port ${port}...`);
+  });
+} else {
+  // Create HTTP server.
+  server = app.listen(port, () => {
+    console.log(`HTTP server running on port ${port}...`);
+  });
+}
+
 process.on('unhandledRejection', err => {
   console.log('UNHANDLED REJECTION! Shutting down...');
   console.log(err.name, err.message);

@@ -45,7 +45,7 @@ exports.updateModel = async collectionId => {
     const Schema = new mongoose.Schema(schema);
     const Model = mongoose.model(colName, Schema);
     modelObj[colName] = Model;
-    console.log('updateModel2');
+    console.log(colName, schema);
     return 'done';
   } catch (err) {
     return new AppError(`modelObj could not be updated: ${err}!`, 404);

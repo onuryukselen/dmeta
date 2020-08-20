@@ -117,10 +117,9 @@ exports.isLoggedIn = async (req, res, next) => {
       res.locals.user = currentUser;
       return next();
     } catch (err) {
-      console.log('isLoggedIn: user not logined');
       return next();
     }
-  } else if (!req.session.loginCheck) {
+  } else if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {
     // check if its authenticated on Auth server
     req.session.loginCheck = true;
     req.session.redirectURL = '/';
@@ -129,16 +128,21 @@ exports.isLoggedIn = async (req, res, next) => {
     res.redirect(
       `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
     );
+  } else {
+    next();
   }
-  next();
 };
 
 exports.ensureSingleSignOn = async (req, res, next) => {
-  // req.session.redirectURL = req.originalUrl || req.url;
-  req.session.redirectURL = '/';
-  res.redirect(
-    `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
-  );
+  if (process.env.SSO_LOGIN === 'true') {
+    // req.session.redirectURL = req.originalUrl || req.url;
+    req.session.redirectURL = '/';
+    res.redirect(
+      `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
+    );
+  } else {
+    next();
+  }
 };
 
 /**
