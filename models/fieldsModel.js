@@ -5,7 +5,26 @@ const fieldsSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'A field must have a name']
+      required: [true, 'A field must have a name'],
+      validate: {
+        validator: async function(v) {
+          let collectionID;
+          if (this.collectionID) {
+            // for createNewField
+            collectionID = this.collectionID;
+          } else if (this.r && this.r.collectionID) {
+            // for findByIdAndUpdate
+            collectionID = this.r.collectionID;
+          }
+          const docs = await mongoose.model('Fields').find({
+            name: v,
+            collectionID: collectionID
+          });
+          console.log(docs);
+          return docs.length === 0;
+        },
+        message: 'Field name has found in the collection!'
+      }
     },
     label: {
       type: String,
@@ -15,7 +34,7 @@ const fieldsSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A field must have a label'],
       default: 'String',
-      enum: ['String', 'Integer', 'Boolean', 'Double', 'Arrays', 'Date', 'Object']
+      enum: ['String', 'Number', 'Boolean', 'Array', 'Date', 'Mixed']
     },
     collectionID: {
       type: mongoose.Schema.ObjectId,
@@ -58,10 +77,18 @@ const fieldsSchema = new mongoose.Schema(
   }
 );
 
+// for findByIdAndUpdate and findByIdAndDelete
 fieldsSchema.pre(/^findOneAnd/, async function(next) {
+  // When running update validators with the `context` option set to 'query',
+  //`this` is query object. `this.r` is query document
   this.r = await this.findOne();
   next();
 });
+
+// fieldsSchema.pre(/^save/, async function(next) {
+//   this.r = await this.name;
+//   next();
+// });
 
 const Fields = mongoose.model('Fields', fieldsSchema);
 

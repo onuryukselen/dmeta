@@ -117,7 +117,6 @@ exports.isLoggedIn = async (req, res, next) => {
       res.locals.user = currentUser;
       return next();
     } catch (err) {
-      console.log('isLoggedIn: user not logged');
       return next();
     }
   } else if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {

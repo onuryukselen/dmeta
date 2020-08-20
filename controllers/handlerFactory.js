@@ -10,6 +10,7 @@ exports.deleteOne = Model =>
     if (!doc) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
+    if (req.body.After) req.body.After();
     res.status(200).json({
       status: 'success',
       data: {
@@ -24,11 +25,13 @@ exports.updateOne = Model =>
     if (req.body.Model) Model = req.body.Model;
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true
+      runValidators: true,
+      context: 'query' //  lets you set `this` as a query object in model validators
     });
     if (!doc) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
+    if (req.body.After) req.body.After();
     res.status(200).json({
       status: 'success',
       data: {
