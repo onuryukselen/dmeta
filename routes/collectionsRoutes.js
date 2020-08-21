@@ -10,12 +10,12 @@ router.use('/:collectionID/fields', fieldsRouter);
 router
   .route('/')
   .get(collectionsController.getAllCollections)
-  .post(collectionsController.createCollection);
+  .post(collectionsController.setAfter, collectionsController.createCollection);
 
 router
   .route('/:id')
   .get(collectionsController.getCollection)
-  .patch(collectionsController.updateCollection)
-  .delete(collectionsController.deleteCollection);
+  .patch(collectionsController.setAfter, collectionsController.updateCollection)
+  .delete(collectionsController.setAfter, collectionsController.deleteCollection);
 
 module.exports = router;
