@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Collection = require('../models/collectionsModel');
 const Field = require('../models/fieldsModel');
 const AppError = require('./appError');
-
+const validator = require('validator');
 const modelObj = {};
 exports.modelObj = modelObj;
 
@@ -16,6 +16,24 @@ function createSchema(fields) {
     Object.keys(field.toJSON()).forEach(k => {
       if (k.toLowerCase() == 'type') {
         entry[k] = field[k];
+      } else if (k.toLowerCase() == 'required') {
+        // Support message usage
+        // entry[k] = [true, 'this field is required']
+        //
+        // add functions like in checkvalid
+        // entry[k] = field[k] == 'true' ? true : false;
+        entry[k] = field[k];
+      } else if (k.toLowerCase() == 'checkvalid') {
+        // Support basic validate options with if clause
+        // Eval function is going to be run. Example validation function => function func(a) { return validator.isEmail(v)}
+        // Warining in eval usage!
+        eval(field[k]);
+        // console.log(func('ga'));
+        // Support message usage
+
+        entry['validate'] = { validator: func, message: 'Validation error' };
+
+        //entry['validate'] = [validator.isEmail, 'Email is not working']
       }
     });
     return entry;
