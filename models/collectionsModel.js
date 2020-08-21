@@ -19,9 +19,9 @@ const collectionsSchema = new mongoose.Schema(
       default: '0'
     },
     version: {
-      type: String,
+      type: Number,
       required: [true, 'A collection must have a version'],
-      default: '1.0.0'
+      default: '1'
     },
     required: { type: 'boolean', default: false },
     active: { type: 'boolean', default: true },
@@ -61,7 +61,13 @@ collectionsSchema.virtual('fields', {
   localField: '_id'
 });
 
+collectionsSchema.pre(/^find/, function(next) {
+  this.find({ active: { $ne: false } });
+  next();
+});
+
 collectionsSchema.pre('save', function(next) {
+  this.name = this.name.replace(/\s+/g, '_').toLowerCase();
   this.slug = slugify(this.name, { lower: true });
   next();
 });

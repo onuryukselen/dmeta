@@ -8,6 +8,7 @@ const fieldsSchema = new mongoose.Schema(
       required: [true, 'A field must have a name'],
       validate: {
         validator: async function(v) {
+          v = v.replace(/\s+/g, '_').toLowerCase();
           let collectionID;
           if (this.collectionID) {
             // for createNewField
@@ -20,7 +21,6 @@ const fieldsSchema = new mongoose.Schema(
             name: v,
             collectionID: collectionID
           });
-          console.log(docs);
           return docs.length === 0;
         },
         message: 'Field name has found in the collection!'
@@ -77,6 +77,11 @@ const fieldsSchema = new mongoose.Schema(
   }
 );
 
+fieldsSchema.pre(/^find/, function(next) {
+  this.find({ active: { $ne: false } });
+  next();
+});
+
 // for findByIdAndUpdate and findByIdAndDelete
 fieldsSchema.pre(/^findOneAnd/, async function(next) {
   // When running update validators with the `context` option set to 'query',
@@ -85,10 +90,10 @@ fieldsSchema.pre(/^findOneAnd/, async function(next) {
   next();
 });
 
-// fieldsSchema.pre(/^save/, async function(next) {
-//   this.r = await this.name;
-//   next();
-// });
+fieldsSchema.pre('save', function(next) {
+  this.name = this.name.replace(/\s+/g, '_').toLowerCase();
+  next();
+});
 
 const Fields = mongoose.model('Fields', fieldsSchema);
 

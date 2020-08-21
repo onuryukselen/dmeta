@@ -33,8 +33,9 @@ function createSchema(fields) {
 // Update mongoose models when collection or field changes
 exports.updateModel = async collectionId => {
   try {
-    console.log('updateModel');
+    console.log('* Update Collection Model ID:', collectionId);
     const col = await Collection.findById(collectionId);
+    if (!col) return 'done'; // collection deleted or deactivated
     const fields = await Field.find({ collectionID: collectionId });
     const colName = col.name.toString();
     // check if model created before => delete model to prevent OverwriteModelError
