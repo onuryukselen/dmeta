@@ -49,6 +49,7 @@ const fieldsSchema = new mongoose.Schema(
       }
     },
     required: { type: 'boolean', default: false },
+    checkvalid: { type: 'string' },
     active: { type: 'boolean', default: true },
     creationDate: {
       type: Date,
