@@ -8,30 +8,25 @@ exports.setCollectionId = (req, res, next) => {
   next();
 };
 
-// set commands after query is completed
+// asign commands to `req.body.After` which will be executed after query is completed
 exports.setAfter = async (req, res, next) => {
-  // for createField
-  if (req.body.collectionID) {
-    req.body.After = function() {
-      buildModels.updateModel(req.body.collectionID);
-    };
-    return next();
-  }
-  // for updateField and deleteField
-  if (req.params.id) {
-    try {
+  let collectionID;
+  try {
+    // for createField
+    if (req.body.collectionID) collectionID = req.body.collectionID;
+    // for updateField and deleteField
+    else if (req.params.id) {
       const field = await Fields.findById(req.params.id);
-      if (field.collectionID) {
-        req.body.After = function() {
-          buildModels.updateModel(field.collectionID);
-        };
-      }
-      return next();
-    } catch {
-      return next(new AppError(`Field is not found.`, 404));
+      if (field.collectionID) collectionID = field.collectionID;
     }
+    if (collectionID) {
+      req.body.After = () => buildModels.updateModel(collectionID);
+      return next();
+    }
+    return next(new AppError(`CollectionID or FieldID is not defined!`, 404));
+  } catch {
+    return next(new AppError(`Field is not found.`, 404));
   }
-  return next(new AppError(`CollectionID or FieldID is not defined!`, 404));
 };
 
 exports.getAllFields = factory.getAll(Fields);

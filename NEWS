@@ -1,7 +1,7 @@
 21.08.2020 Version 0.0.2
 - Before saving, Collection and Field names converted to lowercase, and spaces replaced with underscores. 
-- Field deprication is set for Collections and Fields models.
-- Collection Routes (create, delete and update) updates Data Models.  
+- Field depreciation is set for Collections and Fields models.
+- Collection Routes (create, delete, and update) updates Data Models.  
     
 20.08.2020 Version 0.0.1
 - Name validator added to fields model which validates uniqueness of the name in the collection.
