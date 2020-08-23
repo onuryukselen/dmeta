@@ -48,9 +48,18 @@ const fieldsSchema = new mongoose.Schema(
         message: 'Collection id is not exist!'
       }
     },
-    required: { type: 'boolean', default: false },
-    checkvalid: { type: 'string' },
+    required: { type: 'Mixed', default: false },
+    checkvalid: { type: 'Mixed' },
     active: { type: 'boolean', default: true },
+    default: { type: 'String' },
+    enum: { type: 'Mixed' },
+    min: { type: 'Mixed' },
+    max: { type: 'Mixed' },
+    lowercase: { type: 'boolean' },
+    uppercase: { type: 'boolean' },
+    trim: { type: 'boolean' },
+    minlength: { type: 'Number' },
+    maxlength: { type: 'Number' },
     creationDate: {
       type: Date,
       default: Date.now()
