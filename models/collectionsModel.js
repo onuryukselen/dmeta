@@ -15,8 +15,17 @@ const collectionsSchema = new mongoose.Schema(
       required: [true, 'A collection must have a label']
     },
     parentCollectionID: {
-      type: String,
-      default: '0'
+      type: mongoose.Schema.ObjectId,
+      ref: 'Collection',
+      default: null,
+      validate: {
+        validator: async function(v) {
+          if (v === null) return true;
+          const docs = await mongoose.model('Collection').find({ _id: v });
+          return docs.length > 0;
+        },
+        message: 'Collection id is not exist!'
+      }
     },
     version: {
       type: Number,
