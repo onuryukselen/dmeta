@@ -60,6 +60,7 @@ const fieldsSchema = new mongoose.Schema(
     trim: { type: 'boolean' },
     minlength: { type: 'Number' },
     maxlength: { type: 'Number' },
+    various: { type: 'Mixed' },
     creationDate: {
       type: Date,
       default: Date.now()

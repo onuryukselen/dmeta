@@ -91,6 +91,10 @@ function createSchema(fields) {
 
       if (defParams.includes(k)) {
         entry[k] = field[k];
+      } else if (k == 'various') {
+        if (typeof field[k] === 'object' && field[k] !== null) {
+          Object.assign(entry, field[k]);
+        }
       } else if (k == 'required') {
         const sett = parseSchemaEntry(field[k]);
         let ret = [];
