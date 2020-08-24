@@ -16,6 +16,7 @@
     "prefer-destructuring": ["error", { "object": false, "array": false }],
     "no-unused-vars": ["error", { "argsIgnorePattern": "req|res|next|val" }],
     "no-plusplus": "off",
-    "eqeqeq": "off"
+    "eqeqeq": "off",
+    "dot-notation": "off"
   }
 }

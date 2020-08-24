@@ -1,39 +1,114 @@
+/* eslint-disable no-eval */
+// eslint-disable-next-line no-unused-vars
+const validator = require('validator');
 const mongoose = require('mongoose');
 const Collection = require('../models/collectionsModel');
 const Field = require('../models/fieldsModel');
 const AppError = require('./appError');
-const validator = require('validator');
+
 const modelObj = {};
 exports.modelObj = modelObj;
 
 // create schema for given fields
 // returns schema obj e.g. { name: { type: String } }
 function createSchema(fields) {
+  //
+  // function parseSchemaEntry:
+  // input sett => should be string, array or boolean.
+  //   a. string => it must be a valid function
+  //   b. boolean => it will be used directly as field setting.
+  //   c. array => first element should be string (valid function) or boolean
+  //            => Second item is optional and an error message.
+  // e.g. true
+  // e.g. "(function(v) { return v.length >2 })"
+  // e.g. "(function(v) { return validator.isEmail(v) })"
+  // e.g. "(function(v) { if (v.length >2){return true} else {return false} })"
+  // e.g. ["(function(v) { (return v.length >2) })", "Field must be longer than 2 characters"]
+  // e.g. [true, "This field is required."]
+  // returns mongodb settings in object format
+  // eg. { boolean: true, function: function(v) { return v.length >2 }, message:"this field is required"
+  //
+  const parseSchemaEntry = function(sett) {
+    const ret = {};
+    let checkString;
+    let message;
+    let boolean;
+    let func;
+    if (typeof sett === 'string' || sett instanceof String) {
+      checkString = sett;
+    } else if (typeof sett === 'boolean') {
+      boolean = sett;
+    } else if (Array.isArray(sett)) {
+      if (sett[0]) {
+        if (typeof sett === 'string' || sett instanceof String) {
+          checkString = sett[0];
+        } else if (typeof sett === 'boolean') {
+          boolean = sett[0];
+        }
+      }
+      if (sett[1]) {
+        message = sett[1];
+      }
+    }
+    // Warning in eval usage!
+    if (checkString) {
+      try {
+        console.log('checkvalid', checkString);
+        const testFunc = eval(checkString);
+        if (typeof testFunc === 'function') {
+          func = testFunc;
+        }
+      } catch {
+        console.log('Not a valid function: ', checkString);
+        func = () => true;
+      }
+    }
+
+    if (func) ret.function = func;
+    if (boolean) ret.boolean = boolean;
+    if (message) ret.message = message;
+    return ret;
+  };
+
   // creates object for each schema entry:
   // returns: e.g. { type: String }
   const createSchemaEntry = function(field) {
     const entry = {};
     Object.keys(field.toJSON()).forEach(k => {
-      if (k.toLowerCase() == 'type') {
-        entry[k] = field[k];
-      } else if (k.toLowerCase() == 'required') {
-        // Support message usage
-        // entry[k] = [true, 'this field is required']
-        //
-        // add functions like in checkvalid
-        // entry[k] = field[k] == 'true' ? true : false;
-        entry[k] = field[k];
-      } else if (k.toLowerCase() == 'checkvalid') {
-        // Support basic validate options with if clause
-        // Eval function is going to be run. Example validation function => function func(a) { return validator.isEmail(v)}
-        // Warining in eval usage!
-        eval(field[k]);
-        // console.log(func('ga'));
-        // Support message usage
+      const defParams = [
+        'type',
+        'active',
+        'default',
+        'enum',
+        'min',
+        'max',
+        'lowercase',
+        'uppercase',
+        'trim',
+        'minlength',
+        'maxlength'
+      ];
 
-        entry['validate'] = { validator: func, message: 'Validation error' };
-
-        //entry['validate'] = [validator.isEmail, 'Email is not working']
+      if (defParams.includes(k)) {
+        entry[k] = field[k];
+      } else if (k == 'various') {
+        if (typeof field[k] === 'object' && field[k] !== null) {
+          Object.assign(entry, field[k]);
+        }
+      } else if (k == 'required') {
+        const sett = parseSchemaEntry(field[k]);
+        let ret = [];
+        ret[1] = sett.message ? sett.message : 'This field is required';
+        if (sett.boolean) ret[0] = sett.boolean;
+        else if (sett.function) ret[0] = sett.function;
+        else ret = false;
+        entry[k] = ret;
+      } else if (k == 'checkvalid') {
+        const ret = {};
+        const sett = parseSchemaEntry(field[k]);
+        ret.message = sett.message ? sett.message : 'Validation error';
+        ret.validator = sett.function ? sett.function : () => true;
+        entry['validate'] = ret;
       }
     });
     return entry;
