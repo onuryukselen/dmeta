@@ -3,6 +3,8 @@ const passport = require('passport');
 const request = require('request');
 const util = require('util');
 const accessTokens = require('./../controllers/accessTokenController');
+const authController = require('./../controllers/authController');
+const User = require('./../models/userModel');
 
 const requestPromise = util.promisify(request);
 
@@ -16,6 +18,7 @@ const requestPromise = util.promisify(request);
  *
  * test with: https://localhost:4000/api/v1/meta/protectedEndPoint
  */
+
 passport.use(
   new BearerStrategy(async (accessToken, done) => {
     console.log('****** Passport BearerStrategy ******');
@@ -23,43 +26,33 @@ passport.use(
       const token = await accessTokens.find(accessToken);
 
       if (token != null && new Date() > token.expirationDate) {
-        console.log('date', new Date());
-        console.log('now', Date.now());
-        console.log('token.expirationDate', token);
-        console.log('comp1', new Date() > token.expirationDate);
         await accessTokens.delete(accessToken);
       }
       if (token == null) {
         const tokeninfoURL = process.env.SSO_TOKEN_INFO_URL;
         await requestPromise(tokeninfoURL + accessToken, async (error, response, body) => {
-          console.log(error);
-          console.log(response.statusCode);
-          console.log(JSON.parse(body));
           try {
             if (error != null || response.statusCode !== 200) {
-              console.log('2');
               throw new Error('Token request not valid');
             }
             const bodyObj = JSON.parse(body);
-            const expirationDate = bodyObj.expires_in
-              ? new Date(Date.now() + bodyObj.expires_in * 1000)
-              : null;
-            const userId = null;
-            const scope = null;
-            await accessTokens.save(
-              accessToken,
-              expirationDate,
-              userId,
-              process.env.CLIENT_ID,
-              scope
-            );
-            done(null, accessToken);
+            const expiresIn = bodyObj.expires_in;
+            const user = await authController.saveAccessRefreshToken(accessToken, null, expiresIn);
+            console.log('user2', user);
+            done(null, user);
           } catch (err) {
             done(null, false);
           }
         });
       }
-      done(null, accessToken);
+      if (token.userId) {
+        const user = await User.findOne({ sso_id: token.userId });
+        console.log('user', user);
+        if (!user) {
+          return done(null, false);
+        }
+        done(null, user);
+      }
     } catch (err) {
       done(null, false);
     }
