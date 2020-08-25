@@ -69,14 +69,13 @@ exports.saveAccessRefreshToken = async (accessToken, refreshToken, expiresIn) =>
     const currentUser = JSON.parse(userInfoObj.body);
     console.log('currentUser', currentUser);
     const userId = currentUser._id;
-    const scope = currentUser.scope;
-    const email = currentUser.email;
+    const { scope, email, username, name } = currentUser;
 
     if (!userId) {
       return null;
     }
     const filter = { email: email };
-    const update = { $set: { sso_id: userId, name: currentUser.name, scope: scope } };
+    const update = { $set: { sso_id: userId, name, scope, username } };
     const options = { upsert: true, new: true, setDefaultsOnInsert: true };
     const updatedUser = await User.findOneAndUpdate(filter, update, options);
     console.log('updatedUser', updatedUser);
@@ -100,18 +99,26 @@ exports.login = catchAsync(async (req, res, next) => {
     // Get Client Credentials Grant at: https://tools.ietf.org/html/rfc6749#section-4.3
     // curl --insecure --user 'abc123:ssh-secret' 'https://localhost:3000/oauth/token/' --data 'grant_type=password&username=bob&password=secret'
     // returns: { "access_token" : "(some long token)", "expires_in" : 3600, "token_type" : "Bearer"}
-    const { username, email, password } = req.body;
+    let { username, email, password } = req.body;
     if (!password || (!email && !username)) {
       return next(new AppError('Please provide email/username and password!', 400));
     }
     try {
+      if (!username && email) {
+        const localUser = await User.findOne({ email });
+        console.log(localUser);
+        if (!localUser) {
+          return next(new AppError('Please use your username for login.', 400));
+        }
+        username = localUser.username;
+      }
+
       const auth = `Basic ${Buffer.from(
         `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
       ).toString('base64')}`;
       const sendBody = {
-        username: username,
-        password: password,
-        // scope: '*',
+        username,
+        password,
         grant_type: 'password'
       };
       const { data, status } = await axios.post(
@@ -147,12 +154,14 @@ exports.login = catchAsync(async (req, res, next) => {
       return next(new AppError('Login Failed', 403));
     }
   } else {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return next(new AppError('Please provide email and password!', 400));
+    // -- Local Login --
+    let { username, email, password } = req.body;
+    if (!password || (!email && !username)) {
+      return next(new AppError('Please provide email/username and password!', 400));
     }
+    const filter = email ? { email } : { username };
     // Check if user exists && password is correct
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne(filter).select('+password');
     if (!user || !(await user.correctPassword(password, user.password))) {
       return next(new AppError('Incorrect email or password', 401));
     }

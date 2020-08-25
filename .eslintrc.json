@@ -17,6 +17,7 @@
     "no-unused-vars": ["error", { "argsIgnorePattern": "req|res|next|val" }],
     "no-plusplus": "off",
     "eqeqeq": "off",
-    "dot-notation": "off"
+    "dot-notation": "off",
+    "prefer-const": "off"
   }
 }
