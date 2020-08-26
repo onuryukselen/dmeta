@@ -1,14 +1,23 @@
 /* eslint-disable */
 import '@babel/polyfill';
-import { logout } from './login';
+import { login, logout } from './login';
 import { updateSettings } from './updateSettings';
 import { showAlert } from './alerts';
 
 // DOM ELEMENTS
 const logOutBtn = document.querySelector('.nav__el--logout');
 const userDataForm = document.querySelector('.form-user-data');
+const loginForm = document.querySelector('.form--login');
 
 if (logOutBtn) logOutBtn.addEventListener('click', logout);
+
+if (loginForm)
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    login(email, password);
+  });
 
 if (userDataForm)
   userDataForm.addEventListener('submit', e => {
