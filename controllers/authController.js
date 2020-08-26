@@ -184,7 +184,6 @@ exports.protect = catchAsync(async (req, res, next) => {
     token = req.cookies.jwt;
   }
   if (!token) return next(new AppError('You are not logged in! Please log in to get access.', 401));
-
   let currentUser;
   if (process.env.SSO_LOGIN === 'true') {
     const tokenInfo = await accessTokens.find(token);
@@ -192,14 +191,15 @@ exports.protect = catchAsync(async (req, res, next) => {
       await accessTokens.delete(token);
     }
     if (tokenInfo == null) {
-      const tokeninfoURL = `${process.env.SSO_URL}/api/v1/tokens/info?access_token=${token}`;
-      const { data, status } = await axios.get(tokeninfoURL);
-      if (status !== 200) {
-        return next(new AppError('The user belonging to this token does no longer exist.', 401));
+      try {
+        const tokeninfoURL = `${process.env.SSO_URL}/api/v1/tokens/info?access_token=${token}`;
+        const { data } = await axios.get(tokeninfoURL);
+        const json = JSON.parse(JSON.stringify(data));
+        const expiresIn = json.expires_in;
+        currentUser = await exports.saveAccessRefreshToken(token, null, expiresIn);
+      } catch {
+        return next(new AppError('The token does no longer valid.', 401));
       }
-      const json = JSON.parse(JSON.stringify(data));
-      const expiresIn = json.expires_in;
-      currentUser = await exports.saveAccessRefreshToken(token, null, expiresIn);
     } else if (tokenInfo.userId) {
       currentUser = await User.findOne({ sso_id: tokenInfo.userId });
     }

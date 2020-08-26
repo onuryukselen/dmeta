@@ -2,8 +2,7 @@ const AccessToken = require('../models/accessTokenModel');
 
 exports.find = async token => {
   return await AccessToken.findOne({ token: token }, function(err, item) {
-    console.log('accesstoken find err1:', err);
-    console.log('accesstoken find item1:', item);
+    console.log('accesstoken find:', item);
     if (err) {
       return err;
     }
