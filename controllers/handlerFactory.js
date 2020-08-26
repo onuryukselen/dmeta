@@ -23,6 +23,9 @@ exports.updateOne = Model =>
   catchAsync(async (req, res, next) => {
     // If req.body.Model is exist, use as Model (for dataRoutes)
     if (req.body.Model) Model = req.body.Model;
+    // req.user set with `protected` middleware
+    req.body.lastUpdatedUser = req.user.id;
+    delete req.body.owner; // don't allow to change owner
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -44,6 +47,9 @@ exports.createOne = Model =>
   catchAsync(async (req, res, next) => {
     // If req.body.Model is exist, use as Model (for dataRoutes)
     if (req.body.Model) Model = req.body.Model;
+    // req.user set with `protected` middleware
+    req.body.lastUpdatedUser = req.user.id;
+    req.body.owner = req.user.id;
     const doc = await Model.create(req.body);
     if (req.body.After) req.body.After();
 

@@ -44,16 +44,12 @@ const collectionsSchema = new mongoose.Schema(
       default: Date.now()
     },
     owner: {
-      type: String,
-      required: [true, 'A collection must have a user'],
-      //For now add default user admin
-      default: 'admin'
+      type: mongoose.Schema.ObjectId,
+      ref: 'User'
     },
     lastUpdatedUser: {
-      type: String,
-      required: [true, 'A collection must have a lastUpdatedUser'],
-      //For now add default user admin
-      default: 'admin'
+      type: mongoose.Schema.ObjectId,
+      ref: 'User'
     }
   },
   {
