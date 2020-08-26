@@ -23,7 +23,7 @@ const fieldsSchema = new mongoose.Schema(
           });
           return docs.length === 0;
         },
-        message: 'Field name has found in the collection!'
+        message: 'Field name has found. It has to be unique in the collection!'
       }
     },
     label: {
@@ -70,16 +70,12 @@ const fieldsSchema = new mongoose.Schema(
       default: Date.now()
     },
     owner: {
-      type: String,
-      required: [true, 'A field must have a user'],
-      //For now add default user admin
-      default: 'admin'
+      type: mongoose.Schema.ObjectId,
+      ref: 'User'
     },
     lastUpdatedUser: {
-      type: String,
-      required: [true, 'A field must have a lastUpdatedUser'],
-      //For now add default user admin
-      default: 'admin'
+      type: mongoose.Schema.ObjectId,
+      ref: 'User'
     }
   },
   {

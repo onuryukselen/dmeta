@@ -1,6 +1,5 @@
 const { get, post } = require('request');
 const { promisify } = require('util');
-const passport = require('passport');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const User = require('./../models/userModel');
@@ -130,11 +129,8 @@ exports.login = catchAsync(async (req, res, next) => {
           }
         }
       );
-      console.log('status', status);
-      console.log('data', data);
       const accessToken = data.access_token;
       const expiresIn = data.expires_in;
-      // Username and password not correct
       if (status !== 200 || !accessToken) {
         res.status(status);
         res.send(data);
@@ -180,59 +176,63 @@ exports.logout = async (req, res) => {
 };
 
 // PROTECT ROUTE
-if (process.env.SSO_LOGIN === 'true') {
-  exports.protect = [
-    passport.authenticate('bearer', { session: false }),
-    (req, res, next) => {
-      // req.user is already set by passport BearerStrategy (done(null, user))
-      res.locals.user = req.user; // variables that used in the view while rendering (eg.pug)
-      next();
-    }
-  ];
-} else {
-  exports.protect = catchAsync(async (req, res, next) => {
-    // 1) Getting token and check of it's there
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.jwt) {
-      token = req.cookies.jwt;
-    }
+exports.protect = catchAsync(async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  }
+  if (!token) return next(new AppError('You are not logged in! Please log in to get access.', 401));
 
-    if (!token) {
-      return next(new AppError('You are not logged in! Please log in to get access.', 401));
+  let currentUser;
+  if (process.env.SSO_LOGIN === 'true') {
+    const tokenInfo = await accessTokens.find(token);
+    if (tokenInfo != null && new Date() > tokenInfo.expirationDate) {
+      await accessTokens.delete(token);
     }
-
-    // 2) Verification token
+    if (tokenInfo == null) {
+      const tokeninfoURL = `${process.env.SSO_URL}/api/v1/tokens/info?access_token=${token}`;
+      const { data, status } = await axios.get(tokeninfoURL);
+      if (status !== 200) {
+        return next(new AppError('The user belonging to this token does no longer exist.', 401));
+      }
+      const json = JSON.parse(JSON.stringify(data));
+      const expiresIn = json.expires_in;
+      currentUser = await exports.saveAccessRefreshToken(token, null, expiresIn);
+    } else if (tokenInfo.userId) {
+      currentUser = await User.findOne({ sso_id: tokenInfo.userId });
+    }
+  } else {
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    currentUser = await User.findById(decoded.id);
+  }
 
-    // 3) Check if user still exists
-    const currentUser = await User.findById(decoded.id);
-    if (!currentUser) {
-      return next(new AppError('The user belonging to this token does no longer exist.', 401));
-    }
+  if (!currentUser) {
+    return next(new AppError('The user belonging to this token does no longer exist.', 401));
+  }
 
-    // GRANT ACCESS TO PROTECTED ROUTE
-    req.user = currentUser; //alias for req.session.user
-    res.locals.user = currentUser; // variables that used in the view while rendering (eg.pug)
-    next();
-  });
-}
+  // GRANT ACCESS TO PROTECTED ROUTE
+  req.user = currentUser; //alias for req.session.user
+  res.locals.user = currentUser; // variables that used in the view while rendering (eg.pug)
+  next();
+});
 
 // Only for rendered pages, no errors!
 exports.isLoggedIn = async (req, res, next) => {
   console.log('** isLoggedIn');
   if (req.cookies.jwt) {
     try {
-      // 1) verify token
-      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-      // 2) Check if user still exists
-      const currentUser = await User.findById(decoded.id);
-      console.log(currentUser);
-      if (!currentUser) {
-        return next();
+      let currentUser;
+      if (process.env.SSO_LOGIN === 'true') {
+        const token = await accessTokens.find(req.cookies.jwt);
+        if (token.userId) currentUser = await User.findOne({ sso_id: token.userId });
+      } else {
+        const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+        currentUser = await User.findById(decoded.id);
       }
-      // THERE IS A LOGGED IN USER
+      if (!currentUser) return next();
+
       res.locals.user = currentUser;
       return next();
     } catch (err) {
@@ -266,8 +266,6 @@ exports.ensureSingleSignOn = async (req, res, next) => {
 };
 
 /**
- * https://localhost:4000/receivetoken?code=(authorization code)
- *
  * This is part of the single sign on using the OAuth2 Authorization Code grant type.  This is the
  * redirect from the authorization server.  If you send in a bad authorization code you will get the
  * response code of 400 and the message of
@@ -312,7 +310,6 @@ exports.ssoReceiveToken = async (req, res, next) => {
 
     res.locals.user = updatedUser;
     sendTokenCookie(accessToken, req, res);
-
     res.redirect(req.session.redirectURL);
   } catch (e) {
     return next(new AppError('Login Failed', 403));

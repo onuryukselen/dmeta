@@ -1,3 +1,8 @@
+25.08.2020 Version 0.0.4
+lastUpdatedUser, owner fields added to Data, Collection and Field models.   
+API login and protected middlewares added for both SSO and Local Login.
+API login supports both e-mail and username sign-in.
+
 23.08.2020 Version 0.0.3
 Data Model schema settings are defined.
 parentCollectionID updated.

@@ -16,12 +16,6 @@ exports.setModel = (req, res, next) => {
   return next(new AppError(`collectionName is not defined!`, 404));
 };
 
-//
-exports.setUserIds = (req, res, next) => {
-  if (!req.body.user) req.body.user = req.user.id;
-  next();
-};
-
 exports.getAllData = factory.getAll();
 exports.getData = factory.getOne();
 exports.createData = factory.createOne();

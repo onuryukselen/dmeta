@@ -120,6 +120,10 @@ function createSchema(fields) {
     const entry = createSchemaEntry(fields[n]);
     schema[name] = entry;
   }
+  // set default fields
+  schema.owner = { type: mongoose.Schema.ObjectId, ref: 'User' };
+  schema.lastUpdatedUser = { type: mongoose.Schema.ObjectId, ref: 'User' };
+
   return schema;
 }
 
