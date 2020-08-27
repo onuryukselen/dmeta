@@ -8,7 +8,12 @@ exports.setCollectionId = (req, res, next) => {
   next();
 };
 
-// asign commands to `req.body.After` which will be executed after query is completed
+exports.setFilter = (req, res, next) => {
+  if (req.params.collectionID) res.locals.Filter = { collectionID: req.params.collectionID };
+  next();
+};
+
+// asign commands to `res.locals.After` which will be executed after query is completed
 exports.setAfter = async (req, res, next) => {
   let collectionID;
   try {
@@ -20,7 +25,7 @@ exports.setAfter = async (req, res, next) => {
       if (field.collectionID) collectionID = field.collectionID;
     }
     if (collectionID) {
-      req.body.After = () => buildModels.updateModel(collectionID);
+      res.locals.After = () => buildModels.updateModel(collectionID);
       return next();
     }
     return next(new AppError(`CollectionID or FieldID is not defined!`, 404));

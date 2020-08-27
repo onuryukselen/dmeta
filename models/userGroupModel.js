@@ -1,17 +1,15 @@
 const mongoose = require('mongoose');
 
 const userGroupSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Please provide group name!']
-  },
   user_id: {
     type: mongoose.Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: true
   },
   group_id: {
     type: mongoose.Schema.ObjectId,
-    ref: 'Group'
+    ref: 'Group',
+    required: true
   },
   active: {
     type: Boolean,

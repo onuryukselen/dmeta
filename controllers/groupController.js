@@ -2,6 +2,11 @@ const factory = require('./handlerFactory');
 const Group = require('../models/groupModel');
 const UserGroup = require('../models/userGroupModel');
 
+// exports.setUserId = (req, res, next) => {
+//   if (!req.body.user_id) req.body.user_id = req.user._id;
+//   next();
+// };
+
 exports.getAllGroups = factory.getAll(Group);
 exports.getGroup = factory.getOne(Group);
 exports.createGroup = factory.createOne(Group);

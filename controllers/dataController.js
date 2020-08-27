@@ -4,10 +4,10 @@ const AppError = require('./../utils/appError');
 
 const modelObj = buildModels.modelObj;
 
-//if collectionName is set, then save that Model as a req.body.Model
+//if collectionName is set, then save that Model as a res.locals.Model
 exports.setModel = (req, res, next) => {
   if (req.params.collectionName) {
-    req.body.Model = modelObj[req.params.collectionName];
+    res.locals.Model = modelObj[req.params.collectionName];
     if (!modelObj[req.params.collectionName]) {
       return next(new AppError(`collectionName is not found!`, 404));
     }
