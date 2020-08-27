@@ -6,7 +6,6 @@ const buildModels = require('./../utils/buildModels');
 // set commands after query is completed
 exports.setAfter = async (req, res, next) => {
   // for createCollection
-  console.log('setAfter');
   if (req.body.name) {
     res.locals.After = async function() {
       try {

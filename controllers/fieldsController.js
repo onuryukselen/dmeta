@@ -8,6 +8,7 @@ exports.setCollectionId = (req, res, next) => {
   next();
 };
 
+// Filter for get All Collection fields
 exports.setFilter = (req, res, next) => {
   if (req.params.collectionID) res.locals.Filter = { collectionID: req.params.collectionID };
   next();
