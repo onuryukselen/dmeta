@@ -16,6 +16,7 @@ const globalErrorHandler = require('./controllers/errorController');
 const collectionsRouter = require('./routes/collectionsRoutes');
 const fieldsRouter = require('./routes/fieldsRoutes');
 const userRouter = require('./routes/userRoutes');
+const groupRouter = require('./routes/groupRoutes');
 const dataRouter = require('./routes/dataRoutes');
 const viewRouter = require('./routes/viewRoutes');
 const accessTokens = require('./controllers/accessTokenController');
@@ -98,6 +99,7 @@ setInterval(() => {
 app.use('/api/v1/collections', collectionsRouter);
 app.use('/api/v1/fields', fieldsRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/groups', groupRouter);
 app.use('/api/v1/data', dataRouter);
 app.use('/', viewRouter);
 
