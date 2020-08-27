@@ -43,7 +43,7 @@ process.on('uncaughtException', err => {
 
 const port = process.env.PORT || 3000;
 let server;
-if (process.env.SSO_LOGIN === 'true') {
+if (process.env.PROTOCOL === 'https') {
   // Create HTTPS server.
   const options = {
     key: fs.readFileSync(path.join(__dirname, process.env.CERTS_PRIVATE_KEY)),
