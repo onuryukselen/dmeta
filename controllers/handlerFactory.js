@@ -2,9 +2,19 @@ const AppError = require('./../utils/appError');
 const catchAsync = require('./../utils/catchAsync');
 const APIFeatures = require('./../utils/apiFeatures');
 
+//* -------------- Global Variables for handlerFactory ----------------------
+// 1. res.locals.Model => use as a Model (for dataRoutes)
+//    e.g. if (res.locals.Model) Model = res.locals.Model;
+// 2. res.locals.After => commands will be executed after query is completed
+//    e.g. if (res.locals.After) res.locals.After();
+// 3. res.locals.user set with `protected` middleware
+// 4. res.locals.Perms returns filtration creteria regarding permission
+//    e.g. permission methods: authController.setDefPerms
+//    usage e.g. const permFilter = await res.locals.Perms();
+//         query.find(permFilter);
+
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
-    // If res.locals.Model is exist, use as Model (for dataRoutes)
     if (res.locals.Model) Model = res.locals.Model;
     const doc = await Model.findByIdAndDelete(req.params.id);
     if (!doc) {
@@ -21,7 +31,6 @@ exports.deleteOne = Model =>
 
 exports.updateOne = Model =>
   catchAsync(async (req, res, next) => {
-    // If res.locals.Model is exist, use as Model (for dataRoutes)
     if (res.locals.Model) Model = res.locals.Model;
     // req.user set with `protected` middleware
     req.body.lastUpdatedUser = req.user.id;
@@ -48,7 +57,6 @@ exports.updateOne = Model =>
 
 exports.createOne = Model =>
   catchAsync(async (req, res, next) => {
-    // If res.locals.Model is exist, use as Model (for dataRoutes)
     if (res.locals.Model) Model = res.locals.Model;
     // req.user set with `protected` middleware
     req.body.lastUpdatedUser = req.user.id;
@@ -66,7 +74,6 @@ exports.createOne = Model =>
 
 exports.getOne = (Model, popOptions) =>
   catchAsync(async (req, res, next) => {
-    // If res.locals.Model is exist, use as Model (for dataRoutes)
     if (res.locals.Model) Model = res.locals.Model;
     let query = Model.findById(req.params.id);
     if (popOptions) query = query.populate(popOptions);
@@ -86,17 +93,22 @@ exports.getOne = (Model, popOptions) =>
 
 exports.getAll = Model =>
   catchAsync(async (req, res, next) => {
-    // If res.locals.Model is exist, use as Model (for dataRoutes)
     if (res.locals.Model) Model = res.locals.Model;
     let filter = {};
     if (res.locals.Filter) filter = res.locals.Filter;
-    const features = new APIFeatures(Model.find(filter), req.query)
+    const query = Model.find(filter);
+    if (res.locals.Perms) {
+      const permFilter = await res.locals.Perms();
+      query.find(permFilter);
+    }
+    const features = new APIFeatures(query, req.query)
       .filter()
       .sort()
       .limitFields()
       .paginate();
     //const doc = await features.query.explain();
     const doc = await features.query;
+
     res.status(200).json({
       status: 'success',
       reqeustedAt: req.requestTime,
