@@ -3,6 +3,10 @@ const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
 const buildModels = require('./../utils/buildModels');
 
+exports.getCollectionByName = async name => {
+  return await Collection.findOne({ name });
+};
+
 // set commands after query is completed
 exports.setAfter = async (req, res, next) => {
   // for createCollection
@@ -10,8 +14,7 @@ exports.setAfter = async (req, res, next) => {
     res.locals.After = async function() {
       try {
         req.body.name = req.body.name.replace(/\s+/g, '_').toLowerCase();
-        const col = await Collection.findOne({ name: req.body.name });
-        console.log('col', col);
+        const col = exports.getCollectionByName(req.body.name);
         buildModels.updateModel(col._id);
       } catch {
         return next(new AppError(`Collection Model couldn't be updated.`, 404));

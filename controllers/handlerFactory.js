@@ -80,8 +80,12 @@ exports.createOne = Model =>
     if (res.locals.Model) Model = res.locals.Model;
     req.body.lastUpdatedUser = req.user.id;
     req.body.owner = req.user.id;
-    if (res.locals.Perms) await res.locals.Perms('create');
-
+    if (res.locals.Perms) {
+      const permCreate = await res.locals.Perms('create');
+      if (!permCreate) {
+        return next(new AppError(`Permission denied: no write permission`, 404));
+      }
+    }
     const doc = await Model.create(req.body);
     if (res.locals.After) res.locals.After();
     res.status(201).json({

@@ -50,7 +50,8 @@ const collectionsSchema = new mongoose.Schema(
       type: 'Mixed'
     },
     restrictTo: {
-      type: 'Mixed'
+      type: 'Mixed',
+      default: { role: ['admin'] }
     },
     owner: {
       type: mongoose.Schema.ObjectId,

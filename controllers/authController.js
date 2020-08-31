@@ -3,12 +3,12 @@ const { promisify } = require('util');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const User = require('./../models/userModel');
-const Collection = require('./../models/collectionsModel');
-const UserGroup = require('../models/userGroupModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const accessTokens = require('./../controllers/accessTokenController');
 const refreshTokens = require('./../controllers/refreshTokenController');
+const groupController = require('./../controllers/groupController');
+const collectionsController = require('./../controllers/collectionsController');
 
 const [getAsync, postAsync] = [get, post].map(promisify);
 
@@ -23,25 +23,46 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
     if (type === 'create') {
       if (!res.locals.user) return next(new AppError(`Please login to create document.`, 404));
 
-      let ret = false;
       // For Data Models
       // expected restrictTo object:
       // restrictTo: {
       //    user:["2872..","3fb32..","everyone"],
       //    group:["d3ds..","46h5.."],
-      //    role:["admin, ""project-admin"]
+      //    role:["admin, "project-admin"]
       //  }
       if (req.params.collectionName) {
-        const collection = await Collection.find({ name: req.params.collectionName });
-        const restrictTo = collection.restrictTo;
-        console.log(restrictTo);
-        // check if user has permission to access
-      }
+        const userId = res.locals.user.id;
+        const userRole = res.locals.user.role;
 
-      if (!ret) {
-        return next(new AppError(`Permission denied: no write permission'`, 404));
+        const collection = await collectionsController.getCollectionByName(
+          req.params.collectionName
+        );
+        console.log(collection);
+        // if parentCollectionID not found, then check collection.restrictTo for permissions
+        if (collection.parentCollectionID) {
+          console.log('check parent collection for permissions');
+        } else {
+          console.log('check collection.restrictTo for permissions');
+        }
+        if (collection.restrictTo) {
+          // user: defines allowed user_ids for creating item in the collection
+          // group: defines allowed group_ids for creating item in the collection
+          // role: defines allowed roles for creating item in the collection
+          // returns (Boolean) true when access is permitted
+          const user = collection.restrictTo.user;
+          const group = collection.restrictTo.group;
+          const role = collection.restrictTo.role;
+          if (user && user.constructor === Array && user.includes(userId)) return true;
+          if (role && role.constructor === Array && role.includes(userRole)) return true;
+          if (group && group.constructor === Array) {
+            // get list of group_ids belong to user as an array
+            // if userGroups found in the collection group then return true
+            const userGroups = await groupController.getUserGroupIds(userId);
+            if (group.some(r => userGroups.includes(r))) return true;
+          }
+        }
       }
-      return ret;
+      return false;
     }
 
     // permsFieldUser: defines the read/write permission of the item
@@ -58,29 +79,23 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
     }
     // when user is logged in, res.locals.user will be available.
     if (res.locals.user) {
-      const userid = res.locals.user.id;
+      const userId = res.locals.user.id;
       const userRole = res.locals.user.role;
       // allow access for admin and project-admin
       if (['admin', 'project-admin'].includes(userRole)) return {};
-      // get list of group_ids belong to user -> save as an array called userGroups
-      let userGroups;
-      try {
-        const userGroupData = await UserGroup.find({ user_id: userid }).exec();
-        userGroups = userGroupData.map(a => a.group_id.toString());
-      } catch {
-        userGroups = [];
-      }
+      // get list of group_ids belong to user as an array
+      const userGroups = await groupController.getUserGroupIds(userId);
       // filter['$or'] will check these filters: ownerFilter, userFilter, groupFilter
       // if one of them is verified, it will allow access to that item.
       // ownerFilter -> owner always allowed for read+write
-      // userFilter  -> userid should be in the list of permsFieldUser of the item.
+      // userFilter  -> userId should be in the list of permsFieldUser of the item.
       //                Otherwise 'everyone' should be found for public access.
       // groupFilter -> If userGroups is empty don't add groupFilter to filter['$or']
       //                Otherwise check if one of the `userGroups` are found in permsFieldGroup //                of the item
-      const ownerFilter = { owner: userid };
+      const ownerFilter = { owner: userId };
       const userFilter = {};
       const groupFilter = {};
-      userFilter[permsFieldUser] = { $in: [userid, 'everyone'] };
+      userFilter[permsFieldUser] = { $in: [userId, 'everyone'] };
       groupFilter[permsFieldGroup] = { $in: userGroups };
       filter['$or'] = [ownerFilter, userFilter];
       if (userGroups.length > 0) filter['$or'].push(groupFilter);
