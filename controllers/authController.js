@@ -3,6 +3,7 @@ const { promisify } = require('util');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const User = require('./../models/userModel');
+const Collection = require('./../models/collectionsModel');
 const UserGroup = require('../models/userGroupModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
@@ -11,33 +12,94 @@ const refreshTokens = require('./../controllers/refreshTokenController');
 
 const [getAsync, postAsync] = [get, post].map(promisify);
 
-//Allow  save that Model as a res.locals.Model
 exports.setDefPerms = catchAsync(async (req, res, next) => {
-  res.locals.Perms = async function() {
-    // user not logged in - allow only public access
-    if (!res.locals.user) {
-      return { 'perms.read.user': { $in: ['everyone'] } };
+  // expected perms object:
+  // perms: {
+  //    read:{user:["2872..","3fb32..","everyone"], group:["d3ds..","46h5.."] },
+  //    write:{user:["2fwr.."], group:["d3ds.."] }
+  //  }
+  res.locals.Perms = async function(type) {
+    // type options: "read", "write", "create"
+    if (type === 'create') {
+      if (!res.locals.user) return next(new AppError(`Please login to create document.`, 404));
+
+      let ret = false;
+      // For Data Models
+      // expected restrictTo object:
+      // restrictTo: {
+      //    user:["2872..","3fb32..","everyone"],
+      //    group:["d3ds..","46h5.."],
+      //    role:["admin, ""project-admin"]
+      //  }
+      if (req.params.collectionName) {
+        const collection = await Collection.find({ name: req.params.collectionName });
+        const restrictTo = collection.restrictTo;
+        console.log(restrictTo);
+        // check if user has permission to access
+      }
+
+      if (!ret) {
+        return next(new AppError(`Permission denied: no write permission'`, 404));
+      }
+      return ret;
     }
+
+    // permsFieldUser: defines the read/write permission of the item
+    // permsFieldGroup: defines the read/write permission of the item
+    // filter -> returns mongoose filter creteria
+    const permsFieldUser = `perms.${type}.user`;
+    const permsFieldGroup = `perms.${type}.group`;
+    const filter = {};
+
+    // if user not logged in - allow only public access
+    if (!res.locals.user) {
+      filter[permsFieldUser] = { $in: ['everyone'] };
+      return filter;
+    }
+    // when user is logged in, res.locals.user will be available.
     if (res.locals.user) {
       const userid = res.locals.user.id;
-      let userGroups = [];
+      const userRole = res.locals.user.role;
+      // allow access for admin and project-admin
+      if (['admin', 'project-admin'].includes(userRole)) return {};
+      // get list of group_ids belong to user -> save as an array called userGroups
+      let userGroups;
       try {
         const userGroupData = await UserGroup.find({ user_id: userid }).exec();
         userGroups = userGroupData.map(a => a.group_id.toString());
       } catch {
         userGroups = [];
       }
-      return {
-        $or: [
-          { owner: userid },
-          { 'perms.read.user': { $in: [userid, 'everyone'] } },
-          { 'perms.read.group': { $in: userGroups } }
-        ]
-      };
+      // filter['$or'] will check these filters: ownerFilter, userFilter, groupFilter
+      // if one of them is verified, it will allow access to that item.
+      // ownerFilter -> owner always allowed for read+write
+      // userFilter  -> userid should be in the list of permsFieldUser of the item.
+      //                Otherwise 'everyone' should be found for public access.
+      // groupFilter -> If userGroups is empty don't add groupFilter to filter['$or']
+      //                Otherwise check if one of the `userGroups` are found in permsFieldGroup //                of the item
+      const ownerFilter = { owner: userid };
+      const userFilter = {};
+      const groupFilter = {};
+      userFilter[permsFieldUser] = { $in: [userid, 'everyone'] };
+      groupFilter[permsFieldGroup] = { $in: userGroups };
+      filter['$or'] = [ownerFilter, userFilter];
+      if (userGroups.length > 0) filter['$or'].push(groupFilter);
+      return filter;
     }
   };
   next();
 });
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // roles ['admin', 'project-admin']. role='user'
+    if (!roles.includes(res.locals.user.role)) {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+
+    next();
+  };
+};
 
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {

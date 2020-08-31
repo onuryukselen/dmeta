@@ -10,14 +10,24 @@ const APIFeatures = require('./../utils/apiFeatures');
 // 3. res.locals.user set with `protected` middleware
 // 4. res.locals.Perms returns filtration creteria regarding permission
 //    e.g. permission methods: authController.setDefPerms
-//    usage e.g. const permFilter = await res.locals.Perms();
+//    usage e.g. const permFilter = await res.locals.Perms("read");
 //         query.find(permFilter);
 
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
     if (res.locals.Model) Model = res.locals.Model;
+    // Check if deletion is allowed
+    if (res.locals.Perms) {
+      let query = Model.findById(req.params.id);
+      const permFilter = await res.locals.Perms('write');
+      query.find(permFilter);
+      const doc = await query;
+      if (!doc || (Array.isArray(doc) && doc.length === 0)) {
+        return next(new AppError(`No document found with ${req.params.id}!`, 404));
+      }
+    }
     const doc = await Model.findByIdAndDelete(req.params.id);
-    if (!doc) {
+    if (!doc || (Array.isArray(doc) && doc.length === 0)) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
     if (res.locals.After) res.locals.After();
@@ -32,12 +42,22 @@ exports.deleteOne = Model =>
 exports.updateOne = Model =>
   catchAsync(async (req, res, next) => {
     if (res.locals.Model) Model = res.locals.Model;
-    // req.user set with `protected` middleware
     req.body.lastUpdatedUser = req.user.id;
     // don't allow to change internal parameters such as owner, creationDate etc.
     ['owner', 'creationDate', 'lastUpdateDate', 'lastUpdatedUser'].forEach(function(key) {
       delete req.body[key];
     });
+    // Check if update is allowed
+    if (res.locals.Perms) {
+      let query = Model.findById(req.params.id);
+      const permFilter = await res.locals.Perms('write');
+      query.find(permFilter);
+      const doc = await query;
+      if (!doc || (Array.isArray(doc) && doc.length === 0)) {
+        return next(new AppError(`No document found with ${req.params.id}!`, 404));
+      }
+    }
+
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -58,12 +78,12 @@ exports.updateOne = Model =>
 exports.createOne = Model =>
   catchAsync(async (req, res, next) => {
     if (res.locals.Model) Model = res.locals.Model;
-    // req.user set with `protected` middleware
     req.body.lastUpdatedUser = req.user.id;
     req.body.owner = req.user.id;
+    if (res.locals.Perms) await res.locals.Perms('create');
+
     const doc = await Model.create(req.body);
     if (res.locals.After) res.locals.After();
-
     res.status(201).json({
       status: 'success',
       data: {
@@ -76,9 +96,13 @@ exports.getOne = (Model, popOptions) =>
   catchAsync(async (req, res, next) => {
     if (res.locals.Model) Model = res.locals.Model;
     let query = Model.findById(req.params.id);
+    if (res.locals.Perms) {
+      const permFilter = await res.locals.Perms('read');
+      query.find(permFilter);
+    }
     if (popOptions) query = query.populate(popOptions);
     const doc = await query;
-    if (!doc) {
+    if (!doc || (Array.isArray(doc) && doc.length === 0)) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
 
@@ -98,8 +122,9 @@ exports.getAll = Model =>
     if (res.locals.Filter) filter = res.locals.Filter;
     const query = Model.find(filter);
     if (res.locals.Perms) {
-      const permFilter = await res.locals.Perms();
+      const permFilter = await res.locals.Perms('read');
       query.find(permFilter);
+      console.log(permFilter);
     }
     const features = new APIFeatures(query, req.query)
       .filter()
@@ -108,7 +133,9 @@ exports.getAll = Model =>
       .paginate();
     //const doc = await features.query.explain();
     const doc = await features.query;
-
+    if (!doc || (Array.isArray(doc) && doc.length === 0)) {
+      return next(new AppError(`No document found!`, 404));
+    }
     res.status(200).json({
       status: 'success',
       reqeustedAt: req.requestTime,

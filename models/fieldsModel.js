@@ -69,6 +69,9 @@ const fieldsSchema = new mongoose.Schema(
       type: Date,
       default: Date.now()
     },
+    perms: {
+      type: 'Mixed'
+    },
     owner: {
       type: mongoose.Schema.ObjectId,
       ref: 'User'

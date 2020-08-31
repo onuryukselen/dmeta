@@ -4,6 +4,8 @@ const authController = require('../controllers/authController');
 
 const router = express.Router({ mergeParams: true });
 
+router.use(authController.setDefPerms);
+
 router
   .route('/:collectionName')
   .get(dataController.setModel, dataController.getAllData)
