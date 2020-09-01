@@ -1,8 +1,6 @@
 const factory = require('./handlerFactory');
-const buildModels = require('./../utils/buildModels');
+const { modelObj } = require('./../utils/buildModels');
 const AppError = require('./../utils/appError');
-
-const modelObj = buildModels.modelObj;
 
 //if collectionName is set, then save that Model as a res.locals.Model
 exports.setModel = (req, res, next) => {

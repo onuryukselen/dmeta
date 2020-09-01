@@ -134,9 +134,9 @@ const createSchema = async (fields, col) => {
     schema[name] = entry;
   }
   // set default fields
+  if (!schema.perms) schema.perms = { type: 'Mixed' };
   schema.owner = { type: mongoose.Schema.ObjectId, ref: 'User' };
   schema.lastUpdatedUser = { type: mongoose.Schema.ObjectId, ref: 'User' };
-
   return schema;
 };
 
