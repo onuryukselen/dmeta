@@ -3,15 +3,16 @@
 const validator = require('validator');
 const mongoose = require('mongoose');
 const Collection = require('../models/collectionsModel');
+const collectionsController = require('../controllers/collectionsController');
 const Field = require('../models/fieldsModel');
 const AppError = require('./appError');
 
 const modelObj = {};
 exports.modelObj = modelObj;
 
-// create schema for given fields
+// create schema for given fields and collection(col)
 // returns schema obj e.g. { name: { type: String } }
-function createSchema(fields) {
+const createSchema = async (fields, col) => {
   //
   // function parseSchemaEntry:
   // input sett => should be string, array or boolean.
@@ -53,7 +54,6 @@ function createSchema(fields) {
     // Warning in eval usage!
     if (checkString) {
       try {
-        console.log('checkvalid', checkString);
         const testFunc = eval(checkString);
         if (typeof testFunc === 'function') {
           func = testFunc;
@@ -91,6 +91,10 @@ function createSchema(fields) {
 
       if (defParams.includes(k)) {
         entry[k] = field[k];
+        //exeption for parent reference
+        if (k == 'type' && field[k] == 'mongoose.Schema.ObjectId') {
+          entry[k] = mongoose.Schema.ObjectId;
+        }
       } else if (k == 'various') {
         if (typeof field[k] === 'object' && field[k] !== null) {
           Object.assign(entry, field[k]);
@@ -115,6 +119,15 @@ function createSchema(fields) {
   };
 
   const schema = {};
+  // set default reference fields based on parentCollectionID
+  if (col.parentCollectionID) {
+    // fieldName: reference field name in the collection
+    // parentColName: parent collection name
+    const { fieldName, parentColName } = await collectionsController.getParentRefField(
+      col.parentCollectionID
+    );
+    schema[fieldName] = { type: mongoose.Schema.ObjectId, ref: parentColName, required: true };
+  }
   for (let n = 0; n < fields.length; n++) {
     const name = fields[n].name;
     const entry = createSchemaEntry(fields[n]);
@@ -125,7 +138,7 @@ function createSchema(fields) {
   schema.lastUpdatedUser = { type: mongoose.Schema.ObjectId, ref: 'User' };
 
   return schema;
-}
+};
 
 // Update mongoose models when collection or field changes
 exports.updateModel = async collectionId => {
@@ -139,7 +152,7 @@ exports.updateModel = async collectionId => {
     if (col && mongoose.connection.models[colName]) {
       delete mongoose.connection.models[colName];
     }
-    const schema = createSchema(fields);
+    const schema = await createSchema(fields, col);
     const Schema = new mongoose.Schema(schema);
     const Model = mongoose.model(colName, Schema);
     modelObj[colName] = Model;
@@ -158,10 +171,11 @@ exports.buildModels = async () => {
     const allCollections = await Collection.find({});
     const allFields = await Field.find({});
     for (let n = 0; n < allCollections.length; n++) {
-      const colId = allCollections[n]._id.toString();
-      const colName = allCollections[n].name.toString();
+      const colId = allCollections[n].id;
+      const colName = allCollections[n].name;
       const fields = allFields.filter(f => f.collectionID == colId);
-      const schema = createSchema(fields);
+      // eslint-disable-next-line no-await-in-loop
+      const schema = await createSchema(fields, allCollections[n]);
       console.log(colName, schema);
       if (!modelObj[colName]) {
         const Schema = new mongoose.Schema(schema);

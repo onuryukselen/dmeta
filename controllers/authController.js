@@ -23,7 +23,7 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
     if (type === 'create') {
       if (!res.locals.user) return next(new AppError(`Please login to create document.`, 404));
 
-      // For Data Models
+      // For Data Models (if req.params.collectionName should be exist)
       // expected restrictTo object:
       // restrictTo: {
       //    user:["2872..","3fb32..","everyone"],
@@ -34,24 +34,31 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
         const userId = res.locals.user.id;
         const userRole = res.locals.user.role;
 
-        const collection = await collectionsController.getCollectionByName(
-          req.params.collectionName
-        );
-        console.log(collection);
-        // if parentCollectionID not found, then check collection.restrictTo for permissions
-        if (collection.parentCollectionID) {
-          console.log('check parent collection for permissions');
-        } else {
-          console.log('check collection.restrictTo for permissions');
-        }
-        if (collection.restrictTo) {
+        const col = await collectionsController.getCollectionByName(req.params.collectionName);
+        console.log(col);
+        // if parentCollectionID is found, check parentCollectionID for permissions
+        if (col.parentCollectionID) {
+          // fieldName: reference field name in the collection
+          // parentColName: parent collection name
+          const { fieldName, parentColName } = await collectionsController.getParentRefField(
+            col.parentCollectionID
+          );
+          console.log('fieldName', fieldName);
+          console.log('parentColName', parentColName);
+          if (parentColName && fieldName && req.body[fieldName]) {
+            const refId = req.body[fieldName];
+            console.log('refId', refId);
+          }
+
+          // if parentCollectionID not found, then check collection.restrictTo for permissions
+        } else if (!col.parentCollectionID && col.restrictTo) {
           // user: defines allowed user_ids for creating item in the collection
           // group: defines allowed group_ids for creating item in the collection
           // role: defines allowed roles for creating item in the collection
           // returns (Boolean) true when access is permitted
-          const user = collection.restrictTo.user;
-          const group = collection.restrictTo.group;
-          const role = collection.restrictTo.role;
+          const user = col.restrictTo.user;
+          const group = col.restrictTo.group;
+          const role = col.restrictTo.role;
           if (user && user.constructor === Array && user.includes(userId)) return true;
           if (role && role.constructor === Array && role.includes(userRole)) return true;
           if (group && group.constructor === Array) {
@@ -61,6 +68,11 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
             if (group.some(r => userGroups.includes(r))) return true;
           }
         }
+      } else {
+        // collection and field routes restrictedTo admin
+        // everybody can create his group/usergroup \
+        // everybody can signup and login
+        return true;
       }
       return false;
     }

@@ -4,7 +4,25 @@ const AppError = require('./../utils/appError');
 const buildModels = require('./../utils/buildModels');
 
 exports.getCollectionByName = async name => {
-  return await Collection.findOne({ name });
+  return await Collection.findOne({ name }).lean();
+};
+exports.getCollectionById = async id => {
+  return await Collection.findById(id).lean();
+};
+
+// expects parentCollectionID.
+// returns { fieldName: ref. field name in the collection,
+//           parentColName: parent collection name
+//         }
+exports.getParentRefField = async parentCollectionID => {
+  let fieldName;
+  const parentCol = await exports.getCollectionById(parentCollectionID);
+  const parentColName = parentCol.name;
+  if (parentColName) {
+    fieldName = parentColName.replace(/\s+/g, '_').toLowerCase();
+    fieldName = `${fieldName}_id`;
+  }
+  return { fieldName, parentColName };
 };
 
 // set commands after query is completed

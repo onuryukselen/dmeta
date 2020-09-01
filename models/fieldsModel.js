@@ -34,7 +34,7 @@ const fieldsSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A field must have a label'],
       default: 'String',
-      enum: ['String', 'Number', 'Boolean', 'Array', 'Date', 'Mixed']
+      enum: ['String', 'Number', 'Boolean', 'Array', 'Date', 'Mixed', 'mongoose.Schema.ObjectId']
     },
     collectionID: {
       type: mongoose.Schema.ObjectId,

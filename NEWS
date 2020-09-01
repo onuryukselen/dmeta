@@ -1,6 +1,8 @@
-28.08.2020 Version 0.0.5
+31.08.2020 Version 0.0.6
 Permission filter added for handlerFactory functions.
 RestrictTo middleware added for control the access of routes based on user role.
+Field and Collection routes restricted to admin.
+Permission control added for creation of data routes. (collection.restrictTo + collection perms)
 
 27.08.2020 Version 0.0.5
 Login page fixed for local login.
