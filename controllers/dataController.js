@@ -35,24 +35,24 @@ const parseSummarySchema = () => {
   //    rename: 'directory exp_name pro_name test_name',
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
-  // return populate obj:{
+  // returns popObj:{
   //   path: 'experiments_id',
-  //   populate: {
-  //     path: 'projects_id test_id'
-  //   }
+  //   populate: { path: 'projects_id test_id' }
   // }
+  // returns `rename` Function: renames keys of query docs according to Schema
   const schema = {
     collection: 'samples',
-    select: 'name experiments_id.email experiments_id.projects_id.biosample_name projects2_id.name',
+    select:
+      'name experiments_id.email experiments_id.projects_id.biosample_name experiments_id.projects2_id.name',
     rename: 'name directory exp_name pro_name test_name',
-    populate: 'experiments_id experiments_id.projects_id  experiments_id.test_id'
+    populate: 'experiments_id experiments_id.projects_id'
+    // populate: 'experiments_id experiments_id.projects_id  experiments_id.projects2_id'
   };
   const targetCollection = schema.collection;
   const select = schema.select;
-  const rename = {};
   const popObj = {};
 
-  // prepare popObj
+  // * prepare popObj
   const popArr = schema.populate.split(' ');
   for (let i = 0; i < popArr.length; i++) {
     if (!popArr[i].match(/\./)) {
@@ -76,6 +76,25 @@ const parseSummarySchema = () => {
     }
   }
 
+  // * prepare `rename` function
+  // e.g. project obj: {
+  //   name: d.name,
+  //   exp_email: d.experiments_id.email,
+  // };
+  const renameArr = schema.rename.split(' ');
+  const selectArr = schema.select.split(' ');
+  const rename = doc => {
+    return doc.map(d => {
+      const project = {};
+      for (let i = 0; i < renameArr.length; i++) {
+        // _.get used for getting multiple levels of object with dot notation
+        // by using _.get -> undefined fields doesn't give error
+        project[renameArr[i]] = _.get(d, selectArr[i]);
+      }
+      return project;
+    });
+  };
+
   return { targetCollection, popObj, select, rename };
 };
 
@@ -96,16 +115,7 @@ exports.getDataSummary = catchAsync(async (req, res, next) => {
   if (!doc || (Array.isArray(doc) && doc.length === 0)) {
     return next(new AppError(`No document found!`, 404));
   }
-  // rename keys according to Schema
-  // doc = doc.map(d => {
-  //   // console.log(d.name);
-  //   return {
-  //     name: d.name,
-  //     exp_email: d.experiments_id.email,
-  //     project_biosample_name: d.experiments_id.projects_id.biosample_name,
-  //     project2_name: d.experiments_id.projects2_id.name
-  //   };
-  // });
+  doc = rename(doc);
 
   const duration = Date.now() - start;
 
