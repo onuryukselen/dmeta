@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const factory = require('./handlerFactory');
 const { modelObj } = require('./../utils/buildModels');
 const catchAsync = require('./../utils/catchAsync');
@@ -28,56 +29,67 @@ const parseSummarySchema = () => {
   // - select: space separated selected fields
   // - rename: final name of the fields in the output
   //
-  //e.g. const schema = {
+  // e.g. const schema = {
   //    collection: 'samples',
   //    select:'dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
   //    rename: 'directory exp_name pro_name test_name',
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
+  // return populate obj:{
+  //   path: 'experiments_id',
+  //   populate: {
+  //     path: 'projects_id test_id'
+  //   }
+  // }
   const schema = {
     collection: 'samples',
-    select:
-      'name dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
+    select: 'name experiments_id.email experiments_id.projects_id.biosample_name projects2_id.name',
     rename: 'name directory exp_name pro_name test_name',
-    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
+    populate: 'experiments_id experiments_id.projects_id  experiments_id.test_id'
   };
   const targetCollection = schema.collection;
-  const select = [];
-  const rename = [];
-  const populate = {};
+  const select = schema.select;
+  const rename = {};
+  const popObj = {};
 
-  // const cloneObjWithoutKeys = (obj, keys) => {
-  //   if (Object(obj) !== obj) return obj;
-  //   if (Array.isArray(obj)) return obj.map(o => cloneObjWithoutKeys(o, keys));
+  // prepare popObj
+  const popArr = schema.populate.split(' ');
+  for (let i = 0; i < popArr.length; i++) {
+    if (!popArr[i].match(/\./)) {
+      // parent fields without dots
+      if (popObj.path) popObj.path += ` ${popArr[i]}`;
+      if (!popObj.path) popObj.path = popArr[i];
+    } else {
+      const fields = popArr[i].split('.');
+      const level = fields.length;
+      const lastfield = fields[level - 1];
+      const populates = `populate${'.populate'.repeat(level - 2)}`; // nested populates
+      // lodash used for setting multiple levels of object with dot notation
+      if (!_.get(popObj, `${populates}.path`)) {
+        // set `path` value with `lastfield`
+        _.set(popObj, `${populates}.path`, lastfield);
+      } else {
+        // get last `path` value and concat with `lastfield`
+        const path = _.get(popObj, `${populates}`).path;
+        _.set(popObj, `${populates}.path`, `${path} ${lastfield}`);
+      }
+    }
+  }
 
-  //   return Object.fromEntries(
-  //     Object.entries(obj)
-  //       .filter(([k, v]) => !keys.includes(k))
-  //       .map(([k, v]) => [k, cloneObjWithoutKeys(v, keys)])
-  //   );
-  // };
-  // const populate = cloneObjWithoutKeys(schema, keepKeys);
-  // console.log(populate);
-
-  return { targetCollection, populate, select, rename };
+  return { targetCollection, popObj, select, rename };
 };
 
 exports.getDataSummary = catchAsync(async (req, res, next) => {
   const start = Date.now();
-  const { targetCollection, populate, select, rename } = parseSummarySchema();
+  const { targetCollection, popObj, select, rename } = parseSummarySchema();
   const query = modelObj[targetCollection].find({});
-  // if (res.locals.Perms) {
-  //   const permFilter = await res.locals.Perms('read');
-  //   query.find(permFilter);
-  // }
+  if (res.locals.Perms) {
+    const permFilter = await res.locals.Perms('read');
+    query.find(permFilter);
+  }
   query
-    .populate({
-      path: 'experiments_id',
-      populate: {
-        path: 'projects_id projects2_id'
-      }
-    })
-    .select('name experiments_id.email experiments_id.projects_id.biosample_name projects2_id.name')
+    .populate(popObj)
+    .select(select)
     .lean();
 
   let doc = await query;
@@ -85,15 +97,15 @@ exports.getDataSummary = catchAsync(async (req, res, next) => {
     return next(new AppError(`No document found!`, 404));
   }
   // rename keys according to Schema
-  doc = doc.map(d => {
-    // console.log(d.name);
-    return {
-      name: d.name,
-      exp_email: d.experiments_id.email,
-      project_biosample_name: d.experiments_id.projects_id.biosample_name,
-      project2_name: d.experiments_id.projects2_id.name
-    };
-  });
+  // doc = doc.map(d => {
+  //   // console.log(d.name);
+  //   return {
+  //     name: d.name,
+  //     exp_email: d.experiments_id.email,
+  //     project_biosample_name: d.experiments_id.projects_id.biosample_name,
+  //     project2_name: d.experiments_id.projects2_id.name
+  //   };
+  // });
 
   const duration = Date.now() - start;
 
