@@ -6,14 +6,16 @@ const router = express.Router({ mergeParams: true });
 
 router.use(authController.setDefPerms);
 
+router.route('/summary').get(authController.isLoggedIn, dataController.getDataSummary);
+
 router
   .route('/:collectionName')
-  .get(dataController.setModel, dataController.getAllData)
+  .get(authController.isLoggedIn, dataController.setModel, dataController.getAllData)
   .post(authController.protect, dataController.setModel, dataController.createData);
 
 router
   .route('/:collectionName/:id')
-  .get(dataController.setModel, dataController.getData)
+  .get(authController.isLoggedIn, dataController.setModel, dataController.getData)
   .patch(authController.protect, dataController.setModel, dataController.updateData)
   .delete(authController.protect, dataController.setModel, dataController.deleteData);
 

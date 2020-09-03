@@ -79,6 +79,7 @@ const createSchema = async (fields, col) => {
         'type',
         'active',
         'default',
+        'ref',
         'enum',
         'min',
         'max',

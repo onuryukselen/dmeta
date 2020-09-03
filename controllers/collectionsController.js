@@ -32,7 +32,7 @@ exports.setAfter = async (req, res, next) => {
     res.locals.After = async function() {
       try {
         req.body.name = req.body.name.replace(/\s+/g, '_').toLowerCase();
-        const col = exports.getCollectionByName(req.body.name);
+        const col = await exports.getCollectionByName(req.body.name);
         buildModels.updateModel(col._id);
       } catch {
         return next(new AppError(`Collection Model couldn't be updated.`, 404));

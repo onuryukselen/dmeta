@@ -128,7 +128,6 @@ exports.getAll = Model =>
     if (res.locals.Perms) {
       const permFilter = await res.locals.Perms('read');
       query.find(permFilter);
-      console.log(permFilter);
     }
     const features = new APIFeatures(query, req.query)
       .filter()

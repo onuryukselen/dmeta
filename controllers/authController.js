@@ -20,11 +20,17 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
   //    write:{user:["2fwr.."], group:["d3ds.."] }
   //  }
   res.locals.Perms = async function(type) {
+    // format options: "match", "find"
+    // (`match` used in aggregation queries, `find` used for find queries )
     // type options: "read", "write", "create"
     if (type === 'create') {
       if (!res.locals.user) return next(new AppError(`Please login to create document.`, 404));
-
-      // For Data Models (if req.params.collectionName should be exist)
+      // Creation Control of Data Models:(req.params.collectionName should be exist)
+      // a) if parentCollectionID is set -> check parentCollectionID of collection
+      // use parentCollectionID to learn parentDocument (`refId` in `parentColName`)
+      // then check `perms` of the parentDocument
+      // inherit the `perms` of the parentDocument for new document.
+      // b) if parentCollectionID is null -> check restrictTo object of collection
       // expected restrictTo object:
       // restrictTo: {
       //    user:["2872..","3fb32..","everyone"],

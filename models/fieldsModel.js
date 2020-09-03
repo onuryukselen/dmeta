@@ -52,6 +52,7 @@ const fieldsSchema = new mongoose.Schema(
     checkvalid: { type: 'Mixed' },
     active: { type: 'boolean', default: true },
     default: { type: 'String' },
+    ref: { type: 'String' },
     enum: { type: 'Mixed' },
     min: { type: 'Mixed' },
     max: { type: 'Mixed' },
