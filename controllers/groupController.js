@@ -11,6 +11,18 @@ exports.setGroupFilter = (req, res, next) => {
   next();
 };
 
+// get list of group_ids belong to user -> return as an array
+exports.getUserGroupIds = async userId => {
+  let userGroups;
+  try {
+    const userGroupData = await UserGroup.find({ user_id: userId }).exec();
+    userGroups = userGroupData.map(a => a.group_id.toString());
+  } catch {
+    userGroups = [];
+  }
+  return userGroups;
+};
+
 exports.getAllGroups = factory.getAll(Group);
 exports.getGroup = factory.getOne(Group);
 exports.createGroup = factory.createOne(Group);

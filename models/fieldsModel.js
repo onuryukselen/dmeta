@@ -34,7 +34,7 @@ const fieldsSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A field must have a label'],
       default: 'String',
-      enum: ['String', 'Number', 'Boolean', 'Array', 'Date', 'Mixed']
+      enum: ['String', 'Number', 'Boolean', 'Array', 'Date', 'Mixed', 'mongoose.Schema.ObjectId']
     },
     collectionID: {
       type: mongoose.Schema.ObjectId,
@@ -52,6 +52,7 @@ const fieldsSchema = new mongoose.Schema(
     checkvalid: { type: 'Mixed' },
     active: { type: 'boolean', default: true },
     default: { type: 'String' },
+    ref: { type: 'String' },
     enum: { type: 'Mixed' },
     min: { type: 'Mixed' },
     max: { type: 'Mixed' },
@@ -68,6 +69,9 @@ const fieldsSchema = new mongoose.Schema(
     lastUpdateDate: {
       type: Date,
       default: Date.now()
+    },
+    perms: {
+      type: 'Mixed'
     },
     owner: {
       type: mongoose.Schema.ObjectId,

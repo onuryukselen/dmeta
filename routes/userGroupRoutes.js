@@ -5,6 +5,7 @@ const groupController = require('../controllers/groupController');
 const router = express.Router();
 
 router.use(authController.protect);
+router.use(authController.setDefPerms);
 
 router.route('/').post(groupController.createUserGroup);
 router

@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 
+// restrictTo supports group, role and user list to limit the access
+// e.g. {role:["admin"]} -> will only allow admin to create an doc in the collection
+// e.g. {group:["f4c6.."], role:["project-admin"],user:["7e8g4.."]}
+
 const collectionsSchema = new mongoose.Schema(
   {
     name: {
@@ -34,7 +38,6 @@ const collectionsSchema = new mongoose.Schema(
     },
     required: { type: 'boolean', default: false },
     active: { type: 'boolean', default: true },
-    license: { type: String, default: 'MIT' },
     creationDate: {
       type: Date,
       default: Date.now()
@@ -42,6 +45,13 @@ const collectionsSchema = new mongoose.Schema(
     lastUpdateDate: {
       type: Date,
       default: Date.now()
+    },
+    perms: {
+      type: 'Mixed'
+    },
+    restrictTo: {
+      type: 'Mixed',
+      default: { role: ['admin'] }
     },
     owner: {
       type: mongoose.Schema.ObjectId,
