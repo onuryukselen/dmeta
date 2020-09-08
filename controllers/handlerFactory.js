@@ -7,7 +7,7 @@ const APIFeatures = require('./../utils/apiFeatures');
 //    e.g. if (res.locals.Model) Model = res.locals.Model;
 // 2. res.locals.After => commands will be executed after query is completed
 //    e.g. if (res.locals.After) res.locals.After();
-// 3. res.locals.user set with `protected` middleware
+// 3. res.locals.user set with `isLoggedIn` or `isLoggedInView` middleware
 // 4. res.locals.Perms returns filtration creteria regarding permission
 //    e.g. permission methods: authController.setDefPerms
 //    usage e.g. const permFilter = await res.locals.Perms("read");

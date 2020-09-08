@@ -5,18 +5,19 @@ const authController = require('../controllers/authController');
 const router = express.Router({ mergeParams: true });
 
 router.use(authController.setDefPerms);
+router.use(authController.isLoggedIn);
 
-router.route('/summary').get(authController.isLoggedIn, dataController.getDataSummary);
+router.route('/summary').get(dataController.getDataSummary);
 
 router
   .route('/:collectionName')
-  .get(authController.isLoggedIn, dataController.setModel, dataController.getAllData)
-  .post(authController.protect, dataController.setModel, dataController.createData);
+  .get(dataController.setModel, dataController.getAllData)
+  .post(authController.requireLogin, dataController.setModel, dataController.createData);
 
 router
   .route('/:collectionName/:id')
-  .get(authController.isLoggedIn, dataController.setModel, dataController.getData)
-  .patch(authController.protect, dataController.setModel, dataController.updateData)
-  .delete(authController.protect, dataController.setModel, dataController.deleteData);
+  .get(dataController.setModel, dataController.getData)
+  .patch(authController.requireLogin, dataController.setModel, dataController.updateData)
+  .delete(authController.requireLogin, dataController.setModel, dataController.deleteData);
 
 module.exports = router;

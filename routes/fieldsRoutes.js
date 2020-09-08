@@ -5,7 +5,8 @@ const fieldsController = require('../controllers/fieldsController');
 
 const router = express.Router({ mergeParams: true });
 
-router.use(authController.protect);
+router.use(authController.isLoggedIn);
+router.use(authController.requireLogin);
 router.use(authController.restrictTo('admin'));
 router.use(authController.setDefPerms);
 

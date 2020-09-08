@@ -4,7 +4,8 @@ const groupController = require('../controllers/groupController');
 
 const router = express.Router();
 
-router.use(authController.protect);
+router.use(authController.isLoggedIn);
+router.use(authController.requireLogin);
 router.use(authController.setDefPerms);
 
 // get all users belonging to a group
@@ -12,7 +13,7 @@ router.route('/:id/user').get(groupController.setGroupFilter, groupController.ge
 
 router
   .route('/')
-  .get(authController.protect, groupController.getAllGroups)
+  .get(groupController.getAllGroups)
   .post(groupController.createGroup);
 
 router

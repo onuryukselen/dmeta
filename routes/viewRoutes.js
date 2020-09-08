@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/receivetoken', authController.ssoReceiveToken);
 
-router.use(authController.isLoggedIn);
+router.use(authController.isLoggedInView);
 router.get('/', viewsController.getOverview);
 router.get(
   '/login',
@@ -14,6 +14,6 @@ router.get(
   viewsController.getLoginForm,
   viewsController.getOverview
 );
-router.get('/me', authController.protect, viewsController.getAccount);
+router.get('/me', authController.requireLogin, viewsController.getAccount);
 
 module.exports = router;

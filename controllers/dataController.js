@@ -43,8 +43,8 @@ const parseSummarySchema = () => {
   const schema = {
     collection: 'samples',
     select:
-      'name experiments_id.email experiments_id.projects_id.biosample_name experiments_id.projects2_id.name',
-    rename: 'name directory exp_name pro_name test_name',
+      '_id name experiments_id.email experiments_id.projects_id.biosample_name experiments_id.projects2_id.name',
+    rename: 'id name run_env collection_name date_created project_name',
     populate: 'experiments_id experiments_id.projects_id'
     // populate: 'experiments_id experiments_id.projects_id  experiments_id.projects2_id'
   };
@@ -89,7 +89,7 @@ const parseSummarySchema = () => {
       for (let i = 0; i < renameArr.length; i++) {
         // _.get used for getting multiple levels of object with dot notation
         // by using _.get -> undefined fields doesn't give error
-        project[renameArr[i]] = _.get(d, selectArr[i]);
+        project[renameArr[i]] = _.get(d, selectArr[i]) === undefined ? '' : _.get(d, selectArr[i]);
       }
       return project;
     });
@@ -112,9 +112,7 @@ exports.getDataSummary = catchAsync(async (req, res, next) => {
     .lean();
 
   let doc = await query;
-  if (!doc || (Array.isArray(doc) && doc.length === 0)) {
-    return next(new AppError(`No document found!`, 404));
-  }
+  if (!doc) return next(new AppError(`No document found!`, 404));
   doc = rename(doc);
 
   const duration = Date.now() - start;
