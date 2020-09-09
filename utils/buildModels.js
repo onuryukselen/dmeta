@@ -138,6 +138,8 @@ const createSchema = async (fields, col) => {
   if (!schema.perms) schema.perms = { type: 'Mixed' };
   schema.owner = { type: mongoose.Schema.ObjectId, ref: 'User' };
   schema.lastUpdatedUser = { type: mongoose.Schema.ObjectId, ref: 'User' };
+  schema.creationDate = { type: Date, default: Date.now() };
+  schema.lastUpdateDate = { type: Date, default: Date.now() };
   return schema;
 };
 
@@ -155,7 +157,7 @@ exports.updateModel = async collectionId => {
     }
     const schema = await createSchema(fields, col);
     const Schema = new mongoose.Schema(schema);
-    const Model = mongoose.model(colName, Schema);
+    const Model = mongoose.model(colName, Schema, colName);
     modelObj[colName] = Model;
     console.log(colName, schema);
     return 'done';
@@ -180,7 +182,7 @@ exports.buildModels = async () => {
       console.log(colName, schema);
       if (!modelObj[colName]) {
         const Schema = new mongoose.Schema(schema);
-        const Model = mongoose.model(colName, Schema);
+        const Model = mongoose.model(colName, Schema, colName);
         modelObj[colName] = Model;
       }
     }

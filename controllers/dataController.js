@@ -41,19 +41,27 @@ const parseSummarySchema = () => {
   // }
   // returns `rename` Function: renames keys of query docs according to Schema
   const schema = {
-    collection: 'samples',
-    select:
-      '_id name experiments_id.email experiments_id.projects_id.biosample_name experiments_id.projects2_id.name',
-    rename: 'id name run_env collection_name date_created project_name',
-    populate: 'experiments_id experiments_id.projects_id'
-    // populate: 'experiments_id experiments_id.projects_id  experiments_id.projects2_id'
+    collection: 'file',
+    select: `_id 
+      name 
+      file_env 
+      creationDate 
+      biosamp_id.exp_id.name 
+      biosamp_id.exp_id.exp_series_id.name`,
+    rename: `id 
+      name 
+      file_env 
+      date_created 
+      collection_name 
+      project_name`,
+    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id'
   };
   const targetCollection = schema.collection;
   const select = schema.select;
   const popObj = {};
 
   // * prepare popObj
-  const popArr = schema.populate.split(' ');
+  const popArr = schema.populate.replace(/\s+/g, ' ').split(' ');
   for (let i = 0; i < popArr.length; i++) {
     if (!popArr[i].match(/\./)) {
       // parent fields without dots
@@ -81,8 +89,8 @@ const parseSummarySchema = () => {
   //   name: d.name,
   //   exp_email: d.experiments_id.email,
   // };
-  const renameArr = schema.rename.split(' ');
-  const selectArr = schema.select.split(' ');
+  const renameArr = schema.rename.replace(/\s+/g, ' ').split(' ');
+  const selectArr = schema.select.replace(/\s+/g, ' ').split(' ');
   const rename = doc => {
     return doc.map(d => {
       const project = {};

@@ -1,0 +1,47 @@
+CREATE COLLECTIONS: 
+POST:{{URL}}/api/v1/collections
+
+event _id:5f57ff9b35db5980ba020ff2
+{
+    "name": "event",
+    "label": "Events",
+    "slug": "events",
+    "restrictTo": {"role":["admin"]}
+}
+
+exp_series _id: 5f57ffba35db5980ba020ff3
+{
+    "name": "exp_series",
+    "label": "Experiment Series",
+    "slug": "experiment_series",
+    "restrictTo": {"role":["admin"]}
+}
+
+exp _id: 5f57ffe635db5980ba020ff4
+{
+    "name": "exp",
+    "label": "Experiments",
+    "slug": "experiments",
+    "restrictTo": {"role":["admin"]},
+    "parentCollectionID":"5f57ffba35db5980ba020ff3"
+}
+
+biosamp _id: 5f57fff635db5980ba020ff5
+{
+    "name": "biosamp",
+    "label": "Biosamples",
+    "slug": "biosamples",
+    "restrictTo": {"role":["admin"]},
+    "parentCollectionID":"5f57ffe635db5980ba020ff4"
+}
+
+file _id: 5f58001335db5980ba020ff6
+{
+    "name": "file",
+    "label": "Files",
+    "slug": "files",
+    "restrictTo": {"role":["admin"]},
+    "parentCollectionID":"5f57fff635db5980ba020ff5"
+}
+
+

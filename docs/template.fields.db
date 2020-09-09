@@ -1,0 +1,101 @@
+CREATE FIELDS: 
+POST:{{URL}}/api/v1/fields
+
+exp_series:
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f57ffba35db5980ba020ff3"
+}
+{
+    "name": "design",
+    "label": "Design",
+    "type": "String",
+    "collectionID":"5f57ffba35db5980ba020ff3"
+}
+----------------------------------------------------------------
+exp: 5f57ffe635db5980ba020ff4
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f57ffe635db5980ba020ff4"
+}
+{
+    "name": "summary",
+    "label": "Summary",
+    "type": "String",
+    "collectionID":"5f57ffe635db5980ba020ff4"
+}
+{
+    "name": "protocol_id",
+    "label": "Protocol ID",
+    "type": "mongoose.Schema.ObjectId",
+    "collectionID":"5f57ffe635db5980ba020ff4",
+    "ref": "protocol"
+}
+----------------------------------------------------------------
+biosamp _id: 5f57fff635db5980ba020ff5
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f57fff635db5980ba020ff5"
+}
+{
+    "name": "organism",
+    "label": "Organism",
+    "type": "String",
+    "collectionID":"5f57fff635db5980ba020ff5"
+}
+----------------------------------------------------------------
+file _id: 5f58001335db5980ba020ff6
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+{
+    "name": "file_used",
+    "label": "Used Files",
+    "type": "String",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+{
+    "name": "file_dir",
+    "label": "Directory",
+    "type": "String",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+{
+    "name": "file_type",
+    "label": "File Type",
+    "type": "String",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+{
+    "name": "collection_type",
+    "label": "Collection Type",
+    "type": "String",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+{
+    "name": "file_env",
+    "label": "File Environment",
+    "type": "String",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+{
+    "name": "dnext",
+    "label": "DNext",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "dnext",
+    "collectionID":"5f58001335db5980ba020ff6"
+}
+----------------------------------------------------------------
+
+
+
+
