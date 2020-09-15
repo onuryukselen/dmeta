@@ -10,16 +10,16 @@ exp_series _id: 5f58f13a7845820a1c7883a8
 ----------------------------------------------------------------
 POST:{{URL}}/api/v1/data/exp
 
-exp _id: 5f58f1887845820a1c7883a9
+exp _id1: 5f58f1887845820a1c7883a9  _id2:5f5a98f6abe3fd2d31e3ce68
+    
 {
     "name": "Vitiligo experiment1",
     "summary":"Vitiligo experiment1 summary",
     "exp_series_id":"5f58f13a7845820a1c7883a8"
 }
 
-
 ----------------------------------------------------------------
-POST:{{URL}}/api/v1/data/biosamp
+POST:{{URL}}/api/v1/data/biosamp    _id2 (test_biosample): 5f5a9988abe3fd2d31e3ce69
 
 biosamp _id: 5f58f23b7845820a1c7883aa
 {
@@ -32,8 +32,8 @@ biosamp _id: 5f58f23b7845820a1c7883aa
 file _id:  5f59126c7845820a1c7883ac
 {
 "name": "CB17_H2",
-"file_used": "CB17_H2.fastq.gz",
-"file_dir": "s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_15_17/dolphin_import    9",
+"file_used": [["CB17_H2.fastq.gz"]],
+"file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_15_17/dolphin_import","9"],
 "file_type": "fastq",
 "collection_type": "single",
 "file_env": "amazon",
@@ -44,14 +44,18 @@ file _id:  5f59126c7845820a1c7883ac
 file _id:  5f5912877845820a1c7883ad
 {
     "name": "control",
-    "file_used": "control_rep1.1.fastq.gz,control_rep1.2.fastq.gz | control_rep2.1.fastq.gz,control_rep2.2.fastq.gz",
-    "file_dir": "/home/oy28w/fastqfiles",
+    "file_used": [["control_rep1.1.fastq.gz","control_rep1.2.fastq.gz"],["control_rep2.1.fastq.gz","control_rep2.2.fastq.gz"]],
+    "file_dir": ["/home/oy28w/fastqfiles"],
     "file_type": "fastq",
     "collection_type": "pair",
     "file_env": "cluster-2",
     "biosamp_id": "5f58f23b7845820a1c7883aa",
-    "dnext": "5f58f23b7842820a1c7883a1",
+    "dnext": "5f58f23b7842820a1c7883a1"
 }
+
+
+ 
+
 
 ----------------------------------------------------------------
 

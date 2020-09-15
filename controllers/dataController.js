@@ -45,12 +45,20 @@ const parseSummarySchema = () => {
     select: `_id 
       name 
       file_env 
+      file_used
+      file_dir
+      collection_type
+      file_type
       creationDate 
       biosamp_id.exp_id.name 
       biosamp_id.exp_id.exp_series_id.name`,
     rename: `id 
       name 
       file_env 
+      files_used
+      file_dir
+      collection_type
+      file_type
       date_created 
       collection_name 
       project_name`,

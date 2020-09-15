@@ -60,7 +60,7 @@ file _id: 5f58001335db5980ba020ff6
 {
     "name": "file_used",
     "label": "Used Files",
-    "type": "String",
+    "type": "Array",
     "collectionID":"5f58001335db5980ba020ff6"
 }
 {
