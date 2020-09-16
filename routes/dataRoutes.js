@@ -1,6 +1,7 @@
 const express = require('express');
 const dataController = require('../controllers/dataController');
 const authController = require('../controllers/authController');
+const eventController = require('../controllers/eventController');
 
 const router = express.Router({ mergeParams: true });
 
@@ -12,12 +13,27 @@ router.route('/summary').get(dataController.getDataSummary);
 router
   .route('/:collectionName')
   .get(dataController.setModel, dataController.getAllData)
-  .post(authController.requireLogin, dataController.setModel, dataController.createData);
+  .post(
+    authController.requireLogin,
+    dataController.setModel,
+    eventController.setEvent,
+    dataController.createData
+  );
 
 router
   .route('/:collectionName/:id')
   .get(dataController.setModel, dataController.getData)
-  .patch(authController.requireLogin, dataController.setModel, dataController.updateData)
-  .delete(authController.requireLogin, dataController.setModel, dataController.deleteData);
+  .patch(
+    authController.requireLogin,
+    dataController.setModel,
+    eventController.setEvent,
+    dataController.updateData
+  )
+  .delete(
+    authController.requireLogin,
+    dataController.setModel,
+    eventController.setEvent,
+    dataController.deleteData
+  );
 
 module.exports = router;
