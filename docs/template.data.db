@@ -38,7 +38,7 @@ file _id:  5f59126c7845820a1c7883ac
 "collection_type": "single",
 "file_env": "amazon",
 "biosamp_id": "5f58f23b7845820a1c7883aa",
-"dnext": "5f58f23b7842820a1c7883a1"
+"server_id": "5f622c67721d09b3670c4b66"
 }
 
 file _id:  5f5912877845820a1c7883ad
@@ -50,7 +50,7 @@ file _id:  5f5912877845820a1c7883ad
     "collection_type": "pair",
     "file_env": "cluster-2",
     "biosamp_id": "5f58f23b7845820a1c7883aa",
-    "dnext": "5f58f23b7842820a1c7883a1"
+    "server_id": "5f622c67721d09b3670c4b66"
 }
 
 
