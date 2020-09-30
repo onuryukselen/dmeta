@@ -22,7 +22,7 @@ exports.createData = factory.createOne();
 exports.updateData = factory.updateOne();
 exports.deleteData = factory.deleteOne();
 
-const parseSummarySchema = () => {
+exports.getDataSummarySchema = collectionName => {
   // * expected Schema for data summary
   // - collection: main target collecton
   // - populate: space separated fields to be merged my reference
@@ -35,13 +35,10 @@ const parseSummarySchema = () => {
   //    rename: 'directory exp_name pro_name test_name',
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
-  // returns popObj:{
-  //   path: 'experiments_id',
-  //   populate: { path: 'projects_id test_id' }
-  // }
-  // returns `rename` Function: renames keys of query docs according to Schema
-  const schema = {
-    collection: 'file',
+  // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
+  const schemas = {};
+  schemas.sample = {
+    collection: 'sample',
     select: `_id 
       name 
       file_env 
@@ -52,7 +49,7 @@ const parseSummarySchema = () => {
       creationDate 
       biosamp_id.exp_id.name 
       biosamp_id.exp_id.exp_series_id.name`,
-    rename: `id 
+    rename: `_id 
       name 
       file_env 
       files_used
@@ -64,6 +61,26 @@ const parseSummarySchema = () => {
       project_name`,
     populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id'
   };
+  if (schemas[collectionName]) return schemas[collectionName];
+  return null;
+};
+
+const parseSummarySchema = collectionName => {
+  // e.g. const schema = {
+  //    collection: 'sample',
+  //    select:'dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
+  //    rename: 'directory exp_name pro_name test_name',
+  //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
+  //   }
+  // returns popObj:{
+  //   path: 'experiments_id',
+  //   populate: { path: 'projects_id test_id' }
+  // }
+  // returns `rename` Function: renames keys of query docs according to Schema
+  const schema = exports.getDataSummarySchema(collectionName);
+  if (!schema) {
+    return { targetCollection: collectionName, popObj: '', select: '-__v', rename: null };
+  }
   const targetCollection = schema.collection;
   const select = schema.select;
   const popObj = {};
@@ -114,25 +131,35 @@ const parseSummarySchema = () => {
   return { targetCollection, popObj, select, rename };
 };
 
+exports.getDataSummaryDoc = async (req, res, next) => {
+  try {
+    const { targetCollection, popObj, select, rename } = parseSummarySchema(
+      req.params.collectionName
+    );
+    if (!modelObj[targetCollection]) return null;
+    const query = modelObj[targetCollection].find({});
+    if (res.locals.Perms) {
+      const permFilter = await res.locals.Perms('read');
+      query.find(permFilter);
+    }
+    query
+      .populate(popObj)
+      .select(select)
+      .lean();
+
+    let doc = await query;
+    if (doc && rename) doc = rename(doc);
+    return doc;
+  } catch {
+    return null;
+  }
+};
+
 exports.getDataSummary = catchAsync(async (req, res, next) => {
   const start = Date.now();
-  const { targetCollection, popObj, select, rename } = parseSummarySchema();
-  const query = modelObj[targetCollection].find({});
-  if (res.locals.Perms) {
-    const permFilter = await res.locals.Perms('read');
-    query.find(permFilter);
-  }
-  query
-    .populate(popObj)
-    .select(select)
-    .lean();
-
-  let doc = await query;
-  if (!doc) return next(new AppError(`No document found!`, 404));
-  doc = rename(doc);
-
+  const doc = await exports.getDataSummaryDoc(req, res, next);
   const duration = Date.now() - start;
-
+  if (doc === null) return next(new AppError(`No collection found!`, 404));
   res.status(200).json({
     status: 'success',
     duration: duration,

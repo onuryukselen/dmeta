@@ -8,7 +8,7 @@ const router = express.Router({ mergeParams: true });
 router.use(authController.setDefPerms);
 router.use(authController.isLoggedIn);
 
-router.route('/summary').get(dataController.getDataSummary);
+router.route('/:collectionName/summary').get(dataController.getDataSummary);
 
 router
   .route('/:collectionName')

@@ -29,7 +29,7 @@ biosamp _id: 5f58f23b7845820a1c7883aa
 }
 
 ----------------------------------------------------------------
-file _id:  5f59126c7845820a1c7883ac
+sample _id:  5f74a29bc02b703f634c8100
 {
 "name": "CB17_H2",
 "file_used": [["CB17_H2.fastq.gz"]],
@@ -41,24 +41,62 @@ file _id:  5f59126c7845820a1c7883ac
 "server_id": "5f622c67721d09b3670c4b66"
 }
 
-file _id:  5f5912877845820a1c7883ad
+sample _id:  5f74a2b5c02b703f634c8102
 {
     "name": "control",
     "file_used": [["control_rep1.1.fastq.gz","control_rep1.2.fastq.gz"],["control_rep2.1.fastq.gz","control_rep2.2.fastq.gz"]],
     "file_dir": ["/home/oy28w/fastqfiles"],
     "file_type": "fastq",
     "collection_type": "pair",
-    "file_env": "cluster-2",
+    "file_env": "cluster-5",
     "biosamp_id": "5f58f23b7845820a1c7883aa",
     "server_id": "5f622c67721d09b3670c4b66"
 }
 
-
+sample _id:  5f74a3988f319e401b67e926
+{
+    "name": "experiment",
+    "file_used": [["exper_rep1.1.fastq.gz","exper_rep1.2.fastq.gz"],["exper_rep2.1.fastq.gz","exper_rep2.2.fastq.gz"]],
+    "file_dir": ["/home/oy28w/fastqfiles"],
+    "file_type": "fastq",
+    "collection_type": "pair",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+----------------------------------------------------------------
+run _id: 
+{
+    "name": "test_run",
+    "pipe_id": 298,
+    "tmplt_id": 577,
+    "in": { 
+        "reads": { "!sample_id":["5f74a2b5c02b703f634c8102","5f74a3988f319e401b67e926"] },
+        "mate" : "pair"
+    },  
+    "out": {},
+    "server_id": "5f622c67721d09b3670c4b66"
+}
  
-
-
 ----------------------------------------------------------------
 
-
+{
+    "name": "test_run",
+    "pipe_id": 298,
+    "tmplt_id": 140,
+    "in": { 
+        "reads": { "!file_id":["5f5a986f52e3032c567fa3b8","5f5a99d5abe3fd2d31e3ce6a"] },
+        "mate" : "pair"
+    },  
+    "out":{
+        total_reads: 100000
+        "counts": {refpath:"/dnext/",
+                   type:"rsem_expected_count" 
+                   }
+    }
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+ 
+file.242423 
 
 

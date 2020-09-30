@@ -334,6 +334,7 @@ exports.isLoggedIn = async (req, res, next) => {
     const tokenInfo = await accessTokens.find(token);
     if (tokenInfo != null && new Date() > tokenInfo.expirationDate) {
       await accessTokens.delete(token);
+      return next();
     }
     if (tokenInfo == null) {
       try {
@@ -357,6 +358,7 @@ exports.isLoggedIn = async (req, res, next) => {
     return next();
   }
 
+  res.locals.token = token;
   req.user = currentUser; //alias for req.session.user
   res.locals.user = currentUser; // variables that used in the view while rendering (eg.pug)
   next();
@@ -371,6 +373,7 @@ exports.isLoggedInView = async (req, res, next) => {
       if (process.env.SSO_LOGIN === 'true') {
         const token = await accessTokens.find(req.cookies.jwt);
         if (token.userId) currentUser = await User.findOne({ sso_id: token.userId });
+        res.locals.token = token;
       } else {
         const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
         currentUser = await User.findById(decoded.id);

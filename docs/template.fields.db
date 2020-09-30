@@ -50,52 +50,104 @@ biosamp _id: 5f57fff635db5980ba020ff5
     "collectionID":"5f57fff635db5980ba020ff5"
 }
 ----------------------------------------------------------------
-file _id: 5f58001335db5980ba020ff6
+sample _id: 5f74a0e05443973d2bfd870c
 {
     "name": "name",
     "label": "Name",
     "type": "String",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 {
     "name": "file_used",
     "label": "Used Files",
     "type": "Array",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 {
     "name": "file_dir",
     "label": "Directory",
-    "type": "String",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "type": "Array",
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 {
     "name": "file_type",
     "label": "File Type",
     "type": "String",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 {
     "name": "collection_type",
     "label": "Collection Type",
     "type": "String",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 {
     "name": "file_env",
     "label": "File Environment",
     "type": "String",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 {
-    "name": "dnext",
-    "label": "DNext",
+    "name": "server",
+    "label": "Server",
     "type": "mongoose.Schema.ObjectId",
-    "ref": "dnext",
-    "collectionID":"5f58001335db5980ba020ff6"
+    "ref": "server",
+    "collectionID":"5f74a0e05443973d2bfd870c"
 }
 ----------------------------------------------------------------
-
-
-
-
+run _id: 5f623137721d09b3670c4b67
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f623137721d09b3670c4b67",
+    "required": [true, "Run must have a name."]
+}
+{
+    "name": "status",
+    "label": "Status",
+    "type": "String",
+    "enum": ["pending", "connecting", "initiated", "running", "completed", "terminated", "error"],
+    "collectionID":"5f623137721d09b3670c4b67",
+    "required": true,
+    "default": "pending"
+}
+{
+    "name": "pipe_id",
+    "label": "Pipeline ID",
+    "type": "Number",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "run_id",
+    "label": "Run ID",
+    "type": "Number",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "tmplt_id",
+    "label": "Template Run ID",
+    "type": "Number",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "in",
+    "label": "Inputs",
+    "type": "Mixed",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "out",
+    "label": "Outputs",
+    "type": "Mixed",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "server_id",
+    "label": "Server ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "server",
+    "required": true,
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+----------------------------------------------------------------
