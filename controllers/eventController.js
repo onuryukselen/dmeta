@@ -39,7 +39,7 @@ exports.setEvent = async (req, res, next) => {
       console.log('Event could not be created', eventDetails);
     }
 
-    if (type == 'insert' && collection == 'run') {
+    if (type == 'insert' && collection == 'run' && res.locals.token) {
       exports.startRun(doc, req, res, next);
     }
   };
@@ -91,13 +91,84 @@ exports.replaceDataIds = async (doc, req, res, next) => {
   }
 };
 
+exports.insertOutputRows = async (query, coll, req, res, next) => {
+  try {
+    const auth = `Bearer ${res.locals.token}`;
+    const { data } = await axios.post(
+      `${req.protocol}://${req.get('host')}/api/v1/data/${coll}`,
+      query,
+      {
+        headers: {
+          Authorization: auth
+        }
+      }
+    );
+    if (data.data.data._id) return data.data.data._id;
+    return null;
+  } catch (err) {
+    return null;
+  }
+};
+
+exports.getOutputRows = async (queryParams, coll, req, res, next) => {
+  try {
+    const auth = `Bearer ${res.locals.token}`;
+    const { data } = await axios.get(
+      `${req.protocol}://${req.get('host')}/api/v1/data/${coll}${queryParams}`,
+      {},
+      {
+        headers: {
+          Authorization: auth
+        }
+      }
+    );
+    if (data.data.data._id) return data.data.data._id;
+    return null;
+  } catch (err) {
+    return null;
+  }
+};
+
 // fills  "out": {"sample_summary" : {}},
 //  with sampleName specific row id's
 //  e.g.  "out": {"sample_summary" : {
 //                    "control" : "5f622c67721d09b3670c4b66",
 //                    "experiment": "3333267721d09b3670c4b66"}
 //               }
+
 exports.createOutputRows = async (doc, req, res, next) => {
+  // add sample_id, run_id to sample_summary collection
+  // in {reads: [{_id:"5f5a98", name:"test"},{_id:"5f5a99", name:"test2"}], mate:"pair"}
+  // get all samples names that are belong to collection = found in array
+  const run_id = doc._id;
+  const inputs = doc.in;
+  let sampleNames = [];
+  let sampleIDs = [];
+  for (const i of Object.keys(inputs)) {
+    if (Array.isArray(inputs[i])) {
+      sampleNames = inputs[i].map(el => el.name);
+      sampleIDs = inputs[i].map(el => el._id);
+    }
+  }
+  const out = doc.out;
+  for (const coll of Object.keys(out)) {
+    for (let i = 0; i < sampleIDs.length; i += 1) {
+      const sample_id = sampleIDs[i];
+      const sample_name = sampleNames[i];
+      const queryParams = `?sample_id=${sample_id}&run_id=${run_id}`;
+      // eslint-disable-next-line no-await-in-loop
+      let rowId = await exports.getOutputRows(queryParams, coll, req, res, next);
+      if (!rowId) {
+        const query = { sample_id, run_id, doc: null };
+        // eslint-disable-next-line no-await-in-loop
+        rowId = await exports.insertOutputRows(query, coll, req, res, next);
+      }
+      if (rowId) {
+        doc.out[coll][sample_name] = rowId;
+      }
+    }
+  }
+
   return doc;
 };
 
@@ -108,7 +179,6 @@ exports.startRun = async (doc, req, res, next) => {
     doc = await exports.createOutputRows(doc, req, res, next);
     const info = {};
     info.dmetaServer = `${req.protocol}://${req.get('host')}`;
-    doc.lastUpdatedUser = 'dd';
     console.log('doc', doc);
     console.log('populated_doc_reads', doc.in.reads);
     // send run information to selected server

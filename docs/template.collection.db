@@ -44,3 +44,14 @@ sample _id: 5f74a0e05443973d2bfd870c
 }
 
 
+------ For run outputs -------
+sample_summary _id: 5f74af86d9e07245ea02b53c
+{
+    "name": "sample_summary",
+    "label": "Sample Summary",
+    "slug": "sample_summary",
+    "restrictTo": {"role":["admin"]},
+    "parentCollectionID":"5f74a0e05443973d2bfd870c"
+}
+
+

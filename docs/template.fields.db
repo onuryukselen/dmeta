@@ -95,7 +95,8 @@ sample _id: 5f74a0e05443973d2bfd870c
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
 ----------------------------------------------------------------
-run _id: 5f623137721d09b3670c4b67
+for run _id: 5f623137721d09b3670c4b67
+
 {
     "name": "name",
     "label": "Name",
@@ -151,3 +152,22 @@ run _id: 5f623137721d09b3670c4b67
     "collectionID":"5f623137721d09b3670c4b67"
 }
 ----------------------------------------------------------------
+for sample_summary: _id:5f74af86d9e07245ea02b53c
+
+// `sample_id` field would be created by default using parentCollectionID 
+
+{
+    "name": "run_id",
+    "label": "RUN ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "run",
+    "required": true,
+    "collectionID":"5f74af86d9e07245ea02b53c"
+}
+{
+    "name": "doc",
+    "label": "Data",
+    "type": "Mixed",
+    "collectionID":"5f74af86d9e07245ea02b53c"
+}
+

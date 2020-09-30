@@ -19,6 +19,7 @@
     "eqeqeq": "off",
     "dot-notation": "off",
     "prefer-const": "off",
-    "no-restricted-syntax": "off"
+    "no-restricted-syntax": "off",
+    "camelcase": "off"
   }
 }
