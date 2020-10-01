@@ -94,6 +94,220 @@ sample _id: 5f74a0e05443973d2bfd870c
     "ref": "server",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+{
+    "name": "sample_summary_id",
+    "label": "Sample Summary ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "sample_summary",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+--
+{
+    "name": "unique_id",
+    "label": "uniqueID",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "patient",
+    "label": "Patient",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "aliquot",
+    "label": "Aliquot",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "contract",
+    "label": "Contract",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "visit_num",
+    "label": "Visit #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "clinic_phen",
+    "label": "Clinical Phenotype",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "lesional",
+    "label": "Lesional/Non-Lesional",
+    "type": "String",
+    "enum": ["Lesional", "Non-Lesional"],
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "patient_note",
+    "label": "Patient Notes",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "collect_date",
+    "label": "Collection Date",
+    "type": "Date",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "blister_loc",
+    "label": "Blister Location",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "blister_num",
+    "label": "Number of Blisters",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "volume_bf",
+    "label": "Volume BF (uL)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "cell_density_tc",
+    "label": "Cell Density (TC) (cells/mL)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "total_cells",
+    "label": "Total Cells",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "perc_live_cells",
+    "label": "% Live Cells",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "blister_comments",
+    "label": "Notable Blister Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "bead_batch",
+    "label": "Bead Batch",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "cell_density_indrop",
+    "label": "Cell Density (InDrop) (cells/mL)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "bead_occup",
+    "label": "Bead Occupancy (%)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "run_comments",
+    "label": "Notable Run Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "sc_lib_status",
+    "label": "Single Cell Library Status",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "sequence_date",
+    "label": "Sequence Date",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "seq_details",
+    "label": "Sequence Details",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "total_valid_reads",
+    "label": "Total valid reads",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "cells_UMIs_gt_500",
+    "label": "cells with UMIs>500",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "mean_umi",
+    "label": "Mean # UMIs",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "mean_cell",
+    "label": "Mean Cell",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "duplication_rate",
+    "label": "Duplication Rate",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "seq_comments",
+    "label": "Sequencing Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "library_tube_id",
+    "label": "ibrary Tube #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "index_id",
+    "label": "Index #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "index_seq",
+    "label": "Index seq",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "pool_id",
+    "label": "Pool #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "comment",
+    "label": "Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+
 ----------------------------------------------------------------
 for run _id: 5f623137721d09b3670c4b67
 

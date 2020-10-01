@@ -9,6 +9,7 @@ router.use(authController.setDefPerms);
 router.use(authController.isLoggedIn);
 
 router.route('/:collectionName/summary').get(dataController.getDataSummary);
+router.route('/:collectionName/detailed').get(dataController.getDataDetailed);
 
 router
   .route('/:collectionName')

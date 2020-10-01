@@ -110,12 +110,31 @@ exports.insertOutputRows = async (query, coll, req, res, next) => {
   }
 };
 
-exports.getOutputRows = async (queryParams, coll, req, res, next) => {
+exports.getDataIdByQueryParams = async (queryParams, collection, req, res, next) => {
   try {
     const auth = `Bearer ${res.locals.token}`;
     const { data } = await axios.get(
-      `${req.protocol}://${req.get('host')}/api/v1/data/${coll}${queryParams}`,
+      `${req.protocol}://${req.get('host')}/api/v1/data/${collection}${queryParams}`,
       {},
+      {
+        headers: {
+          Authorization: auth
+        }
+      }
+    );
+    if (data.data.data._id) return data.data.data._id;
+    return null;
+  } catch (err) {
+    return null;
+  }
+};
+
+exports.updateDataByQueryParams = async (queryParams, collection, update, req, res, next) => {
+  try {
+    const auth = `Bearer ${res.locals.token}`;
+    const { data } = await axios.patch(
+      `${req.protocol}://${req.get('host')}/api/v1/data/${collection}${queryParams}`,
+      update,
       {
         headers: {
           Authorization: auth
@@ -151,20 +170,32 @@ exports.createOutputRows = async (doc, req, res, next) => {
     }
   }
   const out = doc.out;
-  for (const coll of Object.keys(out)) {
+  for (const collection of Object.keys(out)) {
     for (let i = 0; i < sampleIDs.length; i += 1) {
       const sample_id = sampleIDs[i];
       const sample_name = sampleNames[i];
       const queryParams = `?sample_id=${sample_id}&run_id=${run_id}`;
       // eslint-disable-next-line no-await-in-loop
-      let rowId = await exports.getOutputRows(queryParams, coll, req, res, next);
-      if (!rowId) {
+      let sample_summary_id = await exports.getDataIdByQueryParams(
+        queryParams,
+        collection,
+        req,
+        res,
+        next
+      );
+      if (!sample_summary_id) {
         const query = { sample_id, run_id, doc: null };
         // eslint-disable-next-line no-await-in-loop
-        rowId = await exports.insertOutputRows(query, coll, req, res, next);
+        sample_summary_id = await exports.insertOutputRows(query, collection, req, res, next);
       }
-      if (rowId) {
-        doc.out[coll][sample_name] = rowId;
+      if (sample_summary_id) {
+        // use latest rowid to update sample_summary_id field in sample collection
+        const sampleQuery = `/${sample_id}`;
+        const update = { sample_summary_id };
+        // eslint-disable-next-line no-await-in-loop
+        await exports.updateDataByQueryParams(sampleQuery, 'sample', update, req, res, next);
+        // save latest rowid in doc.out
+        doc.out[collection][sample_name] = sample_summary_id;
       }
     }
   }
