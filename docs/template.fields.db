@@ -1,0 +1,387 @@
+CREATE FIELDS: 
+POST:{{URL}}/api/v1/fields
+
+exp_series:
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f57ffba35db5980ba020ff3"
+}
+{
+    "name": "design",
+    "label": "Design",
+    "type": "String",
+    "collectionID":"5f57ffba35db5980ba020ff3"
+}
+----------------------------------------------------------------
+exp: 5f57ffe635db5980ba020ff4
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f57ffe635db5980ba020ff4"
+}
+{
+    "name": "summary",
+    "label": "Summary",
+    "type": "String",
+    "collectionID":"5f57ffe635db5980ba020ff4"
+}
+{
+    "name": "protocol_id",
+    "label": "Protocol ID",
+    "type": "mongoose.Schema.ObjectId",
+    "collectionID":"5f57ffe635db5980ba020ff4",
+    "ref": "protocol"
+}
+----------------------------------------------------------------
+biosamp _id: 5f57fff635db5980ba020ff5
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f57fff635db5980ba020ff5"
+}
+{
+    "name": "organism",
+    "label": "Organism",
+    "type": "String",
+    "collectionID":"5f57fff635db5980ba020ff5"
+}
+----------------------------------------------------------------
+sample _id: 5f74a0e05443973d2bfd870c
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "file_used",
+    "label": "Used Files",
+    "type": "Array",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "file_dir",
+    "label": "Directory",
+    "type": "Array",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "file_type",
+    "label": "File Type",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "collection_type",
+    "label": "Collection Type",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "file_env",
+    "label": "File Environment",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "server",
+    "label": "Server",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "server",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "sample_summary_id",
+    "label": "Sample Summary ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "sample_summary",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+--
+{
+    "name": "unique_id",
+    "label": "uniqueID",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "patient",
+    "label": "Patient",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "aliquot",
+    "label": "Aliquot",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "contract",
+    "label": "Contract",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "visit_num",
+    "label": "Visit #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "clinic_phen",
+    "label": "Clinical Phenotype",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "lesional",
+    "label": "Lesional/Non-Lesional",
+    "type": "String",
+    "enum": ["Lesional", "Non-Lesional"],
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "patient_note",
+    "label": "Patient Notes",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "collect_date",
+    "label": "Collection Date",
+    "type": "Date",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "blister_loc",
+    "label": "Blister Location",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "blister_num",
+    "label": "Number of Blisters",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "volume_bf",
+    "label": "Volume BF (uL)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "cell_density_tc",
+    "label": "Cell Density (TC) (cells/mL)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "total_cells",
+    "label": "Total Cells",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "perc_live_cells",
+    "label": "% Live Cells",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "blister_comments",
+    "label": "Notable Blister Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "bead_batch",
+    "label": "Bead Batch",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "cell_density_indrop",
+    "label": "Cell Density (InDrop) (cells/mL)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "bead_occup",
+    "label": "Bead Occupancy (%)",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "run_comments",
+    "label": "Notable Run Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "sc_lib_status",
+    "label": "Single Cell Library Status",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "sequence_date",
+    "label": "Sequence Date",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "seq_details",
+    "label": "Sequence Details",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "total_valid_reads",
+    "label": "Total valid reads",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "cells_UMIs_gt_500",
+    "label": "cells with UMIs>500",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "mean_umi",
+    "label": "Mean # UMIs",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "mean_cell",
+    "label": "Mean Cell",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "duplication_rate",
+    "label": "Duplication Rate",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "seq_comments",
+    "label": "Sequencing Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "library_tube_id",
+    "label": "ibrary Tube #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "index_id",
+    "label": "Index #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "index_seq",
+    "label": "Index seq",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "pool_id",
+    "label": "Pool #",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+{
+    "name": "comment",
+    "label": "Comments",
+    "type": "String",
+    "collectionID":"5f74a0e05443973d2bfd870c"
+}
+
+----------------------------------------------------------------
+for run _id: 5f623137721d09b3670c4b67
+
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5f623137721d09b3670c4b67",
+    "required": [true, "Run must have a name."]
+}
+{
+    "name": "status",
+    "label": "Status",
+    "type": "String",
+    "enum": ["pending", "connecting", "initiated", "running", "completed", "terminated", "error"],
+    "collectionID":"5f623137721d09b3670c4b67",
+    "required": true,
+    "default": "pending"
+}
+{
+    "name": "pipe_id",
+    "label": "Pipeline ID",
+    "type": "Number",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "run_id",
+    "label": "Run ID",
+    "type": "Number",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "tmplt_id",
+    "label": "Template Run ID",
+    "type": "Number",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "in",
+    "label": "Inputs",
+    "type": "Mixed",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "out",
+    "label": "Outputs",
+    "type": "Mixed",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "server_id",
+    "label": "Server ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "server",
+    "required": true,
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+----------------------------------------------------------------
+for sample_summary: _id:5f74af86d9e07245ea02b53c
+
+// `sample_id` field would be created by default using parentCollectionID 
+
+{
+    "name": "run_id",
+    "label": "RUN ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "run",
+    "required": true,
+    "collectionID":"5f74af86d9e07245ea02b53c"
+}
+{
+    "name": "doc",
+    "label": "Data",
+    "type": "Mixed",
+    "collectionID":"5f74af86d9e07245ea02b53c"
+}
+

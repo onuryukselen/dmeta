@@ -22,7 +22,7 @@ exports.createData = factory.createOne();
 exports.updateData = factory.updateOne();
 exports.deleteData = factory.deleteOne();
 
-const parseSummarySchema = () => {
+exports.getDataSummarySchema = (collectionName, type) => {
   // * expected Schema for data summary
   // - collection: main target collecton
   // - populate: space separated fields to be merged my reference
@@ -35,25 +35,108 @@ const parseSummarySchema = () => {
   //    rename: 'directory exp_name pro_name test_name',
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
+  // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
+  let schemas = { summary: {}, detailed: {} };
+  schemas.summary.sample = {
+    collection: 'sample',
+    select: `_id 
+      name 
+      file_env 
+      file_used
+      file_dir
+      collection_type
+      file_type
+      creationDate 
+      biosamp_id.exp_id.name 
+      biosamp_id.exp_id.exp_series_id.name`,
+    rename: `_id 
+      name 
+      file_env 
+      files_used
+      file_dir
+      collection_type
+      file_type
+      date_created 
+      collection_name 
+      project_name`,
+    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id'
+  };
+  schemas.detailed.sample = {
+    collection: 'sample',
+    select: `_id
+      name
+      file_env
+      file_used
+      file_dir
+      collection_type
+      file_type
+      creationDate
+      biosamp_id.exp_id.name
+      biosamp_id.exp_id.exp_series_id.name
+      sample_summary_id.doc 
+      patient
+      aliquot
+      clinic_phen
+      lesional
+      patient_note
+      cell_density_tc
+      cell_density_indrop
+      collect_date
+      library_tube_id
+      library_tube_id
+      pool_id
+      `,
+    rename: `_id
+      name
+      file_env
+      files_used
+      file_dir
+      collection_type
+      file_type
+      date_created
+      collection_name
+      project_name
+      sample_summary
+      patient
+      aliquot
+      clinic_phen
+      lesional
+      patient_note
+      cell_density_tc
+      cell_density_indrop
+      collect_date
+      library_tube_id
+      library_tube_id
+      pool_id
+      `,
+    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id sample_summary_id'
+  };
+  if (schemas[type][collectionName]) return schemas[type][collectionName];
+  return null;
+};
+
+const parseSummarySchema = (collectionName, type) => {
+  // e.g. const schema = {
+  //    collection: 'sample',
+  //    select:'dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
+  //    rename: 'directory exp_name pro_name test_name',
+  //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
+  //   }
   // returns popObj:{
   //   path: 'experiments_id',
   //   populate: { path: 'projects_id test_id' }
   // }
   // returns `rename` Function: renames keys of query docs according to Schema
-  const schema = {
-    collection: 'samples',
-    select:
-      'name experiments_id.email experiments_id.projects_id.biosample_name experiments_id.projects2_id.name',
-    rename: 'name directory exp_name pro_name test_name',
-    populate: 'experiments_id experiments_id.projects_id'
-    // populate: 'experiments_id experiments_id.projects_id  experiments_id.projects2_id'
-  };
+  const schema = exports.getDataSummarySchema(collectionName, type);
+  if (!schema) {
+    return { targetCollection: collectionName, popObj: '', select: '-__v', rename: null };
+  }
   const targetCollection = schema.collection;
   const select = schema.select;
   const popObj = {};
 
   // * prepare popObj
-  const popArr = schema.populate.split(' ');
+  const popArr = schema.populate.replace(/\s+/g, ' ').split(' ');
   for (let i = 0; i < popArr.length; i++) {
     if (!popArr[i].match(/\./)) {
       // parent fields without dots
@@ -81,15 +164,15 @@ const parseSummarySchema = () => {
   //   name: d.name,
   //   exp_email: d.experiments_id.email,
   // };
-  const renameArr = schema.rename.split(' ');
-  const selectArr = schema.select.split(' ');
+  const renameArr = schema.rename.replace(/\s+/g, ' ').split(' ');
+  const selectArr = schema.select.replace(/\s+/g, ' ').split(' ');
   const rename = doc => {
     return doc.map(d => {
       const project = {};
       for (let i = 0; i < renameArr.length; i++) {
         // _.get used for getting multiple levels of object with dot notation
         // by using _.get -> undefined fields doesn't give error
-        project[renameArr[i]] = _.get(d, selectArr[i]);
+        project[renameArr[i]] = _.get(d, selectArr[i]) === undefined ? '' : _.get(d, selectArr[i]);
       }
       return project;
     });
@@ -98,27 +181,54 @@ const parseSummarySchema = () => {
   return { targetCollection, popObj, select, rename };
 };
 
+exports.getDataSummaryDoc = async (type, req, res, next) => {
+  try {
+    const { targetCollection, popObj, select, rename } = parseSummarySchema(
+      req.params.collectionName,
+      type
+    );
+
+    if (!modelObj[targetCollection]) return null;
+    const query = modelObj[targetCollection].find({});
+    if (res.locals.Perms) {
+      const permFilter = await res.locals.Perms('read');
+      query.find(permFilter);
+    }
+    query
+      .populate(popObj)
+      .select(select)
+      .lean();
+
+    let doc = await query;
+    if (doc && rename) doc = rename(doc);
+    return doc;
+  } catch {
+    return null;
+  }
+};
+
 exports.getDataSummary = catchAsync(async (req, res, next) => {
   const start = Date.now();
-  const { targetCollection, popObj, select, rename } = parseSummarySchema();
-  const query = modelObj[targetCollection].find({});
-  if (res.locals.Perms) {
-    const permFilter = await res.locals.Perms('read');
-    query.find(permFilter);
-  }
-  query
-    .populate(popObj)
-    .select(select)
-    .lean();
-
-  let doc = await query;
-  if (!doc || (Array.isArray(doc) && doc.length === 0)) {
-    return next(new AppError(`No document found!`, 404));
-  }
-  doc = rename(doc);
-
+  const type = 'summary';
+  const doc = await exports.getDataSummaryDoc(type, req, res, next);
   const duration = Date.now() - start;
+  if (doc === null) return next(new AppError(`No collection found!`, 404));
+  res.status(200).json({
+    status: 'success',
+    duration: duration,
+    results: doc.length,
+    data: {
+      data: doc
+    }
+  });
+});
 
+exports.getDataDetailed = catchAsync(async (req, res, next) => {
+  const start = Date.now();
+  const type = 'detailed';
+  const doc = await exports.getDataSummaryDoc(type, req, res, next);
+  const duration = Date.now() - start;
+  if (doc === null) return next(new AppError(`No collection found!`, 404));
   res.status(200).json({
     status: 'success',
     duration: duration,

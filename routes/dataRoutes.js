@@ -1,22 +1,40 @@
 const express = require('express');
 const dataController = require('../controllers/dataController');
 const authController = require('../controllers/authController');
+const eventController = require('../controllers/eventController');
 
 const router = express.Router({ mergeParams: true });
 
 router.use(authController.setDefPerms);
+router.use(authController.isLoggedIn);
 
-router.route('/summary').get(authController.isLoggedIn, dataController.getDataSummary);
+router.route('/:collectionName/summary').get(dataController.getDataSummary);
+router.route('/:collectionName/detailed').get(dataController.getDataDetailed);
 
 router
   .route('/:collectionName')
-  .get(authController.isLoggedIn, dataController.setModel, dataController.getAllData)
-  .post(authController.protect, dataController.setModel, dataController.createData);
+  .get(dataController.setModel, dataController.getAllData)
+  .post(
+    authController.requireLogin,
+    dataController.setModel,
+    eventController.setEvent,
+    dataController.createData
+  );
 
 router
   .route('/:collectionName/:id')
-  .get(authController.isLoggedIn, dataController.setModel, dataController.getData)
-  .patch(authController.protect, dataController.setModel, dataController.updateData)
-  .delete(authController.protect, dataController.setModel, dataController.deleteData);
+  .get(dataController.setModel, dataController.getData)
+  .patch(
+    authController.requireLogin,
+    dataController.setModel,
+    eventController.setEvent,
+    dataController.updateData
+  )
+  .delete(
+    authController.requireLogin,
+    dataController.setModel,
+    eventController.setEvent,
+    dataController.deleteData
+  );
 
 module.exports = router;

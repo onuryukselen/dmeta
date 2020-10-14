@@ -7,7 +7,7 @@ const APIFeatures = require('./../utils/apiFeatures');
 //    e.g. if (res.locals.Model) Model = res.locals.Model;
 // 2. res.locals.After => commands will be executed after query is completed
 //    e.g. if (res.locals.After) res.locals.After();
-// 3. res.locals.user set with `protected` middleware
+// 3. res.locals.user set with `isLoggedIn` or `isLoggedInView` middleware
 // 4. res.locals.Perms returns filtration creteria regarding permission
 //    e.g. permission methods: authController.setDefPerms
 //    usage e.g. const permFilter = await res.locals.Perms("read");
@@ -15,22 +15,25 @@ const APIFeatures = require('./../utils/apiFeatures');
 
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
+    let doc;
     if (res.locals.Model) Model = res.locals.Model;
     // Check if deletion is allowed
     if (res.locals.Perms) {
       let query = Model.findById(req.params.id);
       const permFilter = await res.locals.Perms('write');
       query.find(permFilter);
-      const doc = await query;
+      doc = await query;
       if (!doc || (Array.isArray(doc) && doc.length === 0)) {
         return next(new AppError(`No document found with ${req.params.id}!`, 404));
       }
     }
-    const doc = await Model.findByIdAndDelete(req.params.id);
-    if (!doc || (Array.isArray(doc) && doc.length === 0)) {
+    const delDoc = await Model.findByIdAndDelete(req.params.id);
+    if (!delDoc || (Array.isArray(delDoc) && delDoc.length === 0)) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
     if (res.locals.After) res.locals.After();
+    if (res.locals.Event) res.locals.Event('delete', Model.collection.collectionName, doc);
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -67,6 +70,8 @@ exports.updateOne = Model =>
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
     if (res.locals.After) res.locals.After();
+    if (res.locals.Event) res.locals.Event('update', Model.collection.collectionName, doc);
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -88,6 +93,8 @@ exports.createOne = Model =>
     }
     const doc = await Model.create(req.body);
     if (res.locals.After) res.locals.After();
+    if (res.locals.Event) res.locals.Event('insert', Model.collection.collectionName, doc);
+
     res.status(201).json({
       status: 'success',
       data: {

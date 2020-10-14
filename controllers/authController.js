@@ -312,20 +312,29 @@ exports.logout = async (req, res) => {
   res.redirect(`${process.env.SSO_URL}/api/v1/users/logout?redirect_uri=${rootUrl}`);
 };
 
-// PROTECT ROUTE
-exports.protect = catchAsync(async (req, res, next) => {
+// isLoggedIn or isLoggedInView should be executed before this middleware
+exports.requireLogin = catchAsync(async (req, res, next) => {
+  if (!res.locals.user)
+    return next(new AppError('You are not logged in! Please log in to get access.', 401));
+  next();
+});
+
+// Only for APIs, no error
+exports.isLoggedIn = async (req, res, next) => {
+  console.log('** isLoggedIn');
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   } else if (req.cookies.jwt) {
     token = req.cookies.jwt;
   }
-  if (!token) return next(new AppError('You are not logged in! Please log in to get access.', 401));
+  if (!token) return next();
   let currentUser;
   if (process.env.SSO_LOGIN === 'true') {
     const tokenInfo = await accessTokens.find(token);
     if (tokenInfo != null && new Date() > tokenInfo.expirationDate) {
       await accessTokens.delete(token);
+      return next();
     }
     if (tokenInfo == null) {
       try {
@@ -335,7 +344,7 @@ exports.protect = catchAsync(async (req, res, next) => {
         const expiresIn = json.expires_in;
         currentUser = await exports.saveAccessRefreshToken(token, null, expiresIn);
       } catch {
-        return next(new AppError('The token does no longer valid.', 401));
+        return next();
       }
     } else if (tokenInfo.userId) {
       currentUser = await User.findOne({ sso_id: tokenInfo.userId });
@@ -346,24 +355,25 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   if (!currentUser) {
-    return next(new AppError('The user belonging to this token does no longer exist.', 401));
+    return next();
   }
 
-  // GRANT ACCESS TO PROTECTED ROUTE
+  res.locals.token = token;
   req.user = currentUser; //alias for req.session.user
   res.locals.user = currentUser; // variables that used in the view while rendering (eg.pug)
   next();
-});
+};
 
 // Only for rendered pages, no errors!
-exports.isLoggedIn = async (req, res, next) => {
-  console.log('** isLoggedIn');
+exports.isLoggedInView = async (req, res, next) => {
+  console.log('** isLoggedInView');
   if (req.cookies.jwt) {
     try {
       let currentUser;
       if (process.env.SSO_LOGIN === 'true') {
         const token = await accessTokens.find(req.cookies.jwt);
         if (token.userId) currentUser = await User.findOne({ sso_id: token.userId });
+        res.locals.token = token;
       } else {
         const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
         currentUser = await User.findById(decoded.id);
