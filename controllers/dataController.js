@@ -73,7 +73,19 @@ exports.getDataSummarySchema = (collectionName, type) => {
       creationDate
       biosamp_id.exp_id.name
       biosamp_id.exp_id.exp_series_id.name
-      sample_summary_id.doc`,
+      sample_summary_id.doc 
+      patient
+      aliquot
+      clinic_phen
+      lesional
+      patient_note
+      cell_density_tc
+      cell_density_indrop
+      collect_date
+      library_tube_id
+      library_tube_id
+      pool_id
+      `,
     rename: `_id
       name
       file_env
@@ -84,7 +96,19 @@ exports.getDataSummarySchema = (collectionName, type) => {
       date_created
       collection_name
       project_name
-      sample_summary`,
+      sample_summary
+      patient
+      aliquot
+      clinic_phen
+      lesional
+      patient_note
+      cell_density_tc
+      cell_density_indrop
+      collect_date
+      library_tube_id
+      library_tube_id
+      pool_id
+      `,
     populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id sample_summary_id'
   };
   if (schemas[type][collectionName]) return schemas[type][collectionName];

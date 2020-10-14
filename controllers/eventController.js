@@ -54,7 +54,7 @@ exports.replaceDataIds = async (doc, req, res, next) => {
   // e.g. `input` -> "single" (doesn't replace)
   try {
     if (doc.in) {
-      const dbLib = {};
+      let dbLib = {};
       for (const k of Object.keys(doc.in)) {
         const input = doc.in[k];
         if (typeof input === 'object' && input !== null) {
@@ -63,16 +63,20 @@ exports.replaceDataIds = async (doc, req, res, next) => {
             // check if keys are like "!sample_id"
             if (i.charAt(0) == '!' && i.slice(-3) == '_id') {
               const refModel = i.substring(1, i.length - 3);
+              console.log('refModel', refModel);
               const refs = input[i];
               if (!dbLib[refs]) {
                 req.params.collectionName = refModel;
+                const type = 'summary';
                 // eslint-disable-next-line no-await-in-loop
-                const docs = await dataController.getDataSummaryDoc(req, res, next);
+                const docs = await dataController.getDataSummaryDoc(type, req, res, next);
                 dbLib[refModel] = docs;
               }
               if (Array.isArray(refs)) {
                 const promises = refs.map(async id => {
                   const filteredItem = dbLib[refModel].filter(d => d._id == id);
+                  console.log(id);
+                  console.log(filteredItem);
                   if (filteredItem && filteredItem[0]) return filteredItem[0];
                   return id;
                 });

@@ -17,6 +17,19 @@ exp _id1: 5f58f1887845820a1c7883a9  _id2:5f5a98f6abe3fd2d31e3ce68
     "summary":"Vitiligo experiment1 summary",
     "exp_series_id":"5f58f13a7845820a1c7883a8"
 }
+-------------------------------------
+5f7e279f72b9fc71c9ad5a76
+{
+    "name": "Lupus experiment1",
+    "summary":"Lupus experiment1 summary",
+    "exp_series_id":"5f58f13a7845820a1c7883a8"
+}
+biosamp: 5f7e281372b9fc71c9ad5a78
+{
+    "name": "test",
+    "organism": "human",
+    "exp_id": "5f7e279f72b9fc71c9ad5a76"
+}
 
 ----------------------------------------------------------------
 POST:{{URL}}/api/v1/data/biosamp    _id2 (test_biosample): 5f5a9988abe3fd2d31e3ce69
@@ -64,6 +77,324 @@ sample _id:  5f74a3988f319e401b67e926
     "biosamp_id": "5f58f23b7845820a1c7883aa",
     "server_id": "5f622c67721d09b3670c4b66"
 }
+sample _id: 5f7de4d963be669309b7f5f6
+{
+    "name": "experiment-rep3",
+    "file_used": [["exper_rep3.1.fastq","exper_rep3.2.fastq"]],
+    "file_dir": ["/home/oy28w/fastqfiles"],
+    "file_type": "fastq",
+    "collection_type": "pair",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+
+-----------------------------------------------
+{
+    "name": "CB17_H2",
+    "file_used": [["CB17_H2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_15_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "1",
+    "patient": "CB17",
+    "aliquot": "H2",
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "collect_date": "7/27/2017",
+    "library_tube_id": 11,
+    "pool_id": "V3-16"
+}
+
+{
+    "name": "CB19_HA",
+    "file_used": [["CB19_HA.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "2",
+    "patient": "CB19",
+    "aliquot": "HA",
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "patient_note": "Control, has Folliculits",
+    "cell_density_tc": 60000,
+    "cell_density_indrop": 50000,
+    "collect_date": "7/27/2017",
+    "library_tube_id": 12,
+    "pool_id": "V3-01"
+}
+{
+    "name": "CB19_H2",
+    "file_used": [["CB19_H2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "2",
+    "patient": "CB19",
+    "aliquot": "H2",
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "patient_note": "Control, has Folliculits",
+    "cell_density_tc": 60000,
+    "cell_density_indrop": 50000,
+    "collect_date": "7/27/2017",
+    "library_tube_id": 13,
+    "pool_id": "V3-02"
+}
+
+{
+    "name": "CB20_H1",
+    "file_used": [["CB20_H1.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "4",
+    "patient": "CB20",
+    "aliquot": "H1",
+    "blister_loc": "Upper arm",
+    "blister_num": 9,
+    "volume_bf": 180,
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "patient_note": "Control, has Folliculits",
+    "collect_date": "12/11/2017",
+    "library_tube_id": 36,
+    "pool_id": "V3-01"
+}
+
+{
+    "name": "CB20_H2",
+    "file_used": [["CB20_H2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "5",
+    "patient": "CB20",
+    "aliquot": "H2",
+    "blister_loc": "Upper arm",
+    "blister_num": 9,
+    "volume_bf": 180,
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "patient_note": "Control, has Folliculits",
+    "collect_date": "12/11/2017",
+    "library_tube_id": 37,
+    "pool_id": "V3-02"
+}
+{
+    "name": "CB20_H2",
+    "file_used": [["CB20_H2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "6",
+    "patient": "CB21",
+    "aliquot": "H1",
+    "blister_loc": "leg/thigh",
+    "blister_num": 9,
+    "volume_bf": 300,
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "collect_date": "12/11/2017",
+    "library_tube_id": 38,
+    "pool_id": "V3-12"
+}
+{
+    "name": "CB21_H2",
+    "file_used": [["CB21_H2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "7",
+    "patient": "CB21",
+    "aliquot": "H2",
+    "blister_loc": "leg/thigh",
+    "blister_num": 9,
+    "volume_bf": 300,
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "collect_date": "12/11/2017",
+    "library_tube_id": 38,
+    "pool_id": "V3-12"
+}
+{
+    "name": "CB22",
+    "file_used": [["CB22_H1.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_1_17_18/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "8",
+    "patient": "CB22",
+    "aliquot": "H1",
+    "blister_loc": "right forearm",
+    "clinic_phen": "Healthy",
+    "lesional": "Healthy",
+    "collect_date": "12/11/2017",
+    "library_tube_id": 46,
+    "pool_id": "V3-03"
+}
+{
+    "name": "VB114",
+    "file_used": [["VB114_NL_S2_L001.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_7_30_18/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "12",
+    "patient": "VB114",
+    "aliquot": "NL",
+    "blister_loc": "right forearm",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Non-Lesional"
+}
+{
+    "name": "VB114_L",
+    "file_used": [["VB114_L_S1_L001.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_7_30_18/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "13",
+    "patient": "VB114",
+    "aliquot": "L",
+    "blister_loc": "right forearm",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Lesional"
+}
+{
+    "name": "VB65_NL_rep2",
+    "file_used": [["VB65_NL.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "14",
+    "patient": "VB65",
+    "aliquot": "NL",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Non-Lesional"
+}
+{
+    "name": "VB65_L2",
+    "file_used": [["VB65_L2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_14_17_RTI/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "16",
+    "patient": "VB65",
+    "aliquot": "L2",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Lesional"
+}
+{
+    "name": "VB66_NL",
+    "file_used": [["VB66_NL.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "17",
+    "patient": "VB66",
+    "aliquot": "NL",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Non-Lesional"
+}
+{
+    "name": "VB66_NL_rep2",
+    "file_used": [["VB66_NL.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_27_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "17",
+    "patient": "VB66",
+    "aliquot": "NL",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Non-Lesional"
+}
+{
+    "name": "VB66_L1",
+    "file_used": [["VB66_L1.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "18",
+    "patient": "VB66",
+    "aliquot": "L1",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Lesional"
+}
+{
+    "name": "VB75_NL1",
+    "file_used": [["VB75_NL1.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "19",
+    "patient": "VB75",
+    "aliquot": "NL1",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Non-Lesional"
+}
+{
+    "name": "VB75_NL2",
+    "file_used": [["VB75_NL2.fastq.gz"]],
+    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_27_17_RTI/dolphin_import","9"],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "cluster-5",
+    "biosamp_id": "5f58f23b7845820a1c7883aa",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "unique_id": "19",
+    "patient": "VB75",
+    "aliquot": "NL2",
+    "clinic_phen": "Vitiligo",
+    "lesional": "Non-Lesional"
+}
 ----------------------------------------------------------------
 run _id: 
 {
@@ -74,29 +405,31 @@ run _id:
         "reads": { "!sample_id":["5f74a2b5c02b703f634c8102","5f74a3988f319e401b67e926"] },
         "mate" : "pair"
     },  
-    "out": {},
+    "out": {"sample_summary" : {}},
     "server_id": "5f622c67721d09b3670c4b66"
 }
- 
-----------------------------------------------------------------
 
 {
     "name": "test_run",
     "pipe_id": 298,
-    "tmplt_id": 140,
+    "tmplt_id": 577,
     "in": { 
-        "reads": { "!file_id":["5f5a986f52e3032c567fa3b8","5f5a99d5abe3fd2d31e3ce6a"] },
+        "reads": { "!sample_id":["5f7de4d963be669309b7f5f6"] },
         "mate" : "pair"
     },  
+    "out": {"sample_summary" : {}},
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+ 
+ 
+----------------------------------------------------------------
+
     "out":{
         total_reads: 100000
         "counts": {refpath:"/dnext/",
                    type:"rsem_expected_count" 
                    }
     }
-    "server_id": "5f622c67721d09b3670c4b66"
-}
- 
-file.242423 
+
 
 
