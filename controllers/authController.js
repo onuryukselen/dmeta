@@ -400,17 +400,16 @@ exports.isLoggedInView = async (req, res, next) => {
 };
 
 // SSO Login for rendered pages (viewRoutes)
-exports.ensureSingleSignOn = async (req, res, next) => {
-  if (process.env.SSO_LOGIN === 'true') {
-    // req.session.redirectURL = req.originalUrl || req.url;
-    req.session.redirectURL = '/';
-    res.redirect(
-      `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
-    );
-  } else {
-    next();
-  }
-};
+// exports.ensureSingleSignOn = async (req, res, next) => {
+//   if (process.env.SSO_LOGIN === 'true') {
+//     req.session.redirectURL = '/';
+//     res.redirect(
+//       `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
+//     );
+//   } else {
+//     next();
+//   }
+// };
 
 /**
  * This is part of the single sign on using the OAuth2 Authorization Code grant type.  This is the
@@ -457,7 +456,7 @@ exports.ssoReceiveToken = async (req, res, next) => {
 
     res.locals.user = updatedUser;
     sendTokenCookie(accessToken, req, res);
-    res.redirect(req.session.redirectURL);
+    res.redirect('/after-sso');
   } catch (e) {
     return next(new AppError('Login Failed', 403));
   }

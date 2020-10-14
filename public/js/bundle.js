@@ -8819,11 +8819,48 @@ var _updateSettings = require("./updateSettings");
 
 var _alerts = require("./alerts");
 
-// DOM ELEMENTS
+// GLOBAL ENV CONFIG
+var envConf = document.querySelector('#session-env-config');
+var ssologin = envConf && envConf.getAttribute('sso_login') && envConf.getAttribute('sso_login') == 'true'; // DOM ELEMENTS
+
 var logOutBtn = document.querySelector('.nav__el--logout');
+var logInBtn = document.querySelector('.nav__el--login');
+var afterSsoClose = document.querySelector('.after-sso-close');
 var userDataForm = document.querySelector('.form-user-data');
 var loginForm = document.querySelector('.form--login');
 if (logOutBtn) logOutBtn.addEventListener('click', _login.logout);
+
+function popupwindow(url, title, w, h) {
+  var left = screen.width / 2 - w / 2;
+  var top = screen.height / 2 - h / 2;
+  return window.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left);
+} // open pop-up for SSO if user clicks on signin
+
+
+if (logInBtn && ssologin) {
+  logInBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    var SSO_URL = envConf.getAttribute('sso_url');
+    var CLIENT_ID = envConf.getAttribute('client_id');
+    var SSO_REDIRECT_URL = "".concat(window.location.origin, "/receivetoken");
+    var SSO_FINAL_URL = "".concat(SSO_URL, "/dialog/authorize?redirect_uri=").concat(SSO_REDIRECT_URL, "&response_type=code&client_id=").concat(CLIENT_ID, "&scope=offline_access");
+    console.log(SSO_FINAL_URL);
+    popupwindow(SSO_FINAL_URL, 'Login', 650, 800);
+  });
+}
+
+if (afterSsoClose) {
+  if (window.opener) {
+    window.opener.focus();
+
+    if (window.opener && !window.opener.closed) {
+      window.opener.location.reload();
+    }
+  }
+
+  window.close();
+}
+
 if (loginForm) loginForm.addEventListener('submit', function (e) {
   e.preventDefault();
   var email = document.getElementById('email').value;
@@ -8868,7 +8905,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44517" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44203" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

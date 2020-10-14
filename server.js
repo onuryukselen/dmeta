@@ -19,6 +19,8 @@ process.on('uncaughtException', err => {
 
 const app = require('./app');
 
+app.locals.env = process.env;
+
 mongoose
   .connect(process.env.DATABASE_LOCAL, {
     useNewUrlParser: true,

@@ -9,5 +9,7 @@ header.header
       a.nav__el(href='/me')
         span= user.name.split(' ')[0]
     else
-      a.nav__el(href='/login') Log in
+      a.nav__el.nav__el--login(href='/login') Log in
       a.nav__el.nav__el--cta(href='#') Sign up
+  nav.nav#session-env-config(style="display: none;" SSO_LOGIN= env.SSO_LOGIN SSO_URL= env.SSO_URL CLIENT_ID= env.CLIENT_ID)
+    
