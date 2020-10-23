@@ -35,7 +35,7 @@ function popupwindow(url, title, w, h) {
   );
 }
 
-// open pop-up for SSO if user clicks on signin
+// open child window for SSO if user clicks on sign-in button
 if (logInBtn && ssologin) {
   logInBtn.addEventListener('click', e => {
     e.preventDefault();
@@ -43,7 +43,6 @@ if (logInBtn && ssologin) {
     var CLIENT_ID = envConf.getAttribute('client_id');
     var SSO_REDIRECT_URL = `${window.location.origin}/receivetoken`;
     var SSO_FINAL_URL = `${SSO_URL}/dialog/authorize?redirect_uri=${SSO_REDIRECT_URL}&response_type=code&client_id=${CLIENT_ID}&scope=offline_access`;
-    console.log(SSO_FINAL_URL);
     popupwindow(SSO_FINAL_URL, 'Login', 650, 800);
   });
 }

@@ -1,3 +1,6 @@
+23.10.2020 Version 0.0.10
+${req.protocol}://${req.get('host')} replaced with process.env.BASE_URL.
+
 14.10.2020 Version 0.0.9
 SSO login window now opens in new window.
 

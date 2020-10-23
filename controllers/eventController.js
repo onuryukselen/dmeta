@@ -98,15 +98,11 @@ exports.replaceDataIds = async (doc, req, res, next) => {
 exports.insertOutputRows = async (query, coll, req, res, next) => {
   try {
     const auth = `Bearer ${res.locals.token}`;
-    const { data } = await axios.post(
-      `${req.protocol}://${req.get('host')}/api/v1/data/${coll}`,
-      query,
-      {
-        headers: {
-          Authorization: auth
-        }
+    const { data } = await axios.post(`${process.env.BASE_URL}/api/v1/data/${coll}`, query, {
+      headers: {
+        Authorization: auth
       }
-    );
+    });
     if (data.data.data._id) return data.data.data._id;
     return null;
   } catch (err) {
@@ -118,7 +114,7 @@ exports.getDataIdByQueryParams = async (queryParams, collection, req, res, next)
   try {
     const auth = `Bearer ${res.locals.token}`;
     const { data } = await axios.get(
-      `${req.protocol}://${req.get('host')}/api/v1/data/${collection}${queryParams}`,
+      `${process.env.BASE_URL}/api/v1/data/${collection}${queryParams}`,
       {},
       {
         headers: {
@@ -137,7 +133,7 @@ exports.updateDataByQueryParams = async (queryParams, collection, update, req, r
   try {
     const auth = `Bearer ${res.locals.token}`;
     const { data } = await axios.patch(
-      `${req.protocol}://${req.get('host')}/api/v1/data/${collection}${queryParams}`,
+      `${process.env.BASE_URL}/api/v1/data/${collection}${queryParams}`,
       update,
       {
         headers: {
@@ -213,7 +209,7 @@ exports.startRun = async (doc, req, res, next) => {
     doc = await exports.replaceDataIds(doc, req, res, next);
     doc = await exports.createOutputRows(doc, req, res, next);
     const info = {};
-    info.dmetaServer = `${req.protocol}://${req.get('host')}`;
+    info.dmetaServer = process.env.BASE_URL;
     console.log('doc', doc);
     console.log('populated_doc_reads', doc.in.reads);
     // send run information to selected server
