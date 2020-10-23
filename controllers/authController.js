@@ -308,8 +308,8 @@ exports.logout = async (req, res) => {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
   });
-  const rootUrl = `${req.protocol}://${req.get('host')}`;
-  res.redirect(`${process.env.SSO_URL}/api/v1/users/logout?redirect_uri=${rootUrl}`);
+  // const rootUrl = `${req.protocol}://${req.get('host')}`;
+  res.redirect(`${process.env.SSO_URL}/api/v1/users/logout?redirect_uri=${process.env.BASE_URL}`);
 };
 
 // isLoggedIn or isLoggedInView should be executed before this middleware
@@ -390,7 +390,9 @@ exports.isLoggedInView = async (req, res, next) => {
     req.session.loginCheck = true;
     req.session.redirectURL = '/';
     // const originalUrl = `${req.protocol}://${req.get('host')}`;
-    const originalUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    const originalUrl = `${process.env.BASE_URL}${req.originalUrl}`;
+    console.log(req.originalUrl);
+    console.log(originalUrl);
     res.redirect(
       `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
     );

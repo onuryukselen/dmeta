@@ -8834,7 +8834,7 @@ function popupwindow(url, title, w, h) {
   var left = screen.width / 2 - w / 2;
   var top = screen.height / 2 - h / 2;
   return window.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left);
-} // open pop-up for SSO if user clicks on signin
+} // open child window for SSO if user clicks on sign-in button
 
 
 if (logInBtn && ssologin) {
@@ -8844,7 +8844,6 @@ if (logInBtn && ssologin) {
     var CLIENT_ID = envConf.getAttribute('client_id');
     var SSO_REDIRECT_URL = "".concat(window.location.origin, "/receivetoken");
     var SSO_FINAL_URL = "".concat(SSO_URL, "/dialog/authorize?redirect_uri=").concat(SSO_REDIRECT_URL, "&response_type=code&client_id=").concat(CLIENT_ID, "&scope=offline_access");
-    console.log(SSO_FINAL_URL);
     popupwindow(SSO_FINAL_URL, 'Login', 650, 800);
   });
 }
@@ -8905,7 +8904,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "44203" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "34667" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
