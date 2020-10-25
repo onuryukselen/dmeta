@@ -132,7 +132,12 @@ const parseSummarySchema = (collectionName, type) => {
     return { targetCollection: collectionName, popObj: '', select: '-__v', rename: null };
   }
   const targetCollection = schema.collection;
-  const select = schema.select;
+  let select = schema.select;
+  const names = select.split(/\s+/).map(el => el.split('.')[0]);
+  let uniqueNames = names.filter(function(item, pos) {
+    return names.indexOf(item) == pos;
+  });
+  select = uniqueNames.join(' ');
   const popObj = {};
 
   // * prepare popObj
@@ -202,7 +207,8 @@ exports.getDataSummaryDoc = async (type, req, res, next) => {
     let doc = await query;
     if (doc && rename) doc = rename(doc);
     return doc;
-  } catch {
+  } catch (err) {
+    console.log(err);
     return null;
   }
 };
