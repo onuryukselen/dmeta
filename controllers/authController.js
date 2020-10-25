@@ -360,6 +360,7 @@ exports.isLoggedIn = async (req, res, next) => {
 // Only for rendered pages, no errors!
 exports.isLoggedInView = async (req, res, next) => {
   console.log('** isLoggedInView');
+  console.log('req.session.loginCheck:', req.session.loginCheck);
   if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {
     // check if its authenticated on Auth server
     req.session.loginCheck = true;
@@ -372,6 +373,10 @@ exports.isLoggedInView = async (req, res, next) => {
       `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
     );
     return;
+  }
+  if (process.env.SSO_LOGIN === 'true' && req.session.loginCheck) {
+    // after redirection from SSO server, disable loginCheck to prevent redirect loop
+    req.session.loginCheck = false;
   }
   if (req.cookies.jwt) {
     try {
