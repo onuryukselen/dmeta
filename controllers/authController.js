@@ -367,6 +367,19 @@ exports.isLoggedIn = async (req, res, next) => {
 // Only for rendered pages, no errors!
 exports.isLoggedInView = async (req, res, next) => {
   console.log('** isLoggedInView');
+  if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {
+    // check if its authenticated on Auth server
+    req.session.loginCheck = true;
+    req.session.redirectURL = '/';
+    // const originalUrl = `${req.protocol}://${req.get('host')}`;
+    const originalUrl = `${process.env.BASE_URL}${req.originalUrl}`;
+    console.log(req.originalUrl);
+    console.log(originalUrl);
+    res.redirect(
+      `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
+    );
+    return;
+  }
   if (req.cookies.jwt) {
     try {
       let currentUser;
@@ -385,17 +398,6 @@ exports.isLoggedInView = async (req, res, next) => {
     } catch (err) {
       return next();
     }
-  } else if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {
-    // check if its authenticated on Auth server
-    req.session.loginCheck = true;
-    req.session.redirectURL = '/';
-    // const originalUrl = `${req.protocol}://${req.get('host')}`;
-    const originalUrl = `${process.env.BASE_URL}${req.originalUrl}`;
-    console.log(req.originalUrl);
-    console.log(originalUrl);
-    res.redirect(
-      `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
-    );
   } else {
     next();
   }
