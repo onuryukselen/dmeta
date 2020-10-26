@@ -380,7 +380,9 @@ exports.isLoggedInView = async (req, res, next) => {
       return next();
     }
   } else if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {
-    // check if its authenticated on Auth server
+    // check only if user is not logged in!
+    // when user sign out, req.cookies.jwt will be deleted
+    // check if user authenticated on SSO server
     req.session.loginCheck = true;
     req.session.redirectURL = '/';
     const originalUrl = `${process.env.BASE_URL}${req.originalUrl}`;
