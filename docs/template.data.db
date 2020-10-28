@@ -54,7 +54,7 @@ sample _id:  5f74a29bc02b703f634c8100
 "server_id": "5f622c67721d09b3670c4b66"
 }
 
-sample _id:  5f74a2b5c02b703f634c8102
+sample _id:  5f98ffc6f1b38dade4bfbe25
 {
     "name": "control",
     "file_used": [["control_rep1.1.fastq.gz","control_rep1.2.fastq.gz"],["control_rep2.1.fastq.gz","control_rep2.2.fastq.gz"]],
