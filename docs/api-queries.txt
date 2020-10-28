@@ -52,18 +52,19 @@ $server_id = 5f622c67721d09b3670c4b66
 * get $biosample_id: 
 GET {{URL}}/api/v1/data/biosamp
 $biosamp_id (for test_sample): 5f5a9988abe3fd2d31e3ce69
+$biosamp_id (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 
 * get $server_id:
 GET {{URL}}/api/v1/servers?type=dnext
 $server_id (for DolphinNext Umassmed Biocore): 5f622c67721d09b3670c4b66
 
 * get runEnvID: 29
-* get amazonCredID:
+* get amazonCredID: 3
 
 ----------------------------------------------------------------
 
 #insert run:
-
+POST {{URL}}/api/v1/data/run
 {
     "name": "test_run",
     "pipe_id": $pipeline_id,
@@ -83,14 +84,31 @@ Please check above for example.
 * get $server_id: 5f622c67721d09b3670c4b66
 Please check above for example.
 
+example-1
 {
     "name": "test_run",
     "pipe_id": 719,
     "tmplt_id": 3535,
     "in": { 
-        "reads": { "!sample_id":["5f9871c30fd8ff46556ef361"] },
+        "reads": { "!sample_id":["5f5a9988abe3fd2d31e3ce69"] },
         "mate" : "single"
     },  
     "out": {"sample_summary" : {}},
     "server_id": "5f622c67721d09b3670c4b66"
 }
+
+example-2
+{
+    "name": "CB17H_run",
+    "pipe_id": 719,
+    "tmplt_id": 3535,
+    "in": { 
+        "reads": { "!sample_id":["5f7e18cb72b9fc71c9ad5a4f"] },
+        "mate" : "single"
+    },  
+    "out": {"sample_summary" : {}},
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+
+
+
