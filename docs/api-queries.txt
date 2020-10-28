@@ -72,9 +72,8 @@ $experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
     "file_dir": ["/project/umw_garberlab/yukseleo/fastqfiles/indroptest/valid_fastq"],
     "file_type": "fastq",
     "collection_type": "single",
-    "file_env": "cluster-$runEnvID",
+    "file_env": "ghpcc06.umassrc.org",
     "biosamp_id": "$biosamp_id",
-    "server_id": "$server_id",
     "patient": "test",
     "aliquot": "test",
     "clinic_phen": "Vitiligo",
@@ -82,7 +81,6 @@ $experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
     "status":"Sequenced"
 }
 
-$runEnvID = 5
 $biosamp_id = 5f58f23b7845820a1c7883aa
 $server_id = 5f622c67721d09b3670c4b66
 
@@ -91,9 +89,7 @@ GET {{URL}}/api/v1/data/biosamp
 $biosamp_id (for test_sample): 5f5a9988abe3fd2d31e3ce69
 $biosamp_id (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 
-* get $server_id:
-GET {{URL}}/api/v1/servers?type=dnext
-$server_id (for DolphinNext Umassmed Biocore): 5f622c67721d09b3670c4b66
+
 
 * get runEnvID: 29 (28)
 * get amazonCredID: 3 (1)
@@ -117,16 +113,19 @@ POST {{URL}}/api/v1/data/run
 
 * get $templateRunID: 3535
 * get $pipeline_id: 719
-* get $sample_id: 5f9871c30fd8ff46556ef361
-Please check above for example.
-* get $server_id: 5f622c67721d09b3670c4b66
-Please check above for example.
+* get $sample_id: 
+GET {{URL}}/api/v1/data/sample?name=CB17_H2
+
+* get $server_id:
+GET {{URL}}/api/v1/servers?type=dnext
+$server_id (for DolphinNext Umassmed Biocore): 5f622c67721d09b3670c4b66
 
 example-1
 {
     "name": "test_run",
     "pipe_id": 719,
     "tmplt_id": 3535,
+    "run_env" : $runEnvID,
     "in": { 
         "reads": { "!sample_id":["5f5a9988abe3fd2d31e3ce69"] },
         "mate" : "single"
@@ -140,6 +139,7 @@ example-2
     "name": "CB17H_run",
     "pipe_id": 719,
     "tmplt_id": 3535,
+    "run_env" : $runEnvID,
     "in": { 
         "reads": { "!sample_id":["5f7e18cb72b9fc71c9ad5a4f"] },
         "mate" : "single"
@@ -148,5 +148,5 @@ example-2
     "server_id": "5f622c67721d09b3670c4b66"
 }
 
-
+* $runEnvID
 

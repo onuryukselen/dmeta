@@ -52,6 +52,7 @@ exports.replaceDataIds = async (doc, req, res, next) => {
   // e.g. `input` -> { "!sample_id":["5f5a98...","5f5a99..."] }
   // replaces with [{_id:"5f5a98", name:"test"},{_id:"5f5a99", name:"test2"},]
   // e.g. `input` -> "single" (doesn't replace)
+  let sampleIds = [];
   try {
     if (doc.in) {
       let dbLib = {};
@@ -77,6 +78,9 @@ exports.replaceDataIds = async (doc, req, res, next) => {
                   const filteredItem = dbLib[refModel].filter(d => d._id == id);
                   console.log(id);
                   console.log(filteredItem);
+                  if (refModel == 'sample') {
+                    sampleIds.push(id);
+                  }
                   if (filteredItem && filteredItem[0]) return filteredItem[0];
                   return id;
                 });
@@ -89,7 +93,7 @@ exports.replaceDataIds = async (doc, req, res, next) => {
         }
       }
     }
-    return doc;
+    return [doc, sampleIds];
   } catch (err) {
     return doc;
   }
@@ -159,6 +163,7 @@ exports.createOutputRows = async (doc, req, res, next) => {
   // add sample_id, run_id to sample_summary collection
   // in {reads: [{_id:"5f5a98", name:"test"},{_id:"5f5a99", name:"test2"}], mate:"pair"}
   // get all samples names that are belong to collection = found in array
+  let sample_summary_ids = [];
   const run_id = doc._id;
   const inputs = doc.in;
   let sampleNames = [];
@@ -189,6 +194,7 @@ exports.createOutputRows = async (doc, req, res, next) => {
         sample_summary_id = await exports.insertOutputRows(query, collection, req, res, next);
       }
       if (sample_summary_id) {
+        sample_summary_ids.push(sample_summary_id);
         // use latest rowid to update sample_summary_id field in sample collection
         const sampleQuery = `/${sample_id}`;
         const update = { sample_summary_id };
@@ -200,14 +206,14 @@ exports.createOutputRows = async (doc, req, res, next) => {
     }
   }
 
-  return doc;
+  return [doc, sample_summary_ids];
 };
 
-exports.startRun = async (doc, req, res, next) => {
+exports.startRun = async (docSaved, req, res, next) => {
   try {
     console.log('run event created');
-    doc = await exports.replaceDataIds(doc, req, res, next);
-    doc = await exports.createOutputRows(doc, req, res, next);
+    let [docIds, sampleIds] = await exports.replaceDataIds(docSaved, req, res, next);
+    let [doc, sample_summary_ids] = await exports.createOutputRows(docIds, req, res, next);
     const info = {};
     info.dmetaServer = process.env.BASE_URL;
     console.log('doc', doc);
@@ -217,7 +223,7 @@ exports.startRun = async (doc, req, res, next) => {
       const server = await serverController.getServerById(doc.server_id);
       if (server && server.url && res.locals.token) {
         const auth = `Bearer ${res.locals.token}`;
-        //http://localhost:8080/dolphinnext/api/service.php?run=startRun
+        //localhost:8080/dolphinnext/api/service.php?run=startRun
         const { data, status } = await axios.post(
           `${server.url}/api/service.php?run=startRun`,
           { doc, info },
@@ -230,8 +236,36 @@ exports.startRun = async (doc, req, res, next) => {
         console.log(data, status);
         const runStatus = data.status ? data.status : 'error';
         const runLog = data.log ? data.log : data.toString();
+        const runUrl = data.run_url ? data.run_url : '';
         console.log('update.status:', runStatus);
         console.log('runLog:', runLog);
+        if (runStatus == 'initiated') {
+          //update sample status
+          console.log(sampleIds);
+          for (let n = 0; n < sampleIds.length; n++) {
+            // use sampleID to update status field in sample collection
+            // eslint-disable-next-line no-await-in-loop
+            await exports.updateDataByQueryParams(
+              `/${sampleIds[n]}`,
+              'sample',
+              { status: 'Processing' },
+              req,
+              res,
+              next
+            );
+          }
+          for (let n = 0; n < sample_summary_ids.length; n++) {
+            // eslint-disable-next-line no-await-in-loop
+            await exports.updateDataByQueryParams(
+              `/${sample_summary_ids[n]}`,
+              'sample_summary',
+              { run_url: runUrl },
+              req,
+              res,
+              next
+            );
+          }
+        }
       }
       // return run status then update run status
     }
