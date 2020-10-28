@@ -27,7 +27,44 @@ $sampleID (for test_sample): 5f9871c30fd8ff46556ef361
 DELETE {{URL}}/api/v1/data/sample/$sampleID
 
 ----------------------------------------------------------------
+#insert experiment series:
+POST:{{URL}}/api/v1/data/exp_series 
 
+{
+    "name": "Vitiligo experiment series",
+    "design":"Vitiligo experiment series design"
+}
+
+----------------------------------------------------------------
+#insert experiment:
+POST:{{URL}}/api/v1/data/exp
+{
+    "name": "Vitiligo experiment1",
+    "summary":"Vitiligo experiment1 summary",
+    "exp_series_id":"$exp_series_id"
+}
+
+
+* get $exp_series_id
+GET {{URL}}/api/v1/data/exp_series
+$exp_series_id (for Vitiligo experiment series): 5f58f13a7845820a1c7883a8
+----------------------------------------------------------------
+
+
+#insert biosample:
+POST:{{URL}}/api/v1/data/biosamp    
+{
+    "name": "CB17_H2",
+    "organism": "human",
+    "exp_id": "$experimentID"
+}
+
+* get $experimentID
+GET {{URL}}/api/v1/data/exp
+$experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
+
+
+----------------------------------------------------------------
 #insert sample:
 {
     "name": "test_sample",
@@ -69,6 +106,7 @@ POST {{URL}}/api/v1/data/run
     "name": "test_run",
     "pipe_id": $pipeline_id,
     "tmplt_id": $templateRunID,
+    "run_env" : $runEnvID,
     "in": { 
         "reads": { "!sample_id":["$sample_id1", "$sample_id2"] },
         "mate" : "single"
