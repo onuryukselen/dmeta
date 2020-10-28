@@ -90,7 +90,9 @@ $biosamp_id (for test_sample): 5f5a9988abe3fd2d31e3ce69
 $biosamp_id (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 
 
-* get amazonCredID: 3
+
+* get runEnvID: 29 (28)
+* get amazonCredID: 3 (1)
 
 ----------------------------------------------------------------
 
