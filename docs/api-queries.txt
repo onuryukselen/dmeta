@@ -91,8 +91,6 @@ $biosamp_id (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 
 
 
-* get runEnvID: 29 (28)
-* get amazonCredID: 3 (1)
 
 ----------------------------------------------------------------
 
@@ -102,7 +100,7 @@ POST {{URL}}/api/v1/data/run
     "name": "test_run",
     "pipe_id": $pipeline_id,
     "tmplt_id": $templateRunID,
-    "run_env" : $runEnvID,
+    "run_env" : $runEnv,
     "in": { 
         "reads": { "!sample_id":["$sample_id1", "$sample_id2"] },
         "mate" : "single"
@@ -111,6 +109,7 @@ POST {{URL}}/api/v1/data/run
     "server_id": "$server_id"
 }
 
+* $runEnv: target_hostname or "amazon","google"
 * get $templateRunID: 3535
 * get $pipeline_id: 719
 * get $sample_id: 
@@ -125,7 +124,7 @@ example-1
     "name": "test_run",
     "pipe_id": 719,
     "tmplt_id": 3535,
-    "run_env" : $runEnvID,
+    "run_env" : "ghpcc06.umassrc.org",
     "in": { 
         "reads": { "!sample_id":["5f5a9988abe3fd2d31e3ce69"] },
         "mate" : "single"
@@ -139,7 +138,7 @@ example-2
     "name": "CB17H_run",
     "pipe_id": 719,
     "tmplt_id": 3535,
-    "run_env" : $runEnvID,
+    "run_env" : "amazon",
     "in": { 
         "reads": { "!sample_id":["5f7e18cb72b9fc71c9ad5a4f"] },
         "mate" : "single"
@@ -148,5 +147,4 @@ example-2
     "server_id": "5f622c67721d09b3670c4b66"
 }
 
-* $runEnvID
 
