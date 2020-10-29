@@ -371,6 +371,18 @@ for run _id: 5f623137721d09b3670c4b67
     "required": true,
     "collectionID":"5f623137721d09b3670c4b67"
 }
+{
+    "name": "run_env",
+    "label": "Run Environment",
+    "type": "String",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "work_dir",
+    "label": "Work Directory",
+    "type": "String",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
 ----------------------------------------------------------------
 for sample_summary: _id:5f74af86d9e07245ea02b53c
 

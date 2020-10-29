@@ -100,7 +100,8 @@ POST {{URL}}/api/v1/data/run
     "name": "test_run",
     "pipe_id": $pipeline_id,
     "tmplt_id": $templateRunID,
-    "run_env" : $runEnv,
+    "run_env" : "$runEnv",
+    "work_dir": "$workdir",
     "in": { 
         "reads": { "!sample_id":["$sample_id1", "$sample_id2"] },
         "mate" : "single"
@@ -109,6 +110,7 @@ POST {{URL}}/api/v1/data/run
     "server_id": "$server_id"
 }
 
+* $workdir: (optional) work path for run
 * $runEnv: target_hostname or "amazon","google"
 * get $templateRunID: 3535
 * get $pipeline_id: 719
@@ -125,6 +127,7 @@ example-1
     "pipe_id": 719,
     "tmplt_id": 3535,
     "run_env" : "ghpcc06.umassrc.org",
+    "work_dir": "/new_work_dir",
     "in": { 
         "reads": { "!sample_id":["5f5a9988abe3fd2d31e3ce69"] },
         "mate" : "single"
@@ -139,6 +142,7 @@ example-2
     "pipe_id": 719,
     "tmplt_id": 3535,
     "run_env" : "amazon",
+    "work_dir": "/new_work_dir",
     "in": { 
         "reads": { "!sample_id":["5f7e18cb72b9fc71c9ad5a4f"] },
         "mate" : "single"
