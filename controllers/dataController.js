@@ -96,8 +96,8 @@ exports.getDataSummarySchema = (collectionName, type) => {
       collection_type
       file_type
       date_created
-      collection_name
-      project_name
+      experiment
+      experiment_series
       sample_summary
       run_url
       patient
