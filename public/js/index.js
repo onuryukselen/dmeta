@@ -1,8 +1,17 @@
 /* eslint-disable */
 import '@babel/polyfill';
 import { login, logout } from './login';
-import { updateSettings } from './updateSettings';
-import { showAlert } from './alerts';
+import { getProjectNavbar } from './dashboard.js';
+import 'jquery';
+import '@coreui/coreui';
+
+require('datatables.net'); // Datatables Core
+require('datatables.net-bs4/js/dataTables.bootstrap4.js'); // Datatables Bootstrap 4
+require('datatables.net-bs4/css/dataTables.bootstrap4.css'); // Datatables Bootstrap 4
+// import './../css/style.css';
+import './../vendors/@coreui/icons/css/free.min.css';
+import './../vendors/@coreui/icons/css/flag.min.css';
+import './../vendors/@coreui/icons/css/brand.min.css';
 
 // GLOBAL ENV CONFIG
 const envConf = document.querySelector('#session-env-config');
@@ -13,8 +22,8 @@ const ssologin =
 const logOutBtn = document.querySelector('.nav__el--logout');
 const logInBtn = document.querySelector('.nav__el--login');
 const afterSsoClose = document.querySelector('.after-sso-close');
-const userDataForm = document.querySelector('.form-user-data');
 const loginForm = document.querySelector('.form--login');
+const allProjectNav = document.querySelector('#allProjectNav');
 
 if (logOutBtn) logOutBtn.addEventListener('click', logout);
 
@@ -68,16 +77,10 @@ if (loginForm)
     login(email, password);
   });
 
-if (userDataForm)
-  userDataForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const form = new FormData();
-    form.append('name', document.getElementById('name').value);
-    form.append('email', document.getElementById('email').value);
-    form.append('photo', document.getElementById('photo').files[0]);
-
-    updateSettings(form, 'data');
-  });
-
-const alertMessage = document.querySelector('body').dataset.alert;
-if (alertMessage) showAlert('success', alertMessage, 20);
+(async () => {
+  if (allProjectNav) {
+    const projectNavbar = await getProjectNavbar();
+    $('#allProjectNav').append(projectNavbar);
+    $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
+  }
+})();
