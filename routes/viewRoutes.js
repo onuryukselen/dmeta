@@ -8,13 +8,10 @@ router.get('/receivetoken', authController.ssoReceiveToken);
 
 router.use(authController.isLoggedInView);
 router.get('/', viewsController.getOverview);
+router.get('/admin-overview', viewsController.getAdminOverview);
 router.get('/after-sso', viewsController.afterSSO);
-router.get(
-  '/login',
-  // authController.ensureSingleSignOn,
-  viewsController.getLoginForm,
-  viewsController.getOverview
-);
-router.get('/me', authController.requireLogin, viewsController.getAccount);
+router.get('/login', viewsController.getLoginForm, viewsController.getOverview);
+
+// router.get('/me', authController.requireLogin, viewsController.getAccount);
 
 module.exports = router;

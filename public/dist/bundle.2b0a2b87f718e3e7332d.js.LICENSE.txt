@@ -1111,6 +1111,8 @@
 
 /*! ./adapters/xhr */
 
+/*! ./admin-dashboard.js */
+
 /*! ./applyStyles.js */
 
 /*! ./arrow.js */
@@ -1293,6 +1295,14 @@
 
 /*! @popperjs/core */
 
+/*! Bootstrap 4 styling wrapper for ColReorder
+ * ©2018 SpryMedia Ltd - datatables.net/license
+ */
+
+/*! ColReorder 1.5.2
+ * ©2010-2019 SpryMedia Ltd - datatables.net/license
+ */
+
 /*! CommonJS bailout: exports is used directly at 275:0-7 */
 
 /*! CommonJS bailout: exports is used directly at 276:0-7 */
@@ -1437,9 +1447,15 @@
 
 /*! datatables.net */
 
+/*! datatables.net-bs4 */
+
 /*! datatables.net-bs4/css/dataTables.bootstrap4.css */
 
 /*! datatables.net-bs4/js/dataTables.bootstrap4.js */
+
+/*! datatables.net-colreorder */
+
+/*! datatables.net-colreorder-bs4 */
 
 /*! default exports */
 
@@ -1522,6 +1538,8 @@
 /*! export f [provided] [no usage info] [provision prevents renaming (no use info)] -> ./node_modules/core-js/modules/_wks.js */
 
 /*! export flip [provided] [no usage info] [missing usage info prevents renaming] -> ./node_modules/@popperjs/core/lib/modifiers/flip.js .default */
+
+/*! export getAdminProjectNavbar [provided] [no usage info] [missing usage info prevents renaming] */
 
 /*! export getCleanDivId [provided] [no usage info] [missing usage info prevents renaming] */
 
@@ -1658,6 +1676,10 @@
 /*!*************************************!*\
   !*** ./node_modules/axios/index.js ***!
   \*************************************/
+
+/*!**************************************!*\
+  !*** ./public/js/admin-dashboard.js ***!
+  \**************************************/
 
 /*!*****************************************!*\
   !*** ./node_modules/axios/lib/axios.js ***!
@@ -4072,6 +4094,10 @@
   \****************************************************************************/
 
 /*!****************************************************************************!*\
+  !*** ./node_modules/datatables.net-colreorder/js/dataTables.colReorder.js ***!
+  \****************************************************************************/
+
+/*!****************************************************************************!*\
   !*** ./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js ***!
   \****************************************************************************/
 
@@ -4081,6 +4107,10 @@
 
 /*!********************************************************************************!*\
   !*** ./node_modules/core-js/modules/es6.object.get-own-property-descriptor.js ***!
+  \********************************************************************************/
+
+/*!********************************************************************************!*\
+  !*** ./node_modules/datatables.net-colreorder-bs4/js/colReorder.bootstrap4.js ***!
   \********************************************************************************/
 
 /*!*********************************************************************************!*\

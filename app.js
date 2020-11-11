@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -22,6 +23,7 @@ const groupRouter = require('./routes/groupRoutes');
 const userGroupRouter = require('./routes/userGroupRoutes');
 const dataRouter = require('./routes/dataRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const miscRouter = require('./routes/miscRoutes');
 const accessTokens = require('./controllers/accessTokenController');
 
 const app = express();
@@ -30,6 +32,17 @@ app.enable('trust proxy');
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 app.locals.basedir = app.get('views'); // set basedir for pug
+
+// Save changeLogVersion as a global pug variable:
+try {
+  const doc = fs.readFileSync(path.join(__dirname, 'NEWS'), 'utf8');
+  const fLine = doc.split('\n')[0];
+  const fblocks = fLine.split(' ');
+  const version = fblocks[fblocks.length - 1];
+  app.locals.changeLogVersion = version;
+} catch {
+  console.log('changeLogVersion not found in NEWS file.');
+}
 
 // 1) GLOBAL MIDDLEWARES
 app.use(cors());
@@ -109,6 +122,7 @@ app.use('/api/v1/groups', groupRouter);
 app.use('/api/v1/servers', serverRouter);
 app.use('/api/v1/usergroups', userGroupRouter);
 app.use('/api/v1/data', dataRouter);
+app.use('/api/v1/misc', miscRouter);
 app.use('/', viewRouter);
 
 app.all('*', (req, res, next) => {

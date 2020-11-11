@@ -3,6 +3,39 @@ import axios from 'axios';
 import { getCleanDivId } from './jsfuncs';
 // GLOBAL SCOPE
 let $s = { data: {} };
+$s.AdminCollectionFields = [
+  'name',
+  'label',
+  'type',
+  'required',
+  'active',
+  'enum',
+  'checkvalid',
+  'min',
+  'max',
+  'minlength',
+  'maxlength',
+  'ref',
+  'collectionID',
+  'id',
+  'creationDate',
+  'lastUpdateDate'
+];
+
+$s.AdminAllCollectionFields = [
+  'name',
+  'label',
+  'slug',
+  'version',
+  'active',
+  'parentCollectionID',
+  'id',
+  'perms',
+  'restrictTo',
+  'owner',
+  'creationDate',
+  'lastUpdateDate'
+];
 
 const ajaxCall = async (method, url) => {
   try {
@@ -20,9 +53,15 @@ const ajaxCall = async (method, url) => {
 
 const getTableHeaders = collID => {
   let ret = '';
-  for (var i = 0; i < $s.fields.length; i++) {
-    if ($s.fields[i].collectionID == collID && $s.fields[i].label)
-      ret += `<th>${$s.fields[i].label}</th>`;
+  let headerList;
+  if (collID == 'all_collections') {
+    headerList = $s.AdminAllCollectionFields;
+  } else {
+    headerList = $s.AdminCollectionFields;
+  }
+  for (var k = 0; k < headerList.length; k++) {
+    const label = headerList[k].charAt(0).toUpperCase() + headerList[k].slice(1);
+    ret += `<th>${label}</th>`;
   }
   return ret;
 };
@@ -31,7 +70,7 @@ const getCollectionTable = collID => {
   const headers = getTableHeaders(collID);
   const ret = `
   <div class="table-responsive" style="overflow-x:auto; width:100%; ">
-    <table id="${collID}" class="table table-striped" style='white-space: nowrap; table-layout:fixed; width:100%;' cellspacing="0" >
+    <table id="${collID}" class="table table-striped" style="white-space:nowrap; table-layout:fixed; width:100%;" cellspacing="0" cellpadding="0" border="0">
         <thead>
             <tr>
             ${headers}
@@ -48,9 +87,15 @@ const getFieldsOfCollection = collectionID => {
   return $s.fields.filter(field => field.collectionID === collectionID);
 };
 
-const prepareDataForSingleColumn = async collName => {
-  const data = await ajaxCall('GET', `/api/v1/data/${collName}`);
-  $s.data.collName = data;
+const prepareDataForSingleColumn = async collID => {
+  let data;
+  if (collID == 'all_collections') {
+    // Use "$s.collections" prepare all_collections table
+    data = $s.collections;
+  } else {
+    // Use $s.fields to prepare data
+    data = getFieldsOfCollection(collID);
+  }
   const dataCopy = data.slice();
   const ret = dataCopy.map(el => {
     $.each(el, function(k) {
@@ -63,13 +108,18 @@ const prepareDataForSingleColumn = async collName => {
   return ret;
 };
 
-const refreshDataTables = async (TableID, collName) => {
+const refreshDataTables = async TableID => {
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
-    const collFields = getFieldsOfCollection(TableID);
-    const data = await prepareDataForSingleColumn(collName);
+    const data = await prepareDataForSingleColumn(TableID);
     let columns = [];
-    for (var i = 0; i < collFields.length; i++) {
-      columns.push({ data: collFields[i].name });
+    let fieldList;
+    if (TableID == 'all_collections') {
+      fieldList = $s.AdminAllCollectionFields;
+    } else {
+      fieldList = $s.AdminCollectionFields;
+    }
+    for (var i = 0; i < fieldList.length; i++) {
+      columns.push({ data: fieldList[i] });
     }
     var dataTableObj = {
       columns: columns,
@@ -84,19 +134,21 @@ const refreshDataTables = async (TableID, collName) => {
     // speed up the table loading
     dataTableObj.deferRender = true;
     dataTableObj.scroller = true;
-    dataTableObj.scrollCollapse = true;
+    // dataTableObj.responsive = true;
+    dataTableObj.colReorder = true;
+    // dataTableObj.scrollCollapse = true;
     // dataTableObj.scrollY = 600;
-    // dataTableObj.scrollX = 500;
-    dataTableObj.sScrollX = true;
+    dataTableObj.scrollX = '500';
+    // dataTableObj.sScrollX = '5000px';
     // dataTableObj.autoWidth = false;
+    // dataTableObj.bAutoWidth = false;
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };
 const showTableTabs = () => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
-    const collName = $(e.target).attr('collName');
     const tableID = $(e.target).attr('tableID');
-    refreshDataTables(tableID, collName);
+    refreshDataTables(tableID);
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     $($.fn.dataTable.tables(true))
@@ -109,21 +161,18 @@ const showTableTabs = () => {
 const getCollectionNavbar = projectLabel => {
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
-
-  if ($s.collections.length == 0) {
-    content = '';
-    header += '<p> No document found.</p>';
-  }
-  for (var i = 0; i < $s.collections.length; i++) {
-    const collectionName = $s.collections[i].name;
-    const collectionLabel = $s.collections[i].label;
-    const collectionId = $s.collections[i].id;
+  let tabs = [];
+  tabs.push({ label: 'All Collections', id: 'all_collections' });
+  tabs = tabs.concat($s.collections);
+  for (var i = 0; i < tabs.length; i++) {
+    const collectionLabel = tabs[i].label;
+    const collectionId = tabs[i].id;
     const id = getCleanDivId(collectionLabel);
     const collTabID = 'collTab_' + id;
     const active = i === 0 ? 'active' : '';
     const headerLi = `
       <li class="nav-item">
-          <a class="nav-link ${active} collection" data-toggle="tab" collName="${collectionName}" tableID="${collectionId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
+          <a class="nav-link ${active} collection" data-toggle="tab" tableID="${collectionId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
       </li>`;
     header += headerLi;
     const colNavbar = getCollectionTable(collectionId);
@@ -145,7 +194,7 @@ const getCollectionNavbar = projectLabel => {
   return ret;
 };
 
-export const getProjectNavbar = async rowdata => {
+export const getAdminProjectNavbar = async rowdata => {
   showTableTabs();
   // NEEDS UPDATE! : get all projects
   let [collections, fields] = await Promise.all([
