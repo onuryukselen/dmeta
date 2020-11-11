@@ -1,8 +1,10 @@
 extends _layout/pages
 
 block view
-  main.main
-    .error
-      .error__title
-        h2.heading-secondary.heading-secondary--error Something went wrong!   
-      .error__msg= msg
+  .container
+    .row.justify-content-center
+      .col-md-5
+        div.card
+          div.card-body
+            h2 Something went wrong!   
+            p= msg

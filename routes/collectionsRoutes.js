@@ -7,8 +7,6 @@ const fieldsRouter = require('./fieldsRoutes');
 const router = express.Router();
 
 router.use(authController.isLoggedIn);
-router.use(authController.requireLogin);
-router.use(authController.restrictTo('admin'));
 router.use(authController.setDefPerms);
 
 router.use('/:collectionID/fields', fieldsController.setFilter, fieldsRouter);
@@ -16,12 +14,27 @@ router.use('/:collectionID/fields', fieldsController.setFilter, fieldsRouter);
 router
   .route('/')
   .get(collectionsController.getAllCollections)
-  .post(collectionsController.setAfter, collectionsController.createCollection);
+  .post(
+    authController.requireLogin,
+    authController.restrictTo('admin'),
+    collectionsController.setAfter,
+    collectionsController.createCollection
+  );
 
 router
   .route('/:id')
   .get(collectionsController.getCollection)
-  .patch(collectionsController.setAfter, collectionsController.updateCollection)
-  .delete(collectionsController.setAfter, collectionsController.deleteCollection);
+  .patch(
+    authController.requireLogin,
+    authController.restrictTo('admin'),
+    collectionsController.setAfter,
+    collectionsController.updateCollection
+  )
+  .delete(
+    authController.requireLogin,
+    authController.restrictTo('admin'),
+    collectionsController.setAfter,
+    collectionsController.deleteCollection
+  );
 
 module.exports = router;

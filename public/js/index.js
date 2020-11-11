@@ -1,13 +1,22 @@
 /* eslint-disable */
 import '@babel/polyfill';
+import axios from 'axios';
 import { login, logout } from './login';
 import { getProjectNavbar } from './dashboard.js';
+import { getAdminProjectNavbar } from './admin-dashboard.js';
 import 'jquery';
 import '@coreui/coreui';
 
 require('datatables.net'); // Datatables Core
 require('datatables.net-bs4/js/dataTables.bootstrap4.js'); // Datatables Bootstrap 4
 require('datatables.net-bs4/css/dataTables.bootstrap4.css'); // Datatables Bootstrap 4
+require('datatables.net-colreorder');
+require('datatables.net-colreorder-bs4');
+// require('datatables.net-responsive');
+// require('datatables.net-responsive-bs4');
+// require('datatables.net-scroller');
+// require('datatables.net-scroller-bs4');
+
 // import './../css/style.css';
 import './../vendors/@coreui/icons/css/free.min.css';
 import './../vendors/@coreui/icons/css/flag.min.css';
@@ -24,6 +33,8 @@ const logInBtn = document.querySelector('.nav__el--login');
 const afterSsoClose = document.querySelector('.after-sso-close');
 const loginForm = document.querySelector('.form--login');
 const allProjectNav = document.querySelector('#allProjectNav');
+const adminAllProjectNav = document.querySelector('#admin-allProjectNav');
+const dmetaVersionBut = document.querySelector('#dmetaVersionBut');
 
 if (logOutBtn) logOutBtn.addEventListener('click', logout);
 
@@ -81,6 +92,33 @@ if (loginForm)
   if (allProjectNav) {
     const projectNavbar = await getProjectNavbar();
     $('#allProjectNav').append(projectNavbar);
+    // load all tab content
     $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
+  }
+  if (adminAllProjectNav) {
+    const adminProjectNavbar = await getAdminProjectNavbar();
+    $('#admin-allProjectNav').append(adminProjectNavbar);
+    // load all tab content
+    $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
+  }
+  if (dmetaVersionBut) {
+    // $('#dmetaVersionBut').on('click', function(event) {
+    //   console.log('not working');
+    // });
+    var checkLoad = $('#versionNotes').attr('readonly');
+    if (typeof checkLoad === typeof undefined || checkLoad === false) {
+      try {
+        const res = await axios({
+          method: 'GET',
+          url: '/api/v1/misc/changelog'
+        });
+        const changeLogData = res.data.data;
+        $('#versionNotes').val(JSON.parse(changeLogData));
+        $('#versionNotes').attr('readonly', 'readonly');
+      } catch (err) {
+        console.log(err);
+        return '';
+      }
+    }
   }
 })();
