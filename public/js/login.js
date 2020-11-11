@@ -1,6 +1,5 @@
 /* eslint-disable */
 import axios from 'axios';
-import { showAlert } from './alerts';
 export const login = async (emailOrUsername, password) => {
   try {
     const data = { password };
@@ -16,14 +15,13 @@ export const login = async (emailOrUsername, password) => {
     });
 
     if (res.data.status === 'success') {
-      showAlert('success', 'Logged in successfully!');
+      console.log('success', 'Logged in successfully!');
       window.setTimeout(() => {
         location.assign('/');
       }, 1500);
     }
   } catch (err) {
-    console.log(err);
-    showAlert('error', err.response.data.message);
+    console.log('error', err);
   }
 };
 
@@ -31,7 +29,6 @@ export const logout = async () => {
   try {
     location.assign('/api/v1/users/logout');
   } catch (err) {
-    console.log(err.response);
-    showAlert('error', 'Error logging out! Try again.');
+    console.log('error', err);
   }
 };

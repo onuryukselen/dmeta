@@ -29,6 +29,8 @@ const app = express();
 app.enable('trust proxy');
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
+app.locals.basedir = app.get('views'); // set basedir for pug
+
 // 1) GLOBAL MIDDLEWARES
 app.use(cors());
 app.options('*', cors());
@@ -45,9 +47,9 @@ if (process.env.NODE_ENV === 'development') {
 
 // Limit requests from same IP
 const limiter = rateLimit({
-  max: 100,
-  windowMs: 60 * 60 * 1000,
-  message: 'Too many requests from this IP, please try again in an hour!'
+  max: 1000,
+  windowMs: 60 * 10 * 100,
+  message: 'Too many requests from this IP, please try again in a minute!'
 });
 app.use('/api', limiter);
 
