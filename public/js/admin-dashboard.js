@@ -70,7 +70,7 @@ const getCollectionTable = collID => {
   const headers = getTableHeaders(collID);
   const ret = `
   <div class="table-responsive" style="overflow-x:auto; width:100%; ">
-    <table id="${collID}" class="table table-striped" style="white-space:nowrap; table-layout:fixed; width:100%;" cellspacing="0" cellpadding="0" border="0">
+    <table id="${collID}" class="table table-striped" style="white-space:nowrap;  width:100%;" cellspacing="0" cellpadding="0" border="0">
         <thead>
             <tr>
             ${headers}

@@ -31,7 +31,7 @@ const getCollectionTable = collID => {
   const headers = getTableHeaders(collID);
   const ret = `
   <div class="table-responsive" style="overflow-x:auto; width:100%; ">
-    <table id="${collID}" class="table table-striped" style='white-space: nowrap; table-layout:fixed; width:100%;' cellspacing="0" >
+    <table id="${collID}" class="table table-striped" style='white-space: nowrap; width:100%;' cellspacing="0" >
         <thead>
             <tr>
             ${headers}
@@ -85,6 +85,7 @@ const refreshDataTables = async (TableID, collName) => {
     dataTableObj.deferRender = true;
     dataTableObj.scroller = true;
     dataTableObj.scrollCollapse = true;
+    dataTableObj.colReorder = true;
     // dataTableObj.scrollY = 600;
     // dataTableObj.scrollX = 500;
     dataTableObj.sScrollX = true;
