@@ -10,6 +10,19 @@ exports.getCollectionById = async id => {
   return await Collection.findById(id).lean();
 };
 
+// for post,patch requests
+exports.setProjectId = (req, res, next) => {
+  if (!req.body.projectID) req.body.projectID = req.params.projectID;
+  next();
+};
+
+// Filter to get collections based on selected project
+// {{URL}}/api/v1/projects/:projectID/collections
+exports.setFilter = (req, res, next) => {
+  if (req.params.projectID) res.locals.Filter = { projectID: req.params.projectID };
+  next();
+};
+
 // expects parentCollectionID.
 // returns { fieldName: ref. field name in the collection,
 //           parentColName: parent collection name
