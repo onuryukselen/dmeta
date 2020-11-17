@@ -125,11 +125,11 @@ const createSchema = async (fields, col) => {
   // set default reference fields based on parentCollectionID
   if (col.parentCollectionID) {
     // fieldName: reference field name in the collection
-    // parentColName: parent collection name
-    const { fieldName, parentColName } = await collectionsController.getParentRefField(
+    // parentModelName: parent collection model name
+    const { fieldName, parentModelName } = await collectionsController.getParentRefField(
       col.parentCollectionID
     );
-    schema[fieldName] = { type: mongoose.Schema.ObjectId, ref: parentColName, required: true };
+    schema[fieldName] = { type: mongoose.Schema.ObjectId, ref: parentModelName, required: true };
   }
   for (let n = 0; n < fields.length; n++) {
     const name = fields[n].name;
@@ -164,9 +164,11 @@ exports.getModelNameByColId = async collectionId => {
   const colName = collection.name;
   const projectID = collection.projectID;
   let modelName = colName;
+  console.log(projectID);
   if (projectID) {
     const project = await projectsController.getProjectById(projectID);
-    if (project[0] && project[0].name) modelName = `${project[0].name}_${colName}`;
+    console.log(project);
+    if (project.name) modelName = `${project.name}_${colName}`;
   }
   return modelName;
 };

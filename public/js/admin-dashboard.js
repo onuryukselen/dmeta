@@ -29,6 +29,7 @@ $s.AdminAllCollectionFields = [
   'version',
   'active',
   'parentCollectionID',
+  'projectID',
   'id',
   'perms',
   'restrictTo',
@@ -158,30 +159,35 @@ const showTableTabs = () => {
 };
 
 // NEEDS UPDATE! get all collection with project id
-const getCollectionNavbar = projectLabel => {
+const getCollectionNavbar = projectId => {
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
   let tabs = [];
   tabs.push({ label: 'All Collections', id: 'all_collections' });
   tabs = tabs.concat($s.collections);
+  let k = 0;
   for (var i = 0; i < tabs.length; i++) {
-    const collectionLabel = tabs[i].label;
-    const collectionId = tabs[i].id;
-    const id = getCleanDivId(collectionLabel);
-    const collTabID = 'collTab_' + id;
-    const active = i === 0 ? 'active' : '';
-    const headerLi = `
+    const collectionProjectID = tabs[i].projectID;
+    if ((projectId && collectionProjectID == projectId) || (!projectId && !collectionProjectID)) {
+      k++;
+      const collectionLabel = tabs[i].label;
+      const collectionId = tabs[i].id;
+      const id = getCleanDivId(collectionLabel);
+      const collTabID = 'collTab_' + id;
+      const active = k === 1 ? 'active' : '';
+      const headerLi = `
       <li class="nav-item">
           <a class="nav-link ${active} collection" data-toggle="tab" tableID="${collectionId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
       </li>`;
-    header += headerLi;
-    const colNavbar = getCollectionTable(collectionId);
+      header += headerLi;
+      const colNavbar = getCollectionTable(collectionId);
 
-    const contentDiv = `
+      const contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${collTabID}">
           ${colNavbar}
         </div>`;
-    content += contentDiv;
+      content += contentDiv;
+    }
   }
   header += `</ul>`;
   content += `</div>`;
@@ -196,21 +202,26 @@ const getCollectionNavbar = projectLabel => {
 
 export const getAdminProjectNavbar = async rowdata => {
   showTableTabs();
-  // NEEDS UPDATE! : get all projects
-  let [collections, fields] = await Promise.all([
+  let [collections, fields, projects] = await Promise.all([
     ajaxCall('GET', '/api/v1/collections'),
-    ajaxCall('GET', '/api/v1/fields')
+    ajaxCall('GET', '/api/v1/fields'),
+    ajaxCall('GET', '/api/v1/projects')
   ]);
   $s.collections = collections;
   $s.fields = fields;
+  $s.projects = projects;
+  let tabs = [];
+  // tabs.push({ label: 'Public', id: '', name: 'public' });
+  tabs = tabs.concat($s.projects);
 
   let header = '<ul class="nav nav-tabs" role="tablist">';
   let content = '<div class="tab-content">';
 
-  const projects = ['Vitiligo'];
-  for (var i = 0; i < projects.length; i++) {
-    const projectLabel = projects[i];
-    const id = getCleanDivId(projectLabel);
+  for (var i = 0; i < tabs.length; i++) {
+    const projectId = tabs[i].id;
+    const projectLabel = tabs[i].label;
+    const projectName = tabs[i].name;
+    const id = getCleanDivId(projectName);
     const projectTabID = 'projectTab_' + id;
     const active = i === 0 ? 'active' : '';
     const headerLi = `
@@ -218,7 +229,7 @@ export const getAdminProjectNavbar = async rowdata => {
         <a class="nav-link ${active}" data-toggle="tab" href="#${projectTabID}" aria-expanded="true">${projectLabel}</a>
     </li>`;
     header += headerLi;
-    const colNavbar = getCollectionNavbar(projectLabel);
+    const colNavbar = getCollectionNavbar(projectId);
 
     const contentDiv = `
     <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${projectTabID}">

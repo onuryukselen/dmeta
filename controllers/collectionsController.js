@@ -29,13 +29,14 @@ exports.setFilter = (req, res, next) => {
 //         }
 exports.getParentRefField = async parentCollectionID => {
   let fieldName;
+  const parentModelName = await buildModels.getModelNameByColId(parentCollectionID);
   const parentCol = await exports.getCollectionById(parentCollectionID);
   const parentColName = parentCol.name;
   if (parentColName) {
     fieldName = parentColName.replace(/\s+/g, '_').toLowerCase();
     fieldName = `${fieldName}_id`;
   }
-  return { fieldName, parentColName };
+  return { fieldName, parentModelName };
 };
 
 // set commands after query is completed

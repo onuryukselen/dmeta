@@ -36,11 +36,15 @@ exports.setEvent = async (req, res, next) => {
     try {
       await Event.create(eventDetails);
     } catch {
-      console.log('Event could not be created', eventDetails);
+      return { status: 'error', message: 'Event could not be created', error: eventDetails };
     }
 
-    if (type == 'insert' && collection == 'run' && res.locals.token) {
-      exports.startRun(doc, req, res, next);
+    if (
+      type == 'insert' &&
+      (collection == 'run' || collection.match(/_run$/)) &&
+      res.locals.token
+    ) {
+      return await exports.startRun(doc, req, res, next);
     }
   };
   return next();
@@ -265,12 +269,21 @@ exports.startRun = async (docSaved, req, res, next) => {
               next
             );
           }
+          return { status: runStatus, message: 'Run initiated', error: null };
+          // **** update run status
         }
+        return { status: runStatus, message: 'Run could not be started', error: runLog };
+        // **** update run status
       }
-      // return run status then update run status
     }
-  } catch {
-    console.log('Run could not be started');
+    return {
+      status: null,
+      message: 'Run could not be started, Target server could not found.',
+      error: null
+    };
+  } catch (err) {
+    console.log('Run could not be started', err);
+    return { status: null, message: 'Run could not be started', error: err };
   }
 };
 

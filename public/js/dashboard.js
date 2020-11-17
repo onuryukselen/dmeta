@@ -48,11 +48,15 @@ const getFieldsOfCollection = collectionID => {
   return $s.fields.filter(field => field.collectionID === collectionID);
 };
 
-const prepareDataForSingleColumn = async collName => {
-  const data = await ajaxCall('GET', `/api/v1/data/${collName}`);
-  $s.data.collName = data;
+const prepareDataForSingleColumn = async (collName, projectID) => {
+  const project = $s.projects.filter(item => item.id === projectID);
+  const projectName = project[0] && project[0].name ? project[0].name : '';
+  const projectPart = projectName ? `projects/${projectName}/` : '';
+  const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}`);
+  const saveDataPath = `${projectName}_${collName}`;
+  $s.data[saveDataPath] = data;
   const dataCopy = data.slice();
-  const ret = dataCopy.map(el => {
+  let ret = dataCopy.map(el => {
     $.each(el, function(k) {
       if ((typeof el[k] === 'object' && el[k] !== null) || Array.isArray(el[k])) {
         el[k] = JSON.stringify(el[k]);
@@ -63,10 +67,10 @@ const prepareDataForSingleColumn = async collName => {
   return ret;
 };
 
-const refreshDataTables = async (TableID, collName) => {
+const refreshDataTables = async (TableID, collName, projectID) => {
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
     const collFields = getFieldsOfCollection(TableID);
-    const data = await prepareDataForSingleColumn(collName);
+    const data = await prepareDataForSingleColumn(collName, projectID);
     let columns = [];
     for (var i = 0; i < collFields.length; i++) {
       columns.push({ data: collFields[i].name });
@@ -97,7 +101,8 @@ const showTableTabs = () => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     const collName = $(e.target).attr('collName');
     const tableID = $(e.target).attr('tableID');
-    refreshDataTables(tableID, collName);
+    const projectID = $(e.target).attr('projectID');
+    refreshDataTables(tableID, collName, projectID);
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     $($.fn.dataTable.tables(true))
@@ -106,8 +111,7 @@ const showTableTabs = () => {
   });
 };
 
-// NEEDS UPDATE! get all collection with project id
-const getCollectionNavbar = projectLabel => {
+const getCollectionNavbar = projectId => {
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
 
@@ -115,25 +119,30 @@ const getCollectionNavbar = projectLabel => {
     content = '';
     header += '<p> No document found.</p>';
   }
+  let k = 0;
   for (var i = 0; i < $s.collections.length; i++) {
-    const collectionName = $s.collections[i].name;
-    const collectionLabel = $s.collections[i].label;
-    const collectionId = $s.collections[i].id;
-    const id = getCleanDivId(collectionLabel);
-    const collTabID = 'collTab_' + id;
-    const active = i === 0 ? 'active' : '';
-    const headerLi = `
+    const collectionProjectID = $s.collections[i].projectID;
+    if ((projectId && collectionProjectID == projectId) || (!projectId && !collectionProjectID)) {
+      k++;
+      const collectionName = $s.collections[i].name;
+      const collectionLabel = $s.collections[i].label;
+      const collectionId = $s.collections[i].id;
+      const id = getCleanDivId(collectionLabel);
+      const collTabID = 'collTab_' + id;
+      const active = k === 1 ? 'active' : '';
+      const headerLi = `
       <li class="nav-item">
-          <a class="nav-link ${active} collection" data-toggle="tab" collName="${collectionName}" tableID="${collectionId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
+          <a class="nav-link ${active} collection" data-toggle="tab" collName="${collectionName}" tableID="${collectionId}" projectID="${projectId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
       </li>`;
-    header += headerLi;
-    const colNavbar = getCollectionTable(collectionId);
+      header += headerLi;
+      const colNavbar = getCollectionTable(collectionId);
 
-    const contentDiv = `
+      const contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${collTabID}">
           ${colNavbar}
         </div>`;
-    content += contentDiv;
+      content += contentDiv;
+    }
   }
   header += `</ul>`;
   content += `</div>`;
@@ -148,21 +157,25 @@ const getCollectionNavbar = projectLabel => {
 
 export const getProjectNavbar = async rowdata => {
   showTableTabs();
-  // NEEDS UPDATE! : get all projects
-  let [collections, fields] = await Promise.all([
+  let [projects, collections, fields] = await Promise.all([
+    ajaxCall('GET', '/api/v1/projects'),
     ajaxCall('GET', '/api/v1/collections'),
     ajaxCall('GET', '/api/v1/fields')
   ]);
   $s.collections = collections;
   $s.fields = fields;
-
+  $s.projects = projects;
+  let tabs = [];
+  // tabs.push({ label: 'Public', id: '', name: 'public' });
+  tabs = tabs.concat($s.projects);
   let header = '<ul class="nav nav-tabs" role="tablist">';
   let content = '<div class="tab-content">';
 
-  const projects = ['Vitiligo'];
-  for (var i = 0; i < projects.length; i++) {
-    const projectLabel = projects[i];
-    const id = getCleanDivId(projectLabel);
+  for (var i = 0; i < tabs.length; i++) {
+    const projectId = tabs[i].id;
+    const projectLabel = tabs[i].label;
+    const projectName = tabs[i].name;
+    const id = getCleanDivId(projectName);
     const projectTabID = 'projectTab_' + id;
     const active = i === 0 ? 'active' : '';
     const headerLi = `
@@ -170,7 +183,7 @@ export const getProjectNavbar = async rowdata => {
         <a class="nav-link ${active}" data-toggle="tab" href="#${projectTabID}" aria-expanded="true">${projectLabel}</a>
     </li>`;
     header += headerLi;
-    const colNavbar = getCollectionNavbar(projectLabel);
+    const colNavbar = getCollectionNavbar(projectId);
 
     const contentDiv = `
     <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${projectTabID}">

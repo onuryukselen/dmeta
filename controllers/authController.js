@@ -9,7 +9,7 @@ const accessTokens = require('./../controllers/accessTokenController');
 const refreshTokens = require('./../controllers/refreshTokenController');
 const groupController = require('./../controllers/groupController');
 const collectionsController = require('./../controllers/collectionsController');
-const { modelObj, getModelNameByColId } = require('./../utils/buildModels');
+const { modelObj } = require('./../utils/buildModels');
 
 const [getAsync, postAsync] = [get, post].map(promisify);
 
@@ -44,19 +44,18 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
         // if parentCollectionID is found, check parentCollectionID for permissions
         if (col.parentCollectionID) {
           // fieldName: reference field name in the collection
-          // parentColName: parent collection name
+          // parentModelName: parent collection model name
           // refId: reference Id of the newly created document in `parentColName`
-          const { fieldName, parentColName } = await collectionsController.getParentRefField(
+          const { fieldName, parentModelName } = await collectionsController.getParentRefField(
             col.parentCollectionID
           );
-          if (parentColName && fieldName) {
+          if (parentModelName && fieldName) {
             if (req.body[fieldName]) {
               const refId = req.body[fieldName];
-              const modelName = getModelNameByColId(col.parentCollectionID);
               // get refId from `modelName` collection
-              const Model = modelObj[modelName];
+              const Model = modelObj[parentModelName];
               const query = Model.findById(refId);
-              // check if modelName's perms allows to write
+              // check if parentColName's perms allows to write
               const permFilter = await res.locals.Perms('write');
               query.find(permFilter);
               const doc = await query.lean();

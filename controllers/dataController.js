@@ -42,7 +42,7 @@ exports.getDataSummarySchema = (collectionName, type) => {
   // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
   let schemas = { summary: {}, detailed: {} };
   schemas.summary.sample = {
-    collection: 'sample',
+    collection: 'vitiligo_sample',
     select: `_id 
       name 
       file_env 
@@ -66,7 +66,7 @@ exports.getDataSummarySchema = (collectionName, type) => {
     populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id'
   };
   schemas.detailed.sample = {
-    collection: 'sample',
+    collection: 'vitiligo_sample',
     select: `_id
       name
       file_env
