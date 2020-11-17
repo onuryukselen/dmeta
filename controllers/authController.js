@@ -9,7 +9,7 @@ const accessTokens = require('./../controllers/accessTokenController');
 const refreshTokens = require('./../controllers/refreshTokenController');
 const groupController = require('./../controllers/groupController');
 const collectionsController = require('./../controllers/collectionsController');
-const { modelObj } = require('./../utils/buildModels');
+const { modelObj, getModelNameByColId } = require('./../utils/buildModels');
 
 const [getAsync, postAsync] = [get, post].map(promisify);
 
@@ -52,10 +52,11 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
           if (parentColName && fieldName) {
             if (req.body[fieldName]) {
               const refId = req.body[fieldName];
-              // get refId from `parentColName` collection
-              const Model = modelObj[parentColName];
+              const modelName = getModelNameByColId(col.parentCollectionID);
+              // get refId from `modelName` collection
+              const Model = modelObj[modelName];
               const query = Model.findById(refId);
-              // check if parentColName's perms allows to write
+              // check if modelName's perms allows to write
               const permFilter = await res.locals.Perms('write');
               query.find(permFilter);
               const doc = await query.lean();

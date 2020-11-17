@@ -7,9 +7,13 @@ const AppError = require('./../utils/appError');
 //if collectionName is set, then save that Model as a res.locals.Model
 exports.setModel = (req, res, next) => {
   if (req.params.collectionName) {
-    res.locals.Model = modelObj[req.params.collectionName];
-    if (!modelObj[req.params.collectionName]) {
-      return next(new AppError(`collectionName is not found!`, 404));
+    let modelName = req.params.collectionName;
+    if (req.params.projectName) {
+      modelName = `${req.params.projectName}_${req.params.collectionName}`;
+    }
+    res.locals.Model = modelObj[modelName];
+    if (!modelObj[modelName]) {
+      return next(new AppError(`collectionName '${modelName}' is not found!`, 404));
     }
     return next();
   }
@@ -119,7 +123,7 @@ exports.getDataSummarySchema = (collectionName, type) => {
   return null;
 };
 
-const parseSummarySchema = (collectionName, type) => {
+const parseSummarySchema = (collectionName, projectName, type) => {
   // e.g. const schema = {
   //    collection: 'sample',
   //    select:'dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
@@ -133,7 +137,9 @@ const parseSummarySchema = (collectionName, type) => {
   // returns `rename` Function: renames keys of query docs according to Schema
   const schema = exports.getDataSummarySchema(collectionName, type);
   if (!schema) {
-    return { targetCollection: collectionName, popObj: '', select: '-__v', rename: null };
+    let modelName = collectionName;
+    if (projectName) modelName = `${projectName}_${collectionName}`;
+    return { targetCollection: modelName, popObj: '', select: '-__v', rename: null };
   }
   const targetCollection = schema.collection;
   let select = schema.select;
@@ -194,9 +200,11 @@ exports.getDataSummaryDoc = async (type, req, res, next) => {
   try {
     const { targetCollection, popObj, select, rename } = parseSummarySchema(
       req.params.collectionName,
+      req.params.projectName,
       type
     );
 
+    //const modelName = getModelNameByColId(col.parentCollectionID);
     if (!modelObj[targetCollection]) return null;
     const query = modelObj[targetCollection].find({});
     if (res.locals.Perms) {

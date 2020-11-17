@@ -3,12 +3,12 @@ const factory = require('./handlerFactory');
 // const AppError = require('./../utils/appError');
 // const buildModels = require('./../utils/buildModels');
 
-// exports.getCollectionByName = async name => {
-//   return await Collection.findOne({ name }).lean();
-// };
-// exports.getCollectionById = async id => {
-//   return await Collection.findById(id).lean();
-// };
+exports.getProjectByName = async name => {
+  return await Project.findOne({ name }).lean();
+};
+exports.getProjectById = async id => {
+  return await Project.findById(id).lean();
+};
 
 // set commands after query is completed
 // exports.setAfter = async (req, res, next) => {
