@@ -3,12 +3,14 @@ const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
 const buildModels = require('./../utils/buildModels');
 
+// for post/patch requests
 exports.setCollectionId = (req, res, next) => {
   if (!req.body.collections) req.body.collections = req.params.collectionID;
   next();
 };
 
-// Filter for get All Collection fields
+// Filter to get all fields based on selected collectionID
+// {{URL}}/api/v1/collections/:collectionID/fields
 exports.setFilter = (req, res, next) => {
   if (req.params.collectionID) res.locals.Filter = { collectionID: req.params.collectionID };
   next();

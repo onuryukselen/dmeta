@@ -22,6 +22,7 @@ const serverRouter = require('./routes/serverRoutes');
 const groupRouter = require('./routes/groupRoutes');
 const userGroupRouter = require('./routes/userGroupRoutes');
 const dataRouter = require('./routes/dataRoutes');
+const projectsRouter = require('./routes/projectRoutes');
 const viewRouter = require('./routes/viewRoutes');
 const miscRouter = require('./routes/miscRoutes');
 const accessTokens = require('./controllers/accessTokenController');
@@ -114,6 +115,7 @@ setInterval(() => {
 }, process.env.TIME_TO_CHECK_EXPIRED_TOKENS * 1000);
 
 // 2) ROUTES
+app.use('/api/v1/projects', projectsRouter);
 app.use('/api/v1/collections', collectionsRouter);
 app.use('/api/v1/fields', fieldsRouter);
 app.use('/api/v1/users', userRouter);

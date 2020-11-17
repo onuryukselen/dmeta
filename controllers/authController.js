@@ -44,16 +44,16 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
         // if parentCollectionID is found, check parentCollectionID for permissions
         if (col.parentCollectionID) {
           // fieldName: reference field name in the collection
-          // parentColName: parent collection name
+          // parentModelName: parent collection model name
           // refId: reference Id of the newly created document in `parentColName`
-          const { fieldName, parentColName } = await collectionsController.getParentRefField(
+          const { fieldName, parentModelName } = await collectionsController.getParentRefField(
             col.parentCollectionID
           );
-          if (parentColName && fieldName) {
+          if (parentModelName && fieldName) {
             if (req.body[fieldName]) {
               const refId = req.body[fieldName];
-              // get refId from `parentColName` collection
-              const Model = modelObj[parentColName];
+              // get refId from `modelName` collection
+              const Model = modelObj[parentModelName];
               const query = Model.findById(refId);
               // check if parentColName's perms allows to write
               const permFilter = await res.locals.Perms('write');

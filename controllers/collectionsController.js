@@ -10,19 +10,33 @@ exports.getCollectionById = async id => {
   return await Collection.findById(id).lean();
 };
 
+// for post,patch requests
+exports.setProjectId = (req, res, next) => {
+  if (!req.body.projectID) req.body.projectID = req.params.projectID;
+  next();
+};
+
+// Filter to get collections based on selected project
+// {{URL}}/api/v1/projects/:projectID/collections
+exports.setFilter = (req, res, next) => {
+  if (req.params.projectID) res.locals.Filter = { projectID: req.params.projectID };
+  next();
+};
+
 // expects parentCollectionID.
 // returns { fieldName: ref. field name in the collection,
 //           parentColName: parent collection name
 //         }
 exports.getParentRefField = async parentCollectionID => {
   let fieldName;
+  const parentModelName = await buildModels.getModelNameByColId(parentCollectionID);
   const parentCol = await exports.getCollectionById(parentCollectionID);
   const parentColName = parentCol.name;
   if (parentColName) {
     fieldName = parentColName.replace(/\s+/g, '_').toLowerCase();
     fieldName = `${fieldName}_id`;
   }
-  return { fieldName, parentColName };
+  return { fieldName, parentModelName };
 };
 
 // set commands after query is completed

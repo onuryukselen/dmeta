@@ -93,7 +93,12 @@ exports.createOne = Model =>
     }
     const doc = await Model.create(req.body);
     if (res.locals.After) res.locals.After();
-    if (res.locals.Event) res.locals.Event('insert', Model.collection.collectionName, doc);
+    if (res.locals.Event) {
+      const eventRet = await res.locals.Event('insert', Model.collection.collectionName, doc);
+      if (eventRet && eventRet.status == 'error') {
+        return next(new AppError(`${eventRet.message} ${eventRet.error}`, 404));
+      }
+    }
 
     res.status(201).json({
       status: 'success',

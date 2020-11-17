@@ -2,8 +2,10 @@
 // eslint-disable-next-line no-unused-vars
 const validator = require('validator');
 const mongoose = require('mongoose');
+const Project = require('../models/projectsModel');
 const Collection = require('../models/collectionsModel');
 const collectionsController = require('../controllers/collectionsController');
+const projectsController = require('../controllers/projectsController');
 const Field = require('../models/fieldsModel');
 const AppError = require('./appError');
 
@@ -123,11 +125,11 @@ const createSchema = async (fields, col) => {
   // set default reference fields based on parentCollectionID
   if (col.parentCollectionID) {
     // fieldName: reference field name in the collection
-    // parentColName: parent collection name
-    const { fieldName, parentColName } = await collectionsController.getParentRefField(
+    // parentModelName: parent collection model name
+    const { fieldName, parentModelName } = await collectionsController.getParentRefField(
       col.parentCollectionID
     );
-    schema[fieldName] = { type: mongoose.Schema.ObjectId, ref: parentColName, required: true };
+    schema[fieldName] = { type: mongoose.Schema.ObjectId, ref: parentModelName, required: true };
   }
   for (let n = 0; n < fields.length; n++) {
     const name = fields[n].name;
@@ -143,6 +145,34 @@ const createSchema = async (fields, col) => {
   return schema;
 };
 
+// If collection belong to a project then modelName will be `${project_name}_${collection_name}
+// otherwise modelName = collection_name
+exports.getModelName = (collection, project) => {
+  const colName = collection.name;
+  const projectID = collection.projectID;
+  let modelName = colName;
+  if (projectID) {
+    if (project[0] && project[0].name) modelName = `${project[0].name}_${colName}`;
+  }
+  return modelName;
+};
+
+// If collection belong to a project then modelName will be `${project_name}_${collection_name}
+// otherwise modelName = collection_name
+exports.getModelNameByColId = async collectionId => {
+  const collection = await Collection.findById(collectionId);
+  const colName = collection.name;
+  const projectID = collection.projectID;
+  let modelName = colName;
+  console.log(projectID);
+  if (projectID) {
+    const project = await projectsController.getProjectById(projectID);
+    console.log(project);
+    if (project.name) modelName = `${project.name}_${colName}`;
+  }
+  return modelName;
+};
+
 // Update mongoose models when collection or field changes
 exports.updateModel = async collectionId => {
   try {
@@ -150,16 +180,20 @@ exports.updateModel = async collectionId => {
     const col = await Collection.findById(collectionId);
     if (!col) return 'done'; // collection deleted or deactivated
     const fields = await Field.find({ collectionID: collectionId });
-    const colName = col.name.toString();
+    const projectID = col.projectID;
+    let project = null;
+    if (projectID) project = await projectsController.getProjectById(projectID);
+    const modelName = exports.getModelName(col, project);
+
     // check if model created before => delete model to prevent OverwriteModelError
-    if (col && mongoose.connection.models[colName]) {
-      delete mongoose.connection.models[colName];
+    if (col && mongoose.connection.models[modelName]) {
+      delete mongoose.connection.models[modelName];
     }
     const schema = await createSchema(fields, col);
     const Schema = new mongoose.Schema(schema);
-    const Model = mongoose.model(colName, Schema, colName);
-    modelObj[colName] = Model;
-    console.log(colName, schema);
+    const Model = mongoose.model(modelName, Schema, modelName);
+    modelObj[modelName] = Model;
+    console.log(modelName, schema);
     return 'done';
   } catch (err) {
     return new AppError(`modelObj could not be updated: ${err}!`, 404);
@@ -168,22 +202,27 @@ exports.updateModel = async collectionId => {
 
 // On startup, get allCollections and allFields then prepare all mongoose models
 // Save those models into modelObj
+// If collection belong to a project then collection name will be `${project_name}_${collection_name}`
 // modelObj: { experiments: Model { experiments }, projects: Model { projects } }
 exports.buildModels = async () => {
   try {
+    const allProjects = await Project.find({});
     const allCollections = await Collection.find({});
     const allFields = await Field.find({});
     for (let n = 0; n < allCollections.length; n++) {
       const colId = allCollections[n].id;
-      const colName = allCollections[n].name;
+      const projectID = allCollections[n].projectID;
+      let project = null;
+      if (projectID) project = allProjects.filter(f => f.id == projectID);
+      const modelName = exports.getModelName(allCollections[n], project);
       const fields = allFields.filter(f => f.collectionID == colId);
       // eslint-disable-next-line no-await-in-loop
       const schema = await createSchema(fields, allCollections[n]);
-      console.log(colName, schema);
-      if (!modelObj[colName]) {
+      console.log(modelName, schema);
+      if (!modelObj[modelName]) {
         const Schema = new mongoose.Schema(schema);
-        const Model = mongoose.model(colName, Schema, colName);
-        modelObj[colName] = Model;
+        const Model = mongoose.model(modelName, Schema, modelName);
+        modelObj[modelName] = Model;
       }
     }
   } catch (err) {
