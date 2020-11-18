@@ -152,3 +152,49 @@ example-2
 }
 
 
+------------------------------------------------------------------------------
+Group Permissions:
+
+1. insert groups : 
+    vitiligo: read access: 5fb4575faa5adff6f407f2d1
+    vitiligo_admin: read+write access: 5fb45793aa5adff6f407f2d2
+
+POST {{URL}}/api/v1/groups 
+{
+    "name": "vitiligo_project"
+}
+{
+    "name": "vitiligo_project_admin"
+}
+    
+2. add few users for test
+ 5f924e4b3b60e245039758fd user -> vitiligo_project_admin
+ 5f91c4533b60e245039758d3 user -> vitiligo_project
+
+POST {{URL}}/api/v1/usergroups
+{
+    "group_id": "5fb4575faa5adff6f407f2d1",
+    "user_id": "5f91c4533b60e245039758d3"
+}
+{
+    "group_id": "5fb45793aa5adff6f407f2d2",
+    "user_id": "5f924e4b3b60e245039758fd"
+}
+
+3. update permission of collections:
+
+db.vitiligo_biosamp.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_exp.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_exp_series.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_run.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_sample.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_sample_summary.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+
+db.collections.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.fields.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.projects.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+
+db.collections.updateMany({}, {$set: { "restrictTo": {"group":["5fb45793aa5adff6f407f2d2"] } }})
+
+db.server.updateMany({}, {$set: { "perms":{"read":{"user":["everyone"]}}  }})
+        
