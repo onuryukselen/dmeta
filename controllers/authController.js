@@ -13,6 +13,30 @@ const { modelObj } = require('./../utils/buildModels');
 
 const [getAsync, postAsync] = [get, post].map(promisify);
 
+const preparePermFilter = (type, filter, userId, userGroups) => {
+  // permsFieldUser: defines the read/write permission of the item
+  // permsFieldGroup: defines the read/write permission of the item
+  const permsFieldUser = `perms.${type}.user`;
+  const permsFieldGroup = `perms.${type}.group`;
+  const ownerFilter = { owner: userId };
+  const userFilter = {};
+  const groupFilter = {};
+  // filter['$or'] will check these filters: ownerFilter, userFilter, groupFilter
+  // if one of them is verified, it will allow access to that item.
+  // ownerFilter -> owner always allowed for read+write
+  // userFilter  -> userId should be in the list of permsFieldUser of the item.
+  //                Otherwise 'everyone' should be found for public access.
+  // groupFilter -> If userGroups is empty don't add groupFilter to filter['$or']
+  //                Otherwise check if one of the `userGroups` are found in permsFieldGroup //                of the item
+  userFilter[permsFieldUser] = { $in: [userId, 'everyone'] };
+  groupFilter[permsFieldGroup] = { $in: userGroups };
+  if (!filter['$or']) filter['$or'] = [];
+  filter['$or'].push(ownerFilter);
+  filter['$or'].push(userFilter);
+  if (userGroups.length > 0) filter['$or'].push(groupFilter);
+  return filter;
+};
+
 exports.setDefPerms = catchAsync(async (req, res, next) => {
   // expected perms object:
   // perms: {
@@ -78,6 +102,7 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
           const user = col.restrictTo.user;
           const group = col.restrictTo.group;
           const role = col.restrictTo.role;
+          if (['admin'].includes(userRole)) return true;
           if (user && user.constructor === Array && user.includes(userId)) return true;
           if (role && role.constructor === Array && role.includes(userRole)) return true;
           if (group && group.constructor === Array) {
@@ -97,12 +122,9 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
     }
 
     // permsFieldUser: defines the read/write permission of the item
-    // permsFieldGroup: defines the read/write permission of the item
     // filter -> returns mongoose filter creteria
     const permsFieldUser = `perms.${type}.user`;
-    const permsFieldGroup = `perms.${type}.group`;
-    const filter = {};
-
+    let filter = {};
     // if user not logged in - allow only public access
     if (!res.locals.user) {
       filter[permsFieldUser] = { $in: ['everyone'] };
@@ -113,23 +135,14 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
       const userId = res.locals.user.id;
       const userRole = res.locals.user.role;
       // allow access for admin and project-admin
-      if (['admin', 'project-admin'].includes(userRole)) return {};
+      if (['admin'].includes(userRole)) return {};
       // get list of group_ids belong to user as an array
       const userGroups = await groupController.getUserGroupIds(userId);
-      // filter['$or'] will check these filters: ownerFilter, userFilter, groupFilter
-      // if one of them is verified, it will allow access to that item.
-      // ownerFilter -> owner always allowed for read+write
-      // userFilter  -> userId should be in the list of permsFieldUser of the item.
-      //                Otherwise 'everyone' should be found for public access.
-      // groupFilter -> If userGroups is empty don't add groupFilter to filter['$or']
-      //                Otherwise check if one of the `userGroups` are found in permsFieldGroup //                of the item
-      const ownerFilter = { owner: userId };
-      const userFilter = {};
-      const groupFilter = {};
-      userFilter[permsFieldUser] = { $in: [userId, 'everyone'] };
-      groupFilter[permsFieldGroup] = { $in: userGroups };
-      filter['$or'] = [ownerFilter, userFilter];
-      if (userGroups.length > 0) filter['$or'].push(groupFilter);
+      filter = preparePermFilter(type, filter, userId, userGroups);
+      if (type == 'read') {
+        // if user/group has write permission, then give read permission as well
+        filter = preparePermFilter('write', filter, userId, userGroups);
+      }
       return filter;
     }
   };

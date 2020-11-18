@@ -27,7 +27,8 @@ const serverSchema = new mongoose.Schema({
     default: Date.now()
   },
   perms: {
-    type: 'Mixed'
+    type: 'Mixed',
+    default: { read: { user: ['everyone'] } }
   },
   owner: {
     type: mongoose.Schema.ObjectId,

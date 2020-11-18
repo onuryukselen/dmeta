@@ -167,10 +167,14 @@ export const getProjectNavbar = async rowdata => {
   $s.projects = projects;
   let tabs = [];
   // tabs.push({ label: 'Public', id: '', name: 'public' });
-  tabs = tabs.concat($s.projects);
+  if ($s.projects) tabs = tabs.concat($s.projects);
   let header = '<ul class="nav nav-tabs" role="tablist">';
   let content = '<div class="tab-content">';
 
+  if ($s.projects.length == 0) {
+    content = '';
+    header = '<p> No document found.</p>';
+  }
   for (var i = 0; i < tabs.length; i++) {
     const projectId = tabs[i].id;
     const projectLabel = tabs[i].label;
