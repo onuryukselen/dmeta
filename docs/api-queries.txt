@@ -155,9 +155,14 @@ example-2
 ------------------------------------------------------------------------------
 Group Permissions:
 
-1. insert groups : 
-    vitiligo: read access: 5fb4575faa5adff6f407f2d1
-    vitiligo_admin: read+write access: 5fb45793aa5adff6f407f2d2
+1. ADD USERS to DSSO:
+> mongo
+> use dsso
+> db.users.insertOne({"email":"test@gmail.com", "loginType" : "ldap", "active" : true, "name" : "test user", "username" : "test_user"})
+
+2. insert groups to dmeta: 
+    vitiligo_project: read access: (5fb4575faa5adff6f407f2d1)
+    vitiligo_project_admin: read+write access: (5fb45793aa5adff6f407f2d2)
 
 POST {{URL}}/api/v1/groups 
 {
@@ -167,21 +172,31 @@ POST {{URL}}/api/v1/groups
     "name": "vitiligo_project_admin"
 }
     
-2. add few users for test
+3. add users to group
  5f924e4b3b60e245039758fd user -> vitiligo_project_admin
  5f91c4533b60e245039758d3 user -> vitiligo_project
 
 POST {{URL}}/api/v1/usergroups
+// vitiligo_project:
 {
     "group_id": "5fb4575faa5adff6f407f2d1",
     "user_id": "5f91c4533b60e245039758d3"
 }
+// vitiligo_project_admin:
 {
     "group_id": "5fb45793aa5adff6f407f2d2",
-    "user_id": "5f924e4b3b60e245039758fd"
+    "user_id": "5f92529b89c7d0b3bf31ac27"
+}
+{
+    "group_id": "5fb45793aa5adff6f407f2d2",
+    "user_id": "5f946ee3985973177ba30209"
+}
+{
+    "group_id": "5fb45793aa5adff6f407f2d2",
+    "user_id": "5f39add38db6c9a200168a22"
 }
 
-3. update permission of collections:
+4. update permission of collections: (required for initial setup, new documents will inherit permissions)
 
 db.vitiligo_biosamp.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
 db.vitiligo_exp.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
@@ -196,5 +211,4 @@ db.projects.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f
 
 db.collections.updateMany({}, {$set: { "restrictTo": {"group":["5fb45793aa5adff6f407f2d2"] } }})
 
-db.server.updateMany({}, {$set: { "perms":{"read":{"user":["everyone"]}}  }})
         
