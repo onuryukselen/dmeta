@@ -28,7 +28,7 @@ exports.createData = factory.createOne();
 exports.updateData = factory.updateOne();
 exports.deleteData = factory.deleteOne();
 
-exports.getDataSummarySchema = (collectionName, type) => {
+exports.getDataSummarySchema = (collectionName, projectName, type) => {
   // * expected Schema for data summary
   // - collection: main target collecton
   // - populate: space separated fields to be merged my reference
@@ -44,7 +44,7 @@ exports.getDataSummarySchema = (collectionName, type) => {
   // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
   let schemas = { summary: {}, detailed: {} };
   schemas.summary.file = {
-    collection: 'vitiligo_file',
+    collection: `${projectName}_file`,
     select: `_id 
       sample_id._id 
       name 
@@ -77,7 +77,7 @@ exports.getDataSummarySchema = (collectionName, type) => {
       'sample_id sample_id.biosamp_id sample_id.biosamp_id.exp_id sample_id.biosamp_id.exp_id.exp_series_id'
   };
   schemas.detailed.sample = {
-    collection: 'vitiligo_sample',
+    collection: `${projectName}_sample`,
     select: `_id
       name
       creationDate
@@ -132,7 +132,7 @@ const parseSummarySchema = (collectionName, projectName, type) => {
   //   populate: { path: 'projects_id test_id' }
   // }
   // returns `rename` Function: renames keys of query docs according to Schema
-  const schema = exports.getDataSummarySchema(collectionName, type);
+  const schema = exports.getDataSummarySchema(collectionName, projectName, type);
   if (!schema) {
     let modelName = collectionName;
     if (projectName) modelName = `${projectName}_${collectionName}`;
