@@ -1,5 +1,5 @@
-CREATE FIELDS: 
-POST:{{URL}}/api/v1/data/exp_series 
+INSERT DATA: 
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp_series 
 
 exp_series _id: 5f58f13a7845820a1c7883a8
 {
@@ -8,7 +8,7 @@ exp_series _id: 5f58f13a7845820a1c7883a8
 }
 
 ----------------------------------------------------------------
-POST:{{URL}}/api/v1/data/exp
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp
 
 exp _id1: 5f58f1887845820a1c7883a9  _id2:5f5a98f6abe3fd2d31e3ce68
     
@@ -32,7 +32,7 @@ biosamp: 5f7e281372b9fc71c9ad5a78
 }
 
 ----------------------------------------------------------------
-POST:{{URL}}/api/v1/data/biosamp    _id2 (test_biosample): 5f5a9988abe3fd2d31e3ce69
+POST:{{URL}}/api/v1/projects/vitiligo/data/biosamp    _id2 (test_biosample): 5f5a9988abe3fd2d31e3ce69
 
 biosamp _id: 5f58f23b7845820a1c7883aa
 {
@@ -54,7 +54,9 @@ file _id:
     "collection_type": "triple",
     "file_env": "ghpcc06.umassrc.org",
     "sample_id": "5f99a264f1b38dade4bfbe2f",
-    "server_id": "5f622c67721d09b3670c4b66"
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
 }
 
 {
@@ -65,7 +67,9 @@ file _id:
     "collection_type": "single",
     "file_env": "ghpcc06.umassrc.org",
     "sample_id": "5f99a264f1b38dade4bfbe2f",
-    "server_id": "5f622c67721d09b3670c4b66"
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
 }
 
 
@@ -78,7 +82,9 @@ id= 5fbeaa9fe71265b775a76e33
     "collection_type": "single",
     "file_env": "ghpcc06.umassrc.org",
     "sample_id": "5f99a264f1b38dade4bfbe2f",
-    "server_id": "5f622c67721d09b3670c4b66"
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
 }
 
 id =5fc53e4dc08bf8794bd440e6
@@ -407,8 +413,8 @@ id =5fc53e4dc08bf8794bd440e6
 run _id: 
 {
     "name": "dmeta_test_single",
-    "pipe_id": 298,
-    "tmplt_id": 520,
+    "pipe_id": 719,
+    "tmplt_id": 3696,
     "run_env" : "ghpcc06.umassrc.org",
     "work_dir": "/test",
     "in": { 
@@ -423,19 +429,7 @@ run _id:
  triple test file: 5fbc43c727a0c78d39914e73
  
  
- {
-    "name": "dmeta_test_s3",
-    "pipe_id": 298,
-    "tmplt_id": 567,
-    "run_env" : "ghpcc06.umassrc.org",
-    "work_dir": "/project/umw_garberlab/yukseleo/nextflowruns/test2",
-    "in": { 
-        "reads": { "!file_id":["5fc53e4dc08bf8794bd440e6"] },
-        "mate" : "single"
-    },  
-    "out": {"sample_summary" : {},"analysis" :{}},
-    "server_id": "5f622c67721d09b3670c4b66"
-} 
+
  
  
 ----------------------------------------------------------------
