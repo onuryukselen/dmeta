@@ -94,9 +94,13 @@ const createSchema = async (fields, col) => {
 
       if (defParams.includes(k)) {
         entry[k] = field[k];
-        //exeption for parent reference
+        //exception for parent reference
         if (k == 'type' && field[k] == 'mongoose.Schema.ObjectId') {
           entry[k] = mongoose.Schema.ObjectId;
+          // mongoose type="Array" converts arrays into arrays of arrays
+          // instead use type=[] to set proper array fields
+        } else if (k == 'type' && field[k] == 'Array') {
+          entry[k] = [];
         }
       } else if (k == 'various') {
         if (typeof field[k] === 'object' && field[k] !== null) {
@@ -183,14 +187,16 @@ exports.updateModel = async collectionId => {
     const projectID = col.projectID;
     let project = null;
     if (projectID) project = await projectsController.getProjectById(projectID);
-    const modelName = exports.getModelName(col, project);
+    console.log('project', project);
+    const modelName = exports.getModelName(col, [project]);
 
     // check if model created before => delete model to prevent OverwriteModelError
     if (col && mongoose.connection.models[modelName]) {
       delete mongoose.connection.models[modelName];
     }
     const schema = await createSchema(fields, col);
-    const Schema = new mongoose.Schema(schema);
+    // { minimize: false } => allows saving empty objects
+    const Schema = new mongoose.Schema(schema, { minimize: false });
     const Model = mongoose.model(modelName, Schema, modelName);
     modelObj[modelName] = Model;
     console.log(modelName, schema);
@@ -220,7 +226,8 @@ exports.buildModels = async () => {
       const schema = await createSchema(fields, allCollections[n]);
       console.log(modelName, schema);
       if (!modelObj[modelName]) {
-        const Schema = new mongoose.Schema(schema);
+        // { minimize: false } => allows saving empty objects
+        const Schema = new mongoose.Schema(schema, { minimize: false });
         const Model = mongoose.model(modelName, Schema, modelName);
         modelObj[modelName] = Model;
       }

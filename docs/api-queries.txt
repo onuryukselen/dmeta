@@ -69,7 +69,7 @@ $experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
 {
     "name": "test_sample",
     "file_used": [["VB74_NL2_S1_L001_R1_001_R1_valid_00.fastq.gz"],["VB74_NL2_S2_L002_R1_001_R1_valid_00.fastq.gz"]],
-    "file_dir": ["/project/umw_garberlab/yukseleo/fastqfiles/indroptest/valid_fastq"],
+    "file_dir": [["/project/umw_garberlab/yukseleo/fastqfiles/indroptest/valid_fastq"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "ghpcc06.umassrc.org",
@@ -205,9 +205,9 @@ db.vitiligo_run.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5a
 db.vitiligo_sample.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
 db.vitiligo_sample_summary.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
 
-db.collections.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
-db.fields.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
-db.projects.updateMany({}, {$set: { "perms":{"read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.collections.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.fields.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.projects.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
 
 db.collections.updateMany({}, {$set: { "restrictTo": {"group":["5fb45793aa5adff6f407f2d2"] } }})
 

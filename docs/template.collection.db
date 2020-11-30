@@ -43,10 +43,22 @@ sample _id: 5f74a0e05443973d2bfd870c
     "parentCollectionID":"5f57fff635db5980ba020ff5"
 }
 
+file _id: 5fbc1f9e148ac02babb22ddd
+{   
+    "_id": "5fbc1f9e148ac02babb22ddd",
+    "name": "file",
+    "label": "Files",
+    "slug": "files",
+    "restrictTo": {"group":["5fb45793aa5adff6f407f2d2"]},
+    "parentCollectionID":"5f74a0e05443973d2bfd870c",
+    "projectID":"5fb2b395c8c1e577fcb8ce6c"
+}
+
 
 ------ For run outputs -------
 sample_summary _id: 5f74af86d9e07245ea02b53c
 {
+    "_id": "5f74af86d9e07245ea02b53c",
     "name": "sample_summary",
     "label": "Sample Summary",
     "slug": "sample_summary",
@@ -54,4 +66,13 @@ sample_summary _id: 5f74af86d9e07245ea02b53c
     "parentCollectionID":"5f74a0e05443973d2bfd870c"
 }
 
+analysis _id:  5fbd7e6760c2e5b34bf2e4d4
+{
+    "_id": "5fbd7e6760c2e5b34bf2e4d4",
+    "name": "analysis",
+    "label": "Analysis",
+    "slug": "analysis",
+    "restrictTo": {"group":["5fb45793aa5adff6f407f2d2"]},
+    "parentCollectionID":"5f74a0e05443973d2bfd870c"
+}
 

@@ -3,6 +3,8 @@ const factory = require('./handlerFactory');
 const { modelObj } = require('./../utils/buildModels');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const APIFeatures = require('./../utils/apiFeatures');
+const { replaceAllDataIds } = require('./eventController');
 
 //if collectionName is set, then save that Model as a res.locals.Model
 exports.setModel = (req, res, next) => {
@@ -41,44 +43,46 @@ exports.getDataSummarySchema = (collectionName, type) => {
   //   }
   // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
   let schemas = { summary: {}, detailed: {} };
-  schemas.summary.sample = {
-    collection: 'vitiligo_sample',
+  schemas.summary.file = {
+    collection: 'vitiligo_file',
     select: `_id 
+      sample_id._id 
       name 
       file_env 
       file_used
       file_dir
+      archive_dir
+      s3_archive_dir
+      gs_archive_dir
       collection_type
       file_type
       creationDate 
-      biosamp_id.exp_id.name 
-      biosamp_id.exp_id.exp_series_id.name`,
+      sample_id.biosamp_id.exp_id.name 
+      sample_id.biosamp_id.exp_id.exp_series_id.name`,
     rename: `_id 
+      sample_id 
       name 
       file_env 
       files_used
       file_dir
+      archive_dir
+      s3_archive_dir
+      gs_archive_dir
       collection_type
       file_type
       date_created 
       collection_name 
       project_name`,
-    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id'
+    populate:
+      'sample_id sample_id.biosamp_id sample_id.biosamp_id.exp_id sample_id.biosamp_id.exp_id.exp_series_id'
   };
   schemas.detailed.sample = {
     collection: 'vitiligo_sample',
     select: `_id
       name
-      file_env
-      file_used
-      file_dir
-      collection_type
-      file_type
       creationDate
       biosamp_id.exp_id.name
       biosamp_id.exp_id.exp_series_id.name
-      sample_summary_id.doc
-      sample_summary_id.run_url 
       patient
       aliquot
       clinic_phen
@@ -94,16 +98,9 @@ exports.getDataSummarySchema = (collectionName, type) => {
       owner.username`,
     rename: `_id
       name
-      file_env
-      files_used
-      file_dir
-      collection_type
-      file_type
       date_created
       experiment
       experiment_series
-      sample_summary
-      run_url
       patient
       aliquot
       clinic_phen
@@ -117,7 +114,7 @@ exports.getDataSummarySchema = (collectionName, type) => {
       pool_id
       status
       owner`,
-    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id sample_summary_id owner'
+    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id owner'
   };
   if (schemas[type][collectionName]) return schemas[type][collectionName];
   return null;
@@ -211,12 +208,10 @@ exports.getDataSummaryDoc = async (type, req, res, next) => {
       const permFilter = await res.locals.Perms('read');
       query.find(permFilter);
     }
-    query
-      .populate(popObj)
-      .select(select)
-      .lean();
-
-    let doc = await query;
+    query.populate(popObj).select(select);
+    const features = new APIFeatures(query, req.query).filter().sort();
+    const jsonFilter = new APIFeatures(features.query, req.body).filter();
+    let doc = await jsonFilter.query;
     if (doc && rename) doc = rename(doc);
     return doc;
   } catch (err) {
@@ -244,9 +239,14 @@ exports.getDataSummary = catchAsync(async (req, res, next) => {
 exports.getDataDetailed = catchAsync(async (req, res, next) => {
   const start = Date.now();
   const type = 'detailed';
-  const doc = await exports.getDataSummaryDoc(type, req, res, next);
+  let doc = await exports.getDataSummaryDoc(type, req, res, next);
   const duration = Date.now() - start;
   if (doc === null) return next(new AppError(`No collection found!`, 404));
+  // replace in.reads.!file:["fileID1","fileID2"] with in.reads:[{fileObj1}, {fileObj2}]
+  if (req.params.collectionName && req.params.collectionName == 'run') {
+    let [docIds] = await replaceAllDataIds(false, doc, req, res, next);
+    if (docIds) doc = docIds;
+  }
   res.status(200).json({
     status: 'success',
     duration: duration,

@@ -146,8 +146,12 @@ exports.getAll = Model =>
       .sort()
       .limitFields()
       .paginate();
+
+    console.log(req.body);
+    const jsonFilter = new APIFeatures(features.query, req.body).filter();
+
     //const doc = await features.query.explain();
-    const doc = await features.query;
+    const doc = await jsonFilter.query;
     if (!doc || (Array.isArray(doc) && doc.length === 0)) {
       return next(new AppError(`No document found!`, 404));
     }
