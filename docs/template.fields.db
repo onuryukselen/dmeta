@@ -50,6 +50,69 @@ biosamp _id: 5f57fff635db5980ba020ff5
     "collectionID":"5f57fff635db5980ba020ff5"
 }
 ----------------------------------------------------------------
+file -id: 5fbc1f9e148ac02babb22ddd
+{
+    "name": "name",
+    "label": "Name",
+    "type": "String",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "file_used",
+    "label": "Used Files",
+    "type": "Array",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "file_dir",
+    "label": "Directory",
+    "type": "Array",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "file_type",
+    "label": "File Type",
+    "type": "String",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "collection_type",
+    "label": "Collection Type",
+    "type": "String",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "file_env",
+    "label": "File Environment",
+    "type": "String",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "server_id",
+    "label": "Server",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "server",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "archive_dir",
+    "label": "Archive Directory",
+    "type": "String",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "s3_archive_dir",
+    "label": "S3 Archive Directory",
+    "type": "Array",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+{
+    "name": "gs_archive_dir",
+    "label": "Google Storage Archive Directory",
+    "type": "Array",
+    "collectionID":"5fbc1f9e148ac02babb22ddd"
+}
+----------------------------------------------------------------
 sample _id: 5f74a0e05443973d2bfd870c
 {
     "name": "name",
@@ -63,48 +126,62 @@ sample _id: 5f74a0e05443973d2bfd870c
     "type": "String",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f74a1525443973d2bfd870e
 {
     "name": "file_used",
     "label": "Used Files",
     "type": "Array",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f74a1585443973d2bfd870f
 {
     "name": "file_dir",
     "label": "Directory",
     "type": "Array",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f74a1655443973d2bfd8711
 {
     "name": "file_type",
     "label": "File Type",
     "type": "String",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f74a16a5443973d2bfd8712
 {
     "name": "collection_type",
     "label": "Collection Type",
     "type": "String",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f74a1705443973d2bfd8713
 {
     "name": "file_env",
     "label": "File Environment",
     "type": "String",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f74a1765443973d2bfd8714
 {
-    "name": "server",
+    "name": "server_id",
     "label": "Server",
     "type": "mongoose.Schema.ObjectId",
     "ref": "server",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
+
+5f753b64cc3f75507d1e6f48
 {
     "name": "sample_summary_id",
     "label": "Sample Summary ID",
     "type": "mongoose.Schema.ObjectId",
-    "ref": "sample_summary",
+    "ref": "vitiligo_sample_summary",
     "collectionID":"5f74a0e05443973d2bfd870c"
 }
 --
@@ -383,16 +460,29 @@ for run _id: 5f623137721d09b3670c4b67
     "type": "String",
     "collectionID":"5f623137721d09b3670c4b67"
 }
+{
+    "name": "run_url",
+    "label": "Run URL",
+    "type": "String",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
+{
+    "name": "file_ids",
+    "label": "File IDs",
+    "type": "Array",
+    "collectionID":"5f623137721d09b3670c4b67"
+}
 ----------------------------------------------------------------
 for sample_summary: _id:5f74af86d9e07245ea02b53c
 
-// `sample_id` field would be created by default using parentCollectionID 
+// `sample_id` field will be created by default using parentCollectionID 
 
+5f74b0b1d9e07245ea02b53d
 {
     "name": "run_id",
     "label": "RUN ID",
     "type": "mongoose.Schema.ObjectId",
-    "ref": "run",
+    "ref": "vitiligo_run",
     "required": true,
     "collectionID":"5f74af86d9e07245ea02b53c"
 }
@@ -403,9 +493,38 @@ for sample_summary: _id:5f74af86d9e07245ea02b53c
     "collectionID":"5f74af86d9e07245ea02b53c"
 }
 {
-    "name": "run_url",
-    "label": "Run URL",
-    "type": "String",
+    "name": "file_id",
+    "label": "File ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "vitiligo_file",
     "collectionID":"5f74af86d9e07245ea02b53c"
+}
+
+
+for analysis: _id:5fbd7e6760c2e5b34bf2e4d4
+
+// `sample_id` field will be created by default using parentCollectionID 
+
+5f74b0b1d9e07245ea02b53d
+{
+    "name": "run_id",
+    "label": "Run ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "vitiligo_run",
+    "required": true,
+    "collectionID":"5fbd7e6760c2e5b34bf2e4d4"
+}
+{
+    "name": "doc",
+    "label": "Data",
+    "type": "Mixed",
+    "collectionID":"5fbd7e6760c2e5b34bf2e4d4"
+}
+{
+    "name": "file_id",
+    "label": "File ID",
+    "type": "mongoose.Schema.ObjectId",
+    "ref": "vitiligo_file",
+    "collectionID":"5fbd7e6760c2e5b34bf2e4d4"
 }
 
