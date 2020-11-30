@@ -14,21 +14,21 @@ $sampleCollectionId = 5f74a0e05443973d2bfd870c
 ----------------------------------------------------------------
 
 # update sample status:
-PATCH {{URL}}/api/v1/data/sample/$sampleID
+PATCH {{URL}}/api/v1/projects/vitiligo/data/sample/$sampleID
 { "status": "Sequenced"}
 
 * get $sampleID
-GET {{URL}}/api/v1/data/sample?name=CB17_H2
+GET {{URL}}/api/v1/projects/vitiligo/data/sample?name=CB17_H2
 $sampleID (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 $sampleID (for test_sample): 5f9871c30fd8ff46556ef361
 
 ----------------------------------------------------------------
 #delete sample:
-DELETE {{URL}}/api/v1/data/sample/$sampleID
+DELETE {{URL}}/api/v1/projects/vitiligo/data/sample/$sampleID
 
 ----------------------------------------------------------------
 #insert experiment series:
-POST:{{URL}}/api/v1/data/exp_series 
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp_series 
 
 {
     "name": "Vitiligo experiment series",
@@ -37,7 +37,7 @@ POST:{{URL}}/api/v1/data/exp_series
 
 ----------------------------------------------------------------
 #insert experiment:
-POST:{{URL}}/api/v1/data/exp
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp
 {
     "name": "Vitiligo experiment1",
     "summary":"Vitiligo experiment1 summary",
@@ -46,13 +46,13 @@ POST:{{URL}}/api/v1/data/exp
 
 
 * get $exp_series_id
-GET {{URL}}/api/v1/data/exp_series
+GET {{URL}}/api/v1/projects/vitiligo/data/exp_series
 $exp_series_id (for Vitiligo experiment series): 5f58f13a7845820a1c7883a8
 ----------------------------------------------------------------
 
 
 #insert biosample:
-POST:{{URL}}/api/v1/data/biosamp    
+POST:{{URL}}/api/v1/projects/vitiligo/data/biosamp    
 {
     "name": "CB17_H2",
     "organism": "human",
@@ -60,7 +60,7 @@ POST:{{URL}}/api/v1/data/biosamp
 }
 
 * get $experimentID
-GET {{URL}}/api/v1/data/exp
+GET {{URL}}/api/v1/projects/vitiligo/data/exp
 $experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
 
 
@@ -85,7 +85,7 @@ $biosamp_id = 5f58f23b7845820a1c7883aa
 $server_id = 5f622c67721d09b3670c4b66
 
 * get $biosample_id: 
-GET {{URL}}/api/v1/data/biosamp
+GET {{URL}}/api/v1/projects/vitiligo/data/biosamp
 $biosamp_id (for test_sample): 5f5a9988abe3fd2d31e3ce69
 $biosamp_id (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 
@@ -95,7 +95,7 @@ $biosamp_id (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
 ----------------------------------------------------------------
 
 #insert run:
-POST {{URL}}/api/v1/data/run
+POST {{URL}}/api/v1/projects/vitiligo/data/run
 {
     "name": "test_run",
     "pipe_id": $pipeline_id,
@@ -115,7 +115,7 @@ POST {{URL}}/api/v1/data/run
 * get $templateRunID: 3535
 * get $pipeline_id: 719
 * get $sample_id: 
-GET {{URL}}/api/v1/data/sample?name=CB17_H2
+GET {{URL}}/api/v1/projects/vitiligo/data/sample?name=CB17_H2
 
 * get $server_id:
 GET {{URL}}/api/v1/servers?type=dnext
