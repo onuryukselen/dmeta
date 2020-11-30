@@ -208,6 +208,7 @@ export const getAdminProjectNavbar = async rowdata => {
     ajaxCall('GET', '/api/v1/projects')
   ]);
   $s.collections = collections;
+  console.log($s.collections);
   $s.fields = fields;
   $s.projects = projects;
   let tabs = [];
