@@ -79,40 +79,94 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
   schemas.detailed.sample = {
     collection: `${projectName}_sample`,
     select: `_id
-      name
       creationDate
       biosamp_id.exp_id.name
       biosamp_id.exp_id.exp_series_id.name
-      patient
-      aliquot
-      clinic_phen
-      lesional
-      patient_note
-      cell_density_tc
+      biosamp_id.aliquot
+      biosamp_id.bead_batch
+      biosamp_id.blister_comments
+      biosamp_id.blister_loc
+      biosamp_id.blister_num
+      biosamp_id.clin_pheno
+      biosamp_id.col_date
+      biosamp_id.ethnicity
+      biosamp_id.gender
+      biosamp_id.name
+      biosamp_id.organism
+      biosamp_id.patient
+      biosamp_id.patient_note
+      biosamp_id.perc_live_cells
+      biosamp_id.skin
+      biosamp_id.total_cells
+      biosamp_id.type
+      biosamp_id.visit_num
+      biosamp_id.volume_bf
       cell_density_indrop
-      collect_date
+      cell_density_tc
+      cells_umis_gt_500
+      comment
+      contract
+      duplication_rate
+      index_id
+      index_seq
       library_tube_id
-      library_tube_id
+      mean_cell
+      mean_umi
+      name
       pool_id
+      run_comments
+      sc_lib_status
+      seq_comments
+      seq_details
+      sequence_date
       status
+      total_valid_reads
+      unique_id
       owner.username`,
     rename: `_id
-      name
       date_created
       experiment
       experiment_series
-      patient
       aliquot
-      clinic_phen
-      lesional
+      bead_batch
+      blister_comments
+      blister_loc
+      blister_num
+      clin_pheno
+      col_date
+      ethnicity
+      gender
+      biosample_name
+      organism
+      patient
       patient_note
-      cell_density_tc
+      perc_live_cells
+      skin
+      total_cells
+      biosample_type
+      visit_num
+      volume_bf
       cell_density_indrop
-      collect_date
+      cell_density_tc
+      cells_umis_gt_500
+      comment
+      contract
+      duplication_rate
+      index_id
+      index_seq
       library_tube_id
-      library_tube_id
+      mean_cell
+      mean_umi
+      name
       pool_id
+      run_comments
+      sc_lib_status
+      seq_comments
+      seq_details
+      sequence_date
       status
+      total_valid_reads
+      unique_id
       owner`,
     populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id owner'
   };
