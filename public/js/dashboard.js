@@ -24,6 +24,8 @@ const getTableHeaders = collID => {
     if ($s.fields[i].collectionID == collID && $s.fields[i].label)
       ret += `<th>${$s.fields[i].label}</th>`;
   }
+  ret += `<th>ID</th>`;
+
   return ret;
 };
 
@@ -75,6 +77,7 @@ const refreshDataTables = async (TableID, collName, projectID) => {
     for (var i = 0; i < collFields.length; i++) {
       columns.push({ data: collFields[i].name });
     }
+    columns.push({ data: '_id' });
     var dataTableObj = {
       columns: columns,
       columnDefs: [
