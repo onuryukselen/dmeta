@@ -11,6 +11,7 @@ router.get('/', viewsController.getOverview);
 router.get('/admin-overview', viewsController.getAdminOverview);
 router.get('/after-sso', viewsController.afterSSO);
 router.get('/login', viewsController.getLoginForm, viewsController.getOverview);
+router.get('/import', viewsController.getImportPage);
 
 // router.get('/me', authController.requireLogin, viewsController.getAccount);
 
