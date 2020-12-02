@@ -55,6 +55,7 @@ $exp_series_id (for Vitiligo experiment series): 5f58f13a7845820a1c7883a8
 POST:{{URL}}/api/v1/projects/vitiligo/data/biosamp    
 {
     "exp_id": "$experimentID",
+    "unique_id": "1",
     "name": "CL067_L2",
     "organism": "Human",
     "patient": "CL067",
@@ -86,7 +87,6 @@ $experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
 #insert sample:
 {
     "biosamp_id": "$biosamp_id",
-    "unique_id": "1",
     "name": "CL067_L2",
     "contract":"scRNA-Seq",
     "status":"Sequenced",
