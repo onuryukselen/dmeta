@@ -80,6 +80,7 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
     collection: `${projectName}_sample`,
     select: `_id
       creationDate
+      biosamp_id.unique_id
       biosamp_id.exp_id.name
       biosamp_id.exp_id.exp_series_id.name
       biosamp_id.aliquot
@@ -121,10 +122,10 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
       sequence_date
       status
       total_valid_reads
-      unique_id
       owner.username`,
     rename: `_id
       date_created
+      unique_id
       experiment
       experiment_series
       aliquot
@@ -166,7 +167,6 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
       sequence_date
       status
       total_valid_reads
-      unique_id
       owner`,
     populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id owner'
   };
