@@ -158,7 +158,7 @@ const getCollectionNavbar = projectId => {
   return ret;
 };
 
-export const getProjectNavbar = async rowdata => {
+export const getProjectNavbar = async () => {
   showTableTabs();
   let [projects, collections, fields] = await Promise.all([
     ajaxCall('GET', '/api/v1/projects'),
