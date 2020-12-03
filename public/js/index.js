@@ -13,6 +13,8 @@ require('datatables.net-bs4/js/dataTables.bootstrap4.js'); // Datatables Bootstr
 require('datatables.net-bs4/css/dataTables.bootstrap4.css'); // Datatables Bootstrap 4
 require('datatables.net-colreorder');
 require('datatables.net-colreorder-bs4');
+require('datatables.net-buttons');
+require('datatables.net-buttons-bs4');
 
 // import './../css/style.css';
 import './../vendors/@coreui/icons/css/free.min.css';
