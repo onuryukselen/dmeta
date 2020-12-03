@@ -3,7 +3,10 @@ import axios from 'axios';
 import { getCleanDivId } from './jsfuncs';
 // GLOBAL SCOPE
 let $s = { data: {} };
-let $g = { data: {}, keys: {} };
+let $g = { data: {} };
+// Make it for all projects for now only vitiligo supported
+const projectPart = 'projects/vitiligo/';
+const colls = ['exp', 'biosamp', 'sample', 'file'];
 
 const ajaxCall = async (method, url) => {
   try {
@@ -18,9 +21,21 @@ const ajaxCall = async (method, url) => {
   }
 };
 
+const crudCall = async (method, url, data) => {
+  try {
+    const res = await axios({
+      method,
+      url,
+      data
+    });
+    return res;
+  } catch (err) {
+    console.log(err);
+    return '';
+  }
+};
+
 const getTableColumns = data => {
-  console.log(data[0]);
-  console.log(Object.keys(data[0]));
   if (data[0]) return Object.keys(data[0]);
   return [];
 };
@@ -50,6 +65,72 @@ const getImportTable = (data, TableID) => {
   </div>`;
   return ret;
 };
+const bindEventHandlers = () => {
+  $(document).on('click', '.update-db', function(e) {
+    e.preventDefault();
+    const tabId = $(this).attr('tabId');
+    getDbData(tabId);
+  });
+};
+
+const compareWithDB = async (gdata, ddata, tabId) => {
+  console.log(ddata[0].name);
+  for (var i = 0; i < gdata.length; i++) {
+    const recordfound = ddata.filter(ddata => ddata.name === gdata[i].name);
+    if (recordfound.length > 0) {
+      console.log('recordfound:', recordfound);
+      let k = 0;
+      Object.keys(gdata[i]).forEach(key => {
+        if (gdata[i][key] != recordfound[0][key]) {
+          k++;
+        }
+      });
+
+      if (k > 0) {
+        console.log(ddata);
+        console.log('Patch ', gdata[i].name);
+        const res = await crudCall(
+          'PATCH',
+          `/api/v1/${projectPart}data/${colls[tabId]}/${recordfound[0]._id}`,
+          gdata[i]
+        );
+        console.log(res);
+      }
+      console.log(recordfound);
+    } else {
+      const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}`);
+      let m = 0;
+      if (tabId == 1 && !gdata[i].exp_id) {
+        m++;
+        gdata[i].exp_id = dat.data[0]._id;
+      } else if (tabId == 2 && !gdata[i].biosamp_id) {
+        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        if (recordfound.length > 0) {
+          m++;
+          gdata[i].biosamp_id = recordfound._id;
+        }
+      } else if (tabId == 3 && !gdata[i].sample_id) {
+        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        if (recordfound.length > 0) {
+          m++;
+          gdata[i].sample_id = recordfound._id;
+        }
+      }
+      if (m > 0) {
+        const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
+      }
+    }
+  }
+};
+
+const getDbData = async tabId => {
+  // Only three collections supported now (make this part generic)
+  const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[tabId]}`);
+  $s.data[tabId] = data.data;
+
+  compareWithDB($g.data[tabId], $s.data[tabId], tabId);
+};
+
 const showTableTabs = async googleSheetId => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     const tableID = $(e.target).attr('tableID');
@@ -69,11 +150,9 @@ const prepareData = async (googleSheetId, tableID) => {
   return dataObj;
 };
 const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
-  console.log(googleSheetId, TableID, contentDivId);
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
     const data = await prepareData(googleSheetId, TableID);
     const tableContent = getImportTable(data, TableID);
-    console.log(tableContent);
     $(contentDivId).append(tableContent);
 
     const cols = getTableColumns(data);
@@ -81,12 +160,12 @@ const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
     for (var i = 0; i < cols.length; i++) {
       columns.push({ data: cols[i] });
     }
-    console.log(columns);
     var dataTableObj = {
       columns: columns,
       columnDefs: [
         { defaultContent: '-', targets: '_all' } //hides undefined error
-      ]
+      ],
+      buttons: [{ extend: 'csv' }]
     };
     dataTableObj.dom = '<"pull-left"f>rt<"pull-left"i><"bottom"p><"clear">';
     dataTableObj.destroy = true;
@@ -101,19 +180,20 @@ const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
     // dataTableObj.scrollX = 500;
     dataTableObj.sScrollX = true;
     // dataTableObj.autoWidth = false;
+
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };
 
 export const getImportPageNavBar = async googleSheetId => {
+  bindEventHandlers();
   showTableTabs(googleSheetId);
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
 
-  let tabNames = ['Biosamp', 'Sample', 'Files'];
+  let tabNames = ['Biosample', 'Sample', 'Files'];
   for (var i = 0; i < tabNames.length; i++) {
     const tabId = i + 1;
-
     const Name = tabNames[i];
     const Label = tabNames[i];
     const id = getCleanDivId(Label);
@@ -124,9 +204,10 @@ export const getImportPageNavBar = async googleSheetId => {
           <a class="nav-link ${active} collection" data-toggle="tab" collName="${Name}" tableID="${tabId}" href="#${importTabId}" aria-expanded="true">${Label}</a>
       </li>`;
     header += headerLi;
-
     const contentDiv = `
-      <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${importTabId}"></div>`;
+      <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${importTabId}">
+      <button class="btn update-db btn-secondary" type="button" tabId="${tabId}">Update ${Label}</button>
+      </div>`;
     content += contentDiv;
   }
   header += `</ul>`;
