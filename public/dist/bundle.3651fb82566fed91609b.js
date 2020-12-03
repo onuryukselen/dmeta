@@ -12170,14 +12170,14 @@ const compareWithDB = async (gdata, ddata, tabId) => {
 
         if (recordfound.length > 0) {
           m++;
-          gdata[i].biosamp_id = recordfound._id;
+          gdata[i].biosamp_id = recordfound[0]._id;
         }
       } else if (tabId == 3 && !gdata[i].sample_id) {
         const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
 
         if (recordfound.length > 0) {
           m++;
-          gdata[i].sample_id = recordfound._id;
+          gdata[i].sample_id = recordfound[0]._id;
         }
       }
 
@@ -60050,4 +60050,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.44ae39faccea8764e035.js.map
+//# sourceMappingURL=bundle.3651fb82566fed91609b.js.map

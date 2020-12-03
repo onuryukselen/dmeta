@@ -107,13 +107,13 @@ const compareWithDB = async (gdata, ddata, tabId) => {
         const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
         if (recordfound.length > 0) {
           m++;
-          gdata[i].biosamp_id = recordfound._id;
+          gdata[i].biosamp_id = recordfound[0]._id;
         }
       } else if (tabId == 3 && !gdata[i].sample_id) {
         const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
         if (recordfound.length > 0) {
           m++;
-          gdata[i].sample_id = recordfound._id;
+          gdata[i].sample_id = recordfound[0]._id;
         }
       }
       if (m > 0) {
