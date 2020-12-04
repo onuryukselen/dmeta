@@ -126,23 +126,22 @@ const refreshDataTables = async TableID => {
       columns: columns,
       columnDefs: [
         { defaultContent: '-', targets: '_all' } //hides undefined error
+      ],
+      lengthMenu: [
+        [10, 25, 50, -1],
+        [10, 25, 50, 'All']
       ]
     };
-    dataTableObj.dom = '<"pull-left"f>rt<"pull-left"i><"bottom"p><"clear">';
+    dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
     dataTableObj.destroy = true;
+    dataTableObj.pageLength = 25;
     dataTableObj.data = data;
     dataTableObj.hover = true;
     // speed up the table loading
     dataTableObj.deferRender = true;
     dataTableObj.scroller = true;
-    // dataTableObj.responsive = true;
     dataTableObj.colReorder = true;
-    // dataTableObj.scrollCollapse = true;
-    // dataTableObj.scrollY = 600;
     dataTableObj.scrollX = '500';
-    // dataTableObj.sScrollX = '5000px';
-    // dataTableObj.autoWidth = false;
-    // dataTableObj.bAutoWidth = false;
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };

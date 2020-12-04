@@ -110,6 +110,9 @@ POST:{{URL}}/api/v1/project/vitiligo/data/file
     "s3_archive_dir":["s3://dmeta_archive"]
 }
 
+5fc5b7f112b71915ef5f3531
+
+
 $server_id = 5f622c67721d09b3670c4b66
 * get $sample_id: 
 GET {{URL}}/api/v1/projects/vitiligo/data/sample

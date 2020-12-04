@@ -64,7 +64,6 @@ const prepareDbLib = async (docAr, req, res) => {
               // check if keys are like "!sample_id"
               if (i.charAt(0) == '!' && i.slice(-3) == '_id') {
                 const refModel = i.substring(1, i.length - 3);
-                console.log('refModel', refModel);
                 if (refModels.indexOf(refModel) === -1) refModels.push(refModel);
               }
             }
@@ -316,11 +315,11 @@ exports.startRun = async (docSaved, req, res, next) => {
     // send run information to selected server
     if (server_id) {
       const server = await serverController.getServerById(server_id);
-      if (server && server.url && res.locals.token) {
+      if (server && server.url_server && res.locals.token) {
         const auth = `Bearer ${res.locals.token}`;
         //localhost:8080/dolphinnext/api/service.php?run=startRun
         const { data, status } = await axios.post(
-          `${server.url}/api/service.php?run=startRun`,
+          `${server.url_server}/api/service.php?run=startRun`,
           { doc, info },
           {
             headers: {
@@ -339,7 +338,6 @@ exports.startRun = async (docSaved, req, res, next) => {
           // first get unique sample Id array from fileIdObj
           let sampleIds = Object.values(fileIdObj);
           let fileIds = Object.keys(fileIdObj);
-          console.log('fileIds', fileIdObj);
           console.log('fileIds', fileIds);
           sampleIds = sampleIds.filter((v, i, a) => a.indexOf(v) === i);
           for (let n = 0; n < sampleIds.length; n++) {

@@ -13,7 +13,6 @@ class APIFeatures {
     queryStr = queryStr
       .replace(/\b(gte|gt|lte|lt|\\!in)\b/g, match => `$${match}`)
       .replace(/!in\b/g, '$in');
-    console.log('queryStr', queryStr);
 
     this.query = this.query.find(JSON.parse(queryStr));
     return this;
@@ -41,7 +40,7 @@ class APIFeatures {
 
   paginate() {
     const page = this.queryString.page * 1 || 1;
-    const limit = this.queryString.limit * 1 || 100;
+    const limit = this.queryString.limit * 1;
     const skip = (page - 1) * limit;
     this.query = this.query.skip(skip).limit(limit);
     return this;
