@@ -4,6 +4,7 @@ import axios from 'axios';
 import { login, logout } from './login';
 import { getProjectNavbar } from './dashboard.js';
 import { getAdminProjectNavbar } from './admin-dashboard.js';
+import { getImportPageNavBar } from './importpage.js';
 import 'jquery';
 import '@coreui/coreui';
 
@@ -12,6 +13,8 @@ require('datatables.net-bs4/js/dataTables.bootstrap4.js'); // Datatables Bootstr
 require('datatables.net-bs4/css/dataTables.bootstrap4.css'); // Datatables Bootstrap 4
 require('datatables.net-colreorder');
 require('datatables.net-colreorder-bs4');
+require('datatables.net-buttons');
+require('datatables.net-buttons-bs4');
 
 // import './../css/style.css';
 import './../vendors/@coreui/icons/css/free.min.css';
@@ -31,6 +34,9 @@ const loginForm = document.querySelector('.form--login');
 const allProjectNav = document.querySelector('#allProjectNav');
 const adminAllProjectNav = document.querySelector('#admin-allProjectNav');
 const dmetaVersionBut = document.querySelector('#dmetaVersionBut');
+
+const importpageNav = document.querySelector('#import-page');
+const googleSheetId = envConf && envConf.getAttribute('google_sheet_id');
 
 if (logOutBtn) logOutBtn.addEventListener('click', logout);
 
@@ -116,5 +122,11 @@ if (loginForm)
         return '';
       }
     }
+  }
+
+  if (importpageNav && googleSheetId) {
+    const importpage = await getImportPageNavBar(googleSheetId);
+    $('#import-page').append(importpage);
+    $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
   }
 })();

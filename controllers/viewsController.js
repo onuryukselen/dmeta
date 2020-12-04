@@ -12,6 +12,12 @@ exports.getAdminOverview = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getImportPage = catchAsync(async (req, res, next) => {
+  res.status(200).render('import-page', {
+    title: 'Import page'
+  });
+});
+
 exports.afterSSO = (req, res) => {
   res.status(200).render('after-sso');
 };

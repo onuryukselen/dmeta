@@ -54,9 +54,28 @@ $exp_series_id (for Vitiligo experiment series): 5f58f13a7845820a1c7883a8
 #insert biosample:
 POST:{{URL}}/api/v1/projects/vitiligo/data/biosamp    
 {
-    "name": "CB17_H2",
-    "organism": "human",
-    "exp_id": "$experimentID"
+    "exp_id": "$experimentID",
+    "unique_id": "1",
+    "name": "CL067_L2",
+    "organism": "Human",
+    "patient": "CL067",
+    "aliquot": "L2",
+    "gender": "M",
+    "ethnicity": "White",
+    "patient_note": "1st visit (2nd was an SLE flare-up).",
+    "col_date": "10/18/2017",
+    "visit_num":"1",
+    "clin_pheno":"Lupus Erythermatosus",
+    "type":"SLE",
+    "skin":"Lesional",
+    "total_cells": "",
+    "perc_live_cells": "",
+    "volume_bf": "",
+    "bead_batch": "",
+    "bead_occup": "65-70%",
+    "blister_loc": "",
+    "blister_num": "",
+    "blister_comments":""
 }
 
 * get $experimentID
@@ -67,24 +86,22 @@ $experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
 ----------------------------------------------------------------
 #insert sample:
 {
-    "name": "test_sample",
     "biosamp_id": "$biosamp_id",
-    "patient": "test",
-    "aliquot": "test",
-    "clinic_phen": "Vitiligo",
-    "lesional": "Non-Lesional",
+    "name": "CL067_L2",
+    "contract":"scRNA-Seq",
     "status":"Sequenced",
-    "unique_id": "6",
-    "patient": "CB21",
-    "aliquot": "H1",
-    "blister_loc": "leg/thigh",
-    "blister_num": 9,
-    "volume_bf": 300,
-    "clinic_phen": "Healthy",
-    "lesional": "Healthy",
-    "collect_date": "12/11/2017",
+    "sc_lib_status":"",
+    "cell_density_tc": "",
+    "cell_density_indrop":"",
+    "seq_details":"",
+    "sequence_date":"",
     "library_tube_id": 38,
-    "pool_id": "V3-12"
+    "index_id":"",
+    "index_seq":"",
+    "pool_id": "V3-12",
+    "run_comments":"",
+    "seq_comments":"",
+    "comment":""
 }
 
 $biosamp_id = 5f58f23b7845820a1c7883aa
