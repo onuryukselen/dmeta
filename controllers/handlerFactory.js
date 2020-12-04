@@ -147,7 +147,6 @@ exports.getAll = Model =>
       .limitFields()
       .paginate();
 
-    console.log(req.body);
     const jsonFilter = new APIFeatures(features.query, req.body).filter();
 
     //const doc = await features.query.explain();
