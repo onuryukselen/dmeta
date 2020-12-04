@@ -15,14 +15,14 @@ exports.getChangeLog = catchAsync(async (req, res, next) => {
 exports.getGoogleSheet = catchAsync(async (req, res, next) => {
   const sheetId = req.params.id;
   const sheetNumber = req.params.sheet;
-  console.log(sheetNumber);
-  console.log(sheetId);
+  //console.log(sheetNumber);
+  //console.log(sheetId);
   const options = {
     sheetId: sheetId,
     sheetNumber: sheetNumber,
     returnAllResults: true
   };
-  console.log(options);
+  //console.log(options);
   GSheetReader(
     options,
     results => {

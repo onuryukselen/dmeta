@@ -12136,13 +12136,18 @@ const bindEventHandlers = () => {
 };
 
 const compareWithDB = async (gdata, ddata, tabId) => {
-  console.log(ddata[0].name);
-
+  //console.log(ddata[0].name);
   for (var i = 0; i < gdata.length; i++) {
-    const recordfound = ddata.filter(ddata => ddata.name === gdata[i].name);
+    let recordfound = [];
+
+    try {
+      recordfound = ddata.filter(ddata => ddata.name === gdata[i].name);
+    } catch (err) {
+      console.log(err);
+    }
 
     if (recordfound.length > 0) {
-      console.log('recordfound:', recordfound);
+      //console.log('recordfound:', recordfound);
       let k = 0;
       Object.keys(gdata[i]).forEach(key => {
         if (gdata[i][key] != recordfound[0][key]) {
@@ -12151,37 +12156,37 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       });
 
       if (k > 0) {
-        console.log(ddata);
-        console.log('Patch ', gdata[i].name);
+        //console.log(ddata);
+        console.log('Patch: ', gdata[i].name);
         const res = await crudCall('PATCH', `/api/v1/${projectPart}data/${colls[tabId]}/${recordfound[0]._id}`, gdata[i]);
-        console.log(res);
       }
-
-      console.log(recordfound);
     } else {
-      const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}`);
       let m = 0;
 
       if (tabId == 1 && !gdata[i].exp_id) {
+        const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?fields=_id`);
         m++;
         gdata[i].exp_id = dat.data[0]._id;
       } else if (tabId == 2 && !gdata[i].biosamp_id) {
-        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        //const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?unique_id=${gdata[i].unique_id}&fields=_id`);
 
-        if (recordfound.length > 0) {
+        if (dat) {
           m++;
-          gdata[i].biosamp_id = recordfound[0]._id;
+          gdata[i].biosamp_id = dat.data[0]._id;
         }
       } else if (tabId == 3 && !gdata[i].sample_id) {
-        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        //const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?unique_id=${gdata[i].unique_id}&fields=_id`);
 
-        if (recordfound.length > 0) {
+        if (dat) {
           m++;
-          gdata[i].sample_id = recordfound[0]._id;
+          gdata[i].sample_id = dat.data[0]._id;
         }
       }
 
       if (m > 0) {
+        console.log('DATA:[', i, ']', gdata[i]);
         const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
       }
     }
@@ -60050,4 +60055,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.3651fb82566fed91609b.js.map
+//# sourceMappingURL=bundle.6a2c9118b1d64c231c2e.js.map
