@@ -11824,11 +11824,11 @@ const ajaxCall = async (method, url) => {
     const res = await axios__WEBPACK_IMPORTED_MODULE_0___default()({
       method,
       url
-    });
-    console.log(res.data.data.data);
+    }); //console.log(res.data.data.data);
+
     return res.data.data.data;
   } catch (err) {
-    console.log(err);
+    //console.log(err);
     return '';
   }
 };
@@ -11870,17 +11870,22 @@ const prepareDataForSingleColumn = async (collName, projectID) => {
   const projectName = project[0] && project[0].name ? project[0].name : '';
   const projectPart = projectName ? `projects/${projectName}/` : '';
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}`);
-  const saveDataPath = `${projectName}_${collName}`;
-  $s.data[saveDataPath] = data;
-  const dataCopy = data.slice();
-  let ret = dataCopy.map(el => {
-    $.each(el, function (k) {
-      if (typeof el[k] === 'object' && el[k] !== null || Array.isArray(el[k])) {
-        el[k] = JSON.stringify(el[k]);
-      }
+  let ret = [];
+
+  if (data) {
+    const saveDataPath = `${projectName}_${collName}`;
+    $s.data[saveDataPath] = data;
+    const dataCopy = data.slice();
+    ret = dataCopy.map(el => {
+      $.each(el, function (k) {
+        if (typeof el[k] === 'object' && el[k] !== null || Array.isArray(el[k])) {
+          el[k] = JSON.stringify(el[k]);
+        }
+      });
+      return el;
     });
-    return el;
-  });
+  }
+
   return ret;
 };
 
@@ -12132,6 +12137,8 @@ const bindEventHandlers = () => {
 
 const compareWithDB = async (gdata, ddata, tabId) => {
   //console.log(ddata[0].name);
+  const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}`);
+
   for (var i = 0; i < gdata.length; i++) {
     let recordfound = [];
 
@@ -12151,32 +12158,31 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       });
 
       if (k > 0) {
-        //console.log(ddata);
-        console.log('Patch: ', gdata[i].name);
+        console.log(ddata);
+        console.log('Patch ', gdata[i].name);
         const res = await crudCall('PATCH', `/api/v1/${projectPart}data/${colls[tabId]}/${recordfound[0]._id}`, gdata[i]);
       }
     } else {
       let m = 0;
+      console.log('Dat:', dat);
 
       if (tabId == 1 && !gdata[i].exp_id) {
-        const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?fields=_id`);
         m++;
+        console.log(dat.data[0]._id);
         gdata[i].exp_id = dat.data[0]._id;
       } else if (tabId == 2 && !gdata[i].biosamp_id) {
-        //const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
-        const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?unique_id=${gdata[i].unique_id}&fields=_id`);
+        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
 
-        if (dat) {
+        if (recordfound.length > 0) {
           m++;
-          gdata[i].biosamp_id = dat.data[0]._id;
+          gdata[i].biosamp_id = recordfound[0]._id;
         }
       } else if (tabId == 3 && !gdata[i].sample_id) {
-        //const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
-        const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?unique_id=${gdata[i].unique_id}&fields=_id`);
+        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
 
-        if (dat) {
+        if (recordfound.length > 0) {
           m++;
-          gdata[i].sample_id = dat.data[0]._id;
+          gdata[i].sample_id = recordfound[0]._id;
         }
       }
 
@@ -60050,4 +60056,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.e7e01675925593ba222c.js.map
+//# sourceMappingURL=bundle.2925c2bea7a8413ce61b.js.map

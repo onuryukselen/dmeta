@@ -75,6 +75,8 @@ const bindEventHandlers = () => {
 
 const compareWithDB = async (gdata, ddata, tabId) => {
   //console.log(ddata[0].name);
+  const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}`);
+
   for (var i = 0; i < gdata.length; i++) {
     let recordfound = [];
     try {
@@ -92,8 +94,8 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       });
 
       if (k > 0) {
-        //console.log(ddata);
-        console.log('Patch: ', gdata[i].name);
+        console.log(ddata);
+        console.log('Patch ', gdata[i].name);
         const res = await crudCall(
           'PATCH',
           `/api/v1/${projectPart}data/${colls[tabId]}/${recordfound[0]._id}`,
@@ -102,36 +104,22 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       }
     } else {
       let m = 0;
+      console.log('Dat:', dat);
       if (tabId == 1 && !gdata[i].exp_id) {
-        const dat = await ajaxCall(
-          'GET',
-          `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?fields=_id`
-        );
         m++;
+        console.log(dat.data[0]._id);
         gdata[i].exp_id = dat.data[0]._id;
       } else if (tabId == 2 && !gdata[i].biosamp_id) {
-        //const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
-        const dat = await ajaxCall(
-          'GET',
-          `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?unique_id=${
-            gdata[i].unique_id
-          }&fields=_id`
-        );
-        if (dat) {
+        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        if (recordfound.length > 0) {
           m++;
-          gdata[i].biosamp_id = dat.data[0]._id;
+          gdata[i].biosamp_id = recordfound[0]._id;
         }
       } else if (tabId == 3 && !gdata[i].sample_id) {
-        //const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
-        const dat = await ajaxCall(
-          'GET',
-          `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}?unique_id=${
-            gdata[i].unique_id
-          }&fields=_id`
-        );
-        if (dat) {
+        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        if (recordfound.length > 0) {
           m++;
-          gdata[i].sample_id = dat.data[0]._id;
+          gdata[i].sample_id = recordfound[0]._id;
         }
       }
       if (m > 0) {
