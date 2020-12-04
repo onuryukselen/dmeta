@@ -10,10 +10,10 @@ const ajaxCall = async (method, url) => {
       method,
       url
     });
-    console.log(res.data.data.data);
+    //console.log(res.data.data.data);
     return res.data.data.data;
   } catch (err) {
-    console.log(err);
+    //console.log(err);
     return '';
   }
 };
@@ -60,7 +60,7 @@ const prepareDataForSingleColumn = async (collName, projectID) => {
     const saveDataPath = `${projectName}_${collName}`;
     $s.data[saveDataPath] = data;
     const dataCopy = data.slice();
-    let ret = dataCopy.map(el => {
+    ret = dataCopy.map(el => {
       $.each(el, function(k) {
         if ((typeof el[k] === 'object' && el[k] !== null) || Array.isArray(el[k])) {
           el[k] = JSON.stringify(el[k]);

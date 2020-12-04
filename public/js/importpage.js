@@ -85,7 +85,7 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       console.log(err);
     }
     if (recordfound.length > 0) {
-      console.log('recordfound:', recordfound);
+      //console.log('recordfound:', recordfound);
       let k = 0;
       Object.keys(gdata[i]).forEach(key => {
         if (gdata[i][key] != recordfound[0][key]) {
@@ -124,7 +124,7 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       }
       if (m > 0) {
         console.log('DATA:[', i, ']', gdata[i]);
-        //const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
+        const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
       }
     }
   }

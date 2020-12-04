@@ -11824,11 +11824,11 @@ const ajaxCall = async (method, url) => {
     const res = await axios__WEBPACK_IMPORTED_MODULE_0___default()({
       method,
       url
-    });
-    console.log(res.data.data.data);
+    }); //console.log(res.data.data.data);
+
     return res.data.data.data;
   } catch (err) {
-    console.log(err);
+    //console.log(err);
     return '';
   }
 };
@@ -11876,7 +11876,7 @@ const prepareDataForSingleColumn = async (collName, projectID) => {
     const saveDataPath = `${projectName}_${collName}`;
     $s.data[saveDataPath] = data;
     const dataCopy = data.slice();
-    let ret = dataCopy.map(el => {
+    ret = dataCopy.map(el => {
       $.each(el, function (k) {
         if (typeof el[k] === 'object' && el[k] !== null || Array.isArray(el[k])) {
           el[k] = JSON.stringify(el[k]);
@@ -12149,7 +12149,7 @@ const compareWithDB = async (gdata, ddata, tabId) => {
     }
 
     if (recordfound.length > 0) {
-      console.log('recordfound:', recordfound);
+      //console.log('recordfound:', recordfound);
       let k = 0;
       Object.keys(gdata[i]).forEach(key => {
         if (gdata[i][key] != recordfound[0][key]) {
@@ -12187,7 +12187,8 @@ const compareWithDB = async (gdata, ddata, tabId) => {
       }
 
       if (m > 0) {
-        console.log('DATA:[', i, ']', gdata[i]); //const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
+        console.log('DATA:[', i, ']', gdata[i]);
+        const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
       }
     }
   }
@@ -60055,4 +60056,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.d56144200382d44fbf4f.js.map
+//# sourceMappingURL=bundle.2925c2bea7a8413ce61b.js.map
