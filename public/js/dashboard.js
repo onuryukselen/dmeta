@@ -55,17 +55,20 @@ const prepareDataForSingleColumn = async (collName, projectID) => {
   const projectName = project[0] && project[0].name ? project[0].name : '';
   const projectPart = projectName ? `projects/${projectName}/` : '';
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}`);
-  const saveDataPath = `${projectName}_${collName}`;
-  $s.data[saveDataPath] = data;
-  const dataCopy = data.slice();
-  let ret = dataCopy.map(el => {
-    $.each(el, function(k) {
-      if ((typeof el[k] === 'object' && el[k] !== null) || Array.isArray(el[k])) {
-        el[k] = JSON.stringify(el[k]);
-      }
+  let ret = [];
+  if (data) {
+    const saveDataPath = `${projectName}_${collName}`;
+    $s.data[saveDataPath] = data;
+    const dataCopy = data.slice();
+    let ret = dataCopy.map(el => {
+      $.each(el, function(k) {
+        if ((typeof el[k] === 'object' && el[k] !== null) || Array.isArray(el[k])) {
+          el[k] = JSON.stringify(el[k]);
+        }
+      });
+      return el;
     });
-    return el;
-  });
+  }
   return ret;
 };
 

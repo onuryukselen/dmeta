@@ -11870,17 +11870,22 @@ const prepareDataForSingleColumn = async (collName, projectID) => {
   const projectName = project[0] && project[0].name ? project[0].name : '';
   const projectPart = projectName ? `projects/${projectName}/` : '';
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}`);
-  const saveDataPath = `${projectName}_${collName}`;
-  $s.data[saveDataPath] = data;
-  const dataCopy = data.slice();
-  let ret = dataCopy.map(el => {
-    $.each(el, function (k) {
-      if (typeof el[k] === 'object' && el[k] !== null || Array.isArray(el[k])) {
-        el[k] = JSON.stringify(el[k]);
-      }
+  let ret = [];
+
+  if (data) {
+    const saveDataPath = `${projectName}_${collName}`;
+    $s.data[saveDataPath] = data;
+    const dataCopy = data.slice();
+    let ret = dataCopy.map(el => {
+      $.each(el, function (k) {
+        if (typeof el[k] === 'object' && el[k] !== null || Array.isArray(el[k])) {
+          el[k] = JSON.stringify(el[k]);
+        }
+      });
+      return el;
     });
-    return el;
-  });
+  }
+
   return ret;
 };
 
@@ -60050,4 +60055,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.97f848c07d2da61f040e.js.map
+//# sourceMappingURL=bundle.d56144200382d44fbf4f.js.map
