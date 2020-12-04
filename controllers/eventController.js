@@ -43,7 +43,7 @@ exports.setEvent = async (req, res, next) => {
       (collection == 'run' || collection.match(/_run$/)) &&
       res.locals.token
     ) {
-      return await exports.startRun(doc, req, res, next);
+      return await exports.insertRun(doc, req, res, next);
     }
   };
   return next();
@@ -64,7 +64,6 @@ const prepareDbLib = async (docAr, req, res) => {
               // check if keys are like "!sample_id"
               if (i.charAt(0) == '!' && i.slice(-3) == '_id') {
                 const refModel = i.substring(1, i.length - 3);
-                console.log('refModel', refModel);
                 if (refModels.indexOf(refModel) === -1) refModels.push(refModel);
               }
             }
@@ -298,12 +297,15 @@ exports.replaceRunOuts = async (doc, req, res, next) => {
   return doc;
 };
 
-exports.startRun = async (docSaved, req, res, next) => {
+exports.insertRun = async (docSaved, req, res, next) => {
   try {
     console.log('run event created');
     let [docIds, fileIdObj] = await exports.replaceAllDataIds(true, [docSaved], req, res, next);
     if (!docIds || !docIds[0]) return { status: 'error', message: fileIdObj, error: null };
     let doc = await exports.replaceRunOuts(docIds[0], req, res, next);
+    let insertType = 'startRun';
+    if (doc.run_url) insertType = 'existingRun';
+
     const projectName = req.params.projectName ? req.params.projectName : '';
     const run_id = doc._id;
     const server_id = doc.server_id;
@@ -311,16 +313,15 @@ exports.startRun = async (docSaved, req, res, next) => {
     info.dmetaServer = process.env.BASE_URL;
     info.project = projectName;
     console.log('doc', doc);
-    console.log('doc.out', doc.out);
     console.log('populated_doc_reads', doc.in.reads);
     // send run information to selected server
     if (server_id) {
       const server = await serverController.getServerById(server_id);
-      if (server && server.url && res.locals.token) {
+      if (server && server.url_server && res.locals.token) {
         const auth = `Bearer ${res.locals.token}`;
         //localhost:8080/dolphinnext/api/service.php?run=startRun
         const { data, status } = await axios.post(
-          `${server.url}/api/service.php?run=startRun`,
+          `${server.url_server}/api/service.php?run=${insertType}`,
           { doc, info },
           {
             headers: {
@@ -332,15 +333,27 @@ exports.startRun = async (docSaved, req, res, next) => {
         const runStatus = data.status ? data.status : 'error';
         const runLog = data.log ? data.log : data.toString();
         const runUrl = data.run_url ? data.run_url : '';
-        console.log('update.status:', runStatus);
+        console.log('runStatus:', runStatus);
         console.log('runLog:', runLog);
+        console.log('runUrl:', runUrl);
+        // update run: runUrl, file_ids and out of run document
+        let fileIds = Object.keys(fileIdObj);
+        await exports.updateDataByQueryParams(
+          `/${run_id}`,
+          'run',
+          projectName,
+          { run_url: runUrl, file_ids: fileIds, out: doc.out },
+          req,
+          res,
+          next
+        );
+        // stop here if run_url is entered in the doc
+        if (insertType == 'existingRun') return { status: runStatus, message: runLog, error: null };
+
         if (runStatus == 'initiated') {
           //update sample status
           // first get unique sample Id array from fileIdObj
           let sampleIds = Object.values(fileIdObj);
-          let fileIds = Object.keys(fileIdObj);
-          console.log('fileIds', fileIdObj);
-          console.log('fileIds', fileIds);
           sampleIds = sampleIds.filter((v, i, a) => a.indexOf(v) === i);
           for (let n = 0; n < sampleIds.length; n++) {
             // use sampleID to update status field in sample collection
@@ -355,16 +368,6 @@ exports.startRun = async (docSaved, req, res, next) => {
               next
             );
           }
-          // update runUrl of run document
-          await exports.updateDataByQueryParams(
-            `/${run_id}`,
-            'run',
-            projectName,
-            { run_url: runUrl, file_ids: fileIds, out: doc.out },
-            req,
-            res,
-            next
-          );
           return { status: runStatus, message: 'Run initiated', error: null };
           // **** update run status
         }

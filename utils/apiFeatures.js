@@ -13,7 +13,6 @@ class APIFeatures {
     queryStr = queryStr
       .replace(/\b(gte|gt|lte|lt|\\!in)\b/g, match => `$${match}`)
       .replace(/!in\b/g, '$in');
-    console.log('queryStr', queryStr);
 
     this.query = this.query.find(JSON.parse(queryStr));
     return this;

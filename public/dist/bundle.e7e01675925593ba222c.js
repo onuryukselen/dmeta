@@ -11675,23 +11675,19 @@ const refreshDataTables = async TableID => {
         defaultContent: '-',
         targets: '_all'
       } //hides undefined error
-      ]
+      ],
+      lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']]
     };
-    dataTableObj.dom = '<"pull-left"f>rt<"pull-left"i><"bottom"p><"clear">';
+    dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
     dataTableObj.destroy = true;
+    dataTableObj.pageLength = 25;
     dataTableObj.data = data;
     dataTableObj.hover = true; // speed up the table loading
 
     dataTableObj.deferRender = true;
-    dataTableObj.scroller = true; // dataTableObj.responsive = true;
-
-    dataTableObj.colReorder = true; // dataTableObj.scrollCollapse = true;
-    // dataTableObj.scrollY = 600;
-
-    dataTableObj.scrollX = '500'; // dataTableObj.sScrollX = '5000px';
-    // dataTableObj.autoWidth = false;
-    // dataTableObj.bAutoWidth = false;
-
+    dataTableObj.scroller = true;
+    dataTableObj.colReorder = true;
+    dataTableObj.scrollX = '500';
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };
@@ -11909,21 +11905,20 @@ const refreshDataTables = async (TableID, collName, projectID) => {
         defaultContent: '-',
         targets: '_all'
       } //hides undefined error
-      ]
+      ],
+      lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']]
     };
-    dataTableObj.dom = '<"pull-left"f>rt<"pull-left"i><"bottom"p><"clear">';
+    dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
     dataTableObj.destroy = true;
+    dataTableObj.pageLength = 25;
     dataTableObj.data = data;
     dataTableObj.hover = true; // speed up the table loading
 
     dataTableObj.deferRender = true;
     dataTableObj.scroller = true;
     dataTableObj.scrollCollapse = true;
-    dataTableObj.colReorder = true; // dataTableObj.scrollY = 600;
-    // dataTableObj.scrollX = 500;
-
-    dataTableObj.sScrollX = true; // dataTableObj.autoWidth = false;
-
+    dataTableObj.colReorder = true;
+    dataTableObj.sScrollX = true;
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };
@@ -60055,4 +60050,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.6a2c9118b1d64c231c2e.js.map
+//# sourceMappingURL=bundle.e7e01675925593ba222c.js.map

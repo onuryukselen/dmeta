@@ -41,7 +41,7 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
   //    rename: 'directory exp_name pro_name test_name',
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
-  // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
+  // IMPORTANT NOTE: `_id` field is required for schemas (for events->insertRun function)
   let schemas = { summary: {}, detailed: {} };
   schemas.summary.file = {
     collection: `${projectName}_file`,

@@ -82,10 +82,15 @@ const refreshDataTables = async (TableID, collName, projectID) => {
       columns: columns,
       columnDefs: [
         { defaultContent: '-', targets: '_all' } //hides undefined error
+      ],
+      lengthMenu: [
+        [10, 25, 50, -1],
+        [10, 25, 50, 'All']
       ]
     };
-    dataTableObj.dom = '<"pull-left"f>rt<"pull-left"i><"bottom"p><"clear">';
+    dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
     dataTableObj.destroy = true;
+    dataTableObj.pageLength = 25;
     dataTableObj.data = data;
     dataTableObj.hover = true;
     // speed up the table loading
@@ -93,10 +98,7 @@ const refreshDataTables = async (TableID, collName, projectID) => {
     dataTableObj.scroller = true;
     dataTableObj.scrollCollapse = true;
     dataTableObj.colReorder = true;
-    // dataTableObj.scrollY = 600;
-    // dataTableObj.scrollX = 500;
     dataTableObj.sScrollX = true;
-    // dataTableObj.autoWidth = false;
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };
