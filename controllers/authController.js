@@ -13,6 +13,30 @@ const { modelObj } = require('./../utils/buildModels');
 
 const [getAsync, postAsync] = [get, post].map(promisify);
 
+const preparePermFilter = (type, filter, userId, userGroups) => {
+  // permsFieldUser: defines the read/write permission of the item
+  // permsFieldGroup: defines the read/write permission of the item
+  const permsFieldUser = `perms.${type}.user`;
+  const permsFieldGroup = `perms.${type}.group`;
+  const ownerFilter = { owner: userId };
+  const userFilter = {};
+  const groupFilter = {};
+  // filter['$or'] will check these filters: ownerFilter, userFilter, groupFilter
+  // if one of them is verified, it will allow access to that item.
+  // ownerFilter -> owner always allowed for read+write
+  // userFilter  -> userId should be in the list of permsFieldUser of the item.
+  //                Otherwise 'everyone' should be found for public access.
+  // groupFilter -> If userGroups is empty don't add groupFilter to filter['$or']
+  //                Otherwise check if one of the `userGroups` are found in permsFieldGroup //                of the item
+  userFilter[permsFieldUser] = { $in: [userId, 'everyone'] };
+  groupFilter[permsFieldGroup] = { $in: userGroups };
+  if (!filter['$or']) filter['$or'] = [];
+  filter['$or'].push(ownerFilter);
+  filter['$or'].push(userFilter);
+  if (userGroups.length > 0) filter['$or'].push(groupFilter);
+  return filter;
+};
+
 exports.setDefPerms = catchAsync(async (req, res, next) => {
   // expected perms object:
   // perms: {
@@ -44,16 +68,16 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
         // if parentCollectionID is found, check parentCollectionID for permissions
         if (col.parentCollectionID) {
           // fieldName: reference field name in the collection
-          // parentColName: parent collection name
+          // parentModelName: parent collection model name
           // refId: reference Id of the newly created document in `parentColName`
-          const { fieldName, parentColName } = await collectionsController.getParentRefField(
+          const { fieldName, parentModelName } = await collectionsController.getParentRefField(
             col.parentCollectionID
           );
-          if (parentColName && fieldName) {
+          if (parentModelName && fieldName) {
             if (req.body[fieldName]) {
               const refId = req.body[fieldName];
-              // get refId from `parentColName` collection
-              const Model = modelObj[parentColName];
+              // get refId from `modelName` collection
+              const Model = modelObj[parentModelName];
               const query = Model.findById(refId);
               // check if parentColName's perms allows to write
               const permFilter = await res.locals.Perms('write');
@@ -78,6 +102,7 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
           const user = col.restrictTo.user;
           const group = col.restrictTo.group;
           const role = col.restrictTo.role;
+          if (['admin'].includes(userRole)) return true;
           if (user && user.constructor === Array && user.includes(userId)) return true;
           if (role && role.constructor === Array && role.includes(userRole)) return true;
           if (group && group.constructor === Array) {
@@ -97,12 +122,9 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
     }
 
     // permsFieldUser: defines the read/write permission of the item
-    // permsFieldGroup: defines the read/write permission of the item
     // filter -> returns mongoose filter creteria
     const permsFieldUser = `perms.${type}.user`;
-    const permsFieldGroup = `perms.${type}.group`;
-    const filter = {};
-
+    let filter = {};
     // if user not logged in - allow only public access
     if (!res.locals.user) {
       filter[permsFieldUser] = { $in: ['everyone'] };
@@ -113,23 +135,14 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
       const userId = res.locals.user.id;
       const userRole = res.locals.user.role;
       // allow access for admin and project-admin
-      if (['admin', 'project-admin'].includes(userRole)) return {};
+      if (['admin'].includes(userRole)) return {};
       // get list of group_ids belong to user as an array
       const userGroups = await groupController.getUserGroupIds(userId);
-      // filter['$or'] will check these filters: ownerFilter, userFilter, groupFilter
-      // if one of them is verified, it will allow access to that item.
-      // ownerFilter -> owner always allowed for read+write
-      // userFilter  -> userId should be in the list of permsFieldUser of the item.
-      //                Otherwise 'everyone' should be found for public access.
-      // groupFilter -> If userGroups is empty don't add groupFilter to filter['$or']
-      //                Otherwise check if one of the `userGroups` are found in permsFieldGroup //                of the item
-      const ownerFilter = { owner: userId };
-      const userFilter = {};
-      const groupFilter = {};
-      userFilter[permsFieldUser] = { $in: [userId, 'everyone'] };
-      groupFilter[permsFieldGroup] = { $in: userGroups };
-      filter['$or'] = [ownerFilter, userFilter];
-      if (userGroups.length > 0) filter['$or'].push(groupFilter);
+      filter = preparePermFilter(type, filter, userId, userGroups);
+      if (type == 'read') {
+        // if user/group has write permission, then give read permission as well
+        filter = preparePermFilter('write', filter, userId, userGroups);
+      }
       return filter;
     }
   };
@@ -240,14 +253,7 @@ exports.login = catchAsync(async (req, res, next) => {
       return next(new AppError('Please provide email/username and password!', 400));
     }
     try {
-      if (!username && email) {
-        const localUser = await User.findOne({ email });
-        console.log(localUser);
-        if (!localUser) {
-          return next(new AppError('Please use your username for login.', 400));
-        }
-        username = localUser.username;
-      }
+      if (!username && email) username = email;
 
       const auth = `Basic ${Buffer.from(
         `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
@@ -308,8 +314,9 @@ exports.logout = async (req, res) => {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
   });
-  // const rootUrl = `${req.protocol}://${req.get('host')}`;
-  res.redirect(`${process.env.SSO_URL}/api/v1/users/logout?redirect_uri=${process.env.BASE_URL}`);
+  if (process.env.SSO_LOGIN === 'true') {
+    res.redirect(`${process.env.SSO_URL}/api/v1/users/logout?redirect_uri=${process.env.BASE_URL}`);
+  }
 };
 
 // isLoggedIn or isLoggedInView should be executed before this middleware
@@ -367,7 +374,7 @@ exports.isLoggedIn = async (req, res, next) => {
 // Only for rendered pages, no errors!
 exports.isLoggedInView = async (req, res, next) => {
   console.log('** isLoggedInView');
-  if (req.cookies.jwt) {
+  if (req.cookies.jwt && req.cookies.jwt != 'loggedout') {
     try {
       let currentUser;
       if (process.env.SSO_LOGIN === 'true') {
@@ -386,16 +393,18 @@ exports.isLoggedInView = async (req, res, next) => {
       return next();
     }
   } else if (process.env.SSO_LOGIN === 'true' && !req.session.loginCheck) {
-    // check if its authenticated on Auth server
+    // check only if user is not logged in!
+    // when user sign out, req.cookies.jwt will be deleted
+    // check if user authenticated on SSO server
     req.session.loginCheck = true;
     req.session.redirectURL = '/';
-    // const originalUrl = `${req.protocol}://${req.get('host')}`;
     const originalUrl = `${process.env.BASE_URL}${req.originalUrl}`;
-    console.log(req.originalUrl);
-    console.log(originalUrl);
     res.redirect(
-      `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
+      `${process.env.SSO_URL}/api/v1/oauth/check?redirect_original=${originalUrl}&redirect_uri=${process.env.SSO_REDIRECT_URL}&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
     );
+  } else if (process.env.SSO_LOGIN === 'true' && req.session.loginCheck) {
+    req.session.loginCheck = false;
+    next();
   } else {
     next();
   }
@@ -458,7 +467,13 @@ exports.ssoReceiveToken = async (req, res, next) => {
 
     res.locals.user = updatedUser;
     sendTokenCookie(accessToken, req, res);
-    res.redirect('/after-sso');
+    if (!req.session.loginCheck) {
+      // login on pop up window
+      res.redirect('/after-sso');
+    } else {
+      // sso login without click signin
+      res.redirect(req.session.redirectURL);
+    }
   } catch (e) {
     return next(new AppError('Login Failed', 403));
   }

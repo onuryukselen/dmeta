@@ -9,9 +9,13 @@ const serverSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide server type.']
   },
-  url: {
+  url_server: {
     type: String,
     required: [true, 'Please provide server url.']
+  },
+  url_client: {
+    type: String,
+    required: [true, 'Please provide url for client side.']
   },
   active: {
     type: Boolean,
@@ -27,7 +31,8 @@ const serverSchema = new mongoose.Schema({
     default: Date.now()
   },
   perms: {
-    type: 'Mixed'
+    type: 'Mixed',
+    default: { read: { user: ['everyone'] } }
   },
   owner: {
     type: mongoose.Schema.ObjectId,

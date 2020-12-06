@@ -1,0 +1,106 @@
+header.c-header.c-header-light.c-header-fixed.c-header-with-subheader
+  ul.c-header-nav.d-md-down
+    li.c-header-nav-item.px-3
+      a.c-header-nav-link(href="/" style='font-size:larger; margin-right:10px;margin-left:10px; font-weight:700;') D-Meta
+  ul.c-header-nav.d-md-down
+    li.c-header-nav-item.px-3
+      a.c-header-nav-link(href="/") Dashboard
+    if user && user.role == 'admin'
+      li.c-header-nav-item.px-3
+        a.c-header-nav-link(href="/admin-overview") Admin
+      li.c-header-nav-item.px-3
+        a.c-header-nav-link(href="/import") Import Page
+    li.c-header-nav-item.px-3
+  ul.c-header-nav.ml-auto.mr-4
+    li.c-header-nav-item.dropdown(style="margin-right: 25px;")
+      if changeLogVersion
+        a#dmetaVersionBut.c-header-nav-link(data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false")= "v" + changeLogVersion 
+        .dropdown-menu.dropdown-menu-right(aria-labelledby="dmetaVersionBut" style="width:650px; padding:20px;")
+          div.panel.panel-default(style="margin:0px;")
+            div.panel-heading.clearfix
+              div.float-left
+                h5 Version Notes
+              div.float-right 
+                a(role="button" )
+                  span(aria-hidden="true") &times;
+            div.panel-body(style="padding:0px;")
+              textarea#versionNotes.form-control(rows="30" style="resize:none; ")
+    if user
+      a.c-header-nav-link.nav__el--logout(href="#") Log out
+      li.c-header-nav-item.px-3
+        a.c-header-nav-link
+          span= user.name.split(' ')[0]
+    else
+      a.c-header-nav-link.nav__el--login(href='/login') Log in
+  .c-subheader.px-3
+    include ./../_partials/breadcrumb.pug
+      //- li.c-header-nav-item.d-md-down-none.mx-2
+      //-   a.c-header-nav-link(href="#")
+      //-     svg.c-icon
+      //-       use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-bell")
+      //- li.c-header-nav-item.d-md-down-none.mx-2
+      //-   a.c-header-nav-link(href="#")
+      //-     svg.c-icon
+      //-       use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-list-rich")
+      //- li.c-header-nav-item.d-md-down-none.mx-2
+      //-   a.c-header-nav-link(href="#")
+      //-     svg.c-icon
+      //-       use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-envelope-open")
+      //- li.c-header-nav-item.dropdown
+        a.c-header-nav-link(data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false")
+        //-   .c-avatar
+        //-     img.c-avatar-img(src="assets/img/avatars/6.jpg" alt="user@email.com")
+        //- .dropdown-menu.dropdown-menu-right.pt-0
+        //-   .dropdown-header.bg-light.py-2
+        //-     strong Account
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-bell")
+          //-   |  Updates
+          //-   span.badge.badge-info.ml-auto 42
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-envelope-open")
+          //-   |  Messages
+          //-   span.badge.badge-success.ml-auto 42
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-task")
+          //-   |  Tasks
+          //-   span.badge.badge-danger.ml-auto 42
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-comment-square")
+          //-   |  Comments
+          //-   span.badge.badge-warning.ml-auto 42
+          //- .dropdown-header.bg-light.py-2
+          //-   strong Settings
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-user")
+          //-   |  Profile
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-settings")
+          //-   |  Settings
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-credit-card")
+          //-   |  Payments
+          //-   span.badge.badge-secondary.ml-auto 42
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-file")
+          //-   |  Projects
+          //-   span.badge.badge-primary.ml-auto 42
+          //- .dropdown-divider
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-lock-locked")
+          //-   |  Lock Account
+          //- a.dropdown-item(href="#")
+          //-   svg.c-icon.mr-2
+          //-     use(xlink:href="node_modules/@coreui/icons/sprites/free.svg#cil-account-logout")
+          //-   |  Logout
+
+    

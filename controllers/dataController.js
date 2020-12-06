@@ -3,13 +3,19 @@ const factory = require('./handlerFactory');
 const { modelObj } = require('./../utils/buildModels');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const APIFeatures = require('./../utils/apiFeatures');
+const { replaceAllDataIds } = require('./eventController');
 
 //if collectionName is set, then save that Model as a res.locals.Model
 exports.setModel = (req, res, next) => {
   if (req.params.collectionName) {
-    res.locals.Model = modelObj[req.params.collectionName];
-    if (!modelObj[req.params.collectionName]) {
-      return next(new AppError(`collectionName is not found!`, 404));
+    let modelName = req.params.collectionName;
+    if (req.params.projectName) {
+      modelName = `${req.params.projectName}_${req.params.collectionName}`;
+    }
+    res.locals.Model = modelObj[modelName];
+    if (!modelObj[modelName]) {
+      return next(new AppError(`collectionName '${modelName}' is not found!`, 404));
     }
     return next();
   }
@@ -22,7 +28,7 @@ exports.createData = factory.createOne();
 exports.updateData = factory.updateOne();
 exports.deleteData = factory.deleteOne();
 
-exports.getDataSummarySchema = (collectionName, type) => {
+exports.getDataSummarySchema = (collectionName, projectName, type) => {
   // * expected Schema for data summary
   // - collection: main target collecton
   // - populate: space separated fields to be merged my reference
@@ -35,87 +41,140 @@ exports.getDataSummarySchema = (collectionName, type) => {
   //    rename: 'directory exp_name pro_name test_name',
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
-  // IMPORTANT NOTE: `_id` field is required for schemas (for events->startRun function)
+  // IMPORTANT NOTE: `_id` field is required for schemas (for events->insertRun function)
   let schemas = { summary: {}, detailed: {} };
-  schemas.summary.sample = {
-    collection: 'sample',
+  schemas.summary.file = {
+    collection: `${projectName}_file`,
     select: `_id 
+      sample_id._id 
       name 
       file_env 
       file_used
       file_dir
+      archive_dir
+      s3_archive_dir
+      gs_archive_dir
       collection_type
       file_type
       creationDate 
-      biosamp_id.exp_id.name 
-      biosamp_id.exp_id.exp_series_id.name`,
+      sample_id.biosamp_id.exp_id.name 
+      sample_id.biosamp_id.exp_id.exp_series_id.name`,
     rename: `_id 
+      sample_id 
       name 
       file_env 
       files_used
       file_dir
+      archive_dir
+      s3_archive_dir
+      gs_archive_dir
       collection_type
       file_type
       date_created 
       collection_name 
       project_name`,
-    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id'
+    populate:
+      'sample_id sample_id.biosamp_id sample_id.biosamp_id.exp_id sample_id.biosamp_id.exp_id.exp_series_id'
   };
   schemas.detailed.sample = {
-    collection: 'sample',
+    collection: `${projectName}_sample`,
     select: `_id
-      name
-      file_env
-      file_used
-      file_dir
-      collection_type
-      file_type
       creationDate
+      biosamp_id.unique_id
       biosamp_id.exp_id.name
       biosamp_id.exp_id.exp_series_id.name
-      sample_summary_id.doc 
-      patient
-      aliquot
-      clinic_phen
-      lesional
-      patient_note
-      cell_density_tc
+      biosamp_id.aliquot
+      biosamp_id.bead_batch
+      biosamp_id.blister_comments
+      biosamp_id.blister_loc
+      biosamp_id.blister_num
+      biosamp_id.clin_pheno
+      biosamp_id.col_date
+      biosamp_id.ethnicity
+      biosamp_id.gender
+      biosamp_id.name
+      biosamp_id.organism
+      biosamp_id.patient
+      biosamp_id.patient_note
+      biosamp_id.perc_live_cells
+      biosamp_id.skin
+      biosamp_id.total_cells
+      biosamp_id.type
+      biosamp_id.visit_num
+      biosamp_id.volume_bf
       cell_density_indrop
-      collect_date
+      cell_density_tc
+      cells_umis_gt_500
+      comment
+      contract
+      duplication_rate
+      index_id
+      index_seq
       library_tube_id
-      library_tube_id
-      pool_id
-      `,
-    rename: `_id
+      mean_cell
+      mean_umi
       name
-      file_env
-      files_used
-      file_dir
-      collection_type
-      file_type
-      date_created
-      collection_name
-      project_name
-      sample_summary
-      patient
-      aliquot
-      clinic_phen
-      lesional
-      patient_note
-      cell_density_tc
-      cell_density_indrop
-      collect_date
-      library_tube_id
-      library_tube_id
       pool_id
-      `,
-    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id sample_summary_id'
+      run_comments
+      sc_lib_status
+      seq_comments
+      seq_details
+      sequence_date
+      status
+      total_valid_reads
+      owner.username`,
+    rename: `_id
+      date_created
+      unique_id
+      experiment
+      experiment_series
+      aliquot
+      bead_batch
+      blister_comments
+      blister_loc
+      blister_num
+      clin_pheno
+      col_date
+      ethnicity
+      gender
+      biosample_name
+      organism
+      patient
+      patient_note
+      perc_live_cells
+      skin
+      total_cells
+      biosample_type
+      visit_num
+      volume_bf
+      cell_density_indrop
+      cell_density_tc
+      cells_umis_gt_500
+      comment
+      contract
+      duplication_rate
+      index_id
+      index_seq
+      library_tube_id
+      mean_cell
+      mean_umi
+      name
+      pool_id
+      run_comments
+      sc_lib_status
+      seq_comments
+      seq_details
+      sequence_date
+      status
+      total_valid_reads
+      owner`,
+    populate: 'biosamp_id biosamp_id.exp_id biosamp_id.exp_id.exp_series_id owner'
   };
   if (schemas[type][collectionName]) return schemas[type][collectionName];
   return null;
 };
 
-const parseSummarySchema = (collectionName, type) => {
+const parseSummarySchema = (collectionName, projectName, type) => {
   // e.g. const schema = {
   //    collection: 'sample',
   //    select:'dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
@@ -127,12 +186,19 @@ const parseSummarySchema = (collectionName, type) => {
   //   populate: { path: 'projects_id test_id' }
   // }
   // returns `rename` Function: renames keys of query docs according to Schema
-  const schema = exports.getDataSummarySchema(collectionName, type);
+  const schema = exports.getDataSummarySchema(collectionName, projectName, type);
   if (!schema) {
-    return { targetCollection: collectionName, popObj: '', select: '-__v', rename: null };
+    let modelName = collectionName;
+    if (projectName) modelName = `${projectName}_${collectionName}`;
+    return { targetCollection: modelName, popObj: '', select: '-__v', rename: null };
   }
   const targetCollection = schema.collection;
-  const select = schema.select;
+  let select = schema.select;
+  const names = select.split(/\s+/).map(el => el.split('.')[0]);
+  let uniqueNames = names.filter(function(item, pos) {
+    return names.indexOf(item) == pos;
+  });
+  select = uniqueNames.join(' ');
   const popObj = {};
 
   // * prepare popObj
@@ -185,24 +251,25 @@ exports.getDataSummaryDoc = async (type, req, res, next) => {
   try {
     const { targetCollection, popObj, select, rename } = parseSummarySchema(
       req.params.collectionName,
+      req.params.projectName,
       type
     );
 
+    //const modelName = getModelNameByColId(col.parentCollectionID);
     if (!modelObj[targetCollection]) return null;
     const query = modelObj[targetCollection].find({});
     if (res.locals.Perms) {
       const permFilter = await res.locals.Perms('read');
       query.find(permFilter);
     }
-    query
-      .populate(popObj)
-      .select(select)
-      .lean();
-
-    let doc = await query;
+    query.populate(popObj).select(select);
+    const features = new APIFeatures(query, req.query).filter().sort();
+    const jsonFilter = new APIFeatures(features.query, req.body).filter();
+    let doc = await jsonFilter.query;
     if (doc && rename) doc = rename(doc);
     return doc;
-  } catch {
+  } catch (err) {
+    console.log(err);
     return null;
   }
 };
@@ -226,9 +293,14 @@ exports.getDataSummary = catchAsync(async (req, res, next) => {
 exports.getDataDetailed = catchAsync(async (req, res, next) => {
   const start = Date.now();
   const type = 'detailed';
-  const doc = await exports.getDataSummaryDoc(type, req, res, next);
+  let doc = await exports.getDataSummaryDoc(type, req, res, next);
   const duration = Date.now() - start;
   if (doc === null) return next(new AppError(`No collection found!`, 404));
+  // replace in.reads.!file:["fileID1","fileID2"] with in.reads:[{fileObj1}, {fileObj2}]
+  if (req.params.collectionName && req.params.collectionName == 'run') {
+    let [docIds] = await replaceAllDataIds(false, doc, req, res, next);
+    if (docIds) doc = docIds;
+  }
   res.status(200).json({
     status: 'success',
     duration: duration,

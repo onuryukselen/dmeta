@@ -2,15 +2,22 @@ const catchAsync = require('../utils/catchAsync');
 
 exports.getOverview = catchAsync(async (req, res, next) => {
   res.status(200).render('overview', {
-    title: 'Overview'
+    title: 'Dashboard'
   });
 });
 
-exports.getAccount = (req, res) => {
-  res.status(200).render('account', {
-    title: 'Your account'
+exports.getAdminOverview = catchAsync(async (req, res, next) => {
+  res.status(200).render('admin-overview', {
+    title: 'Admin Dashboard'
   });
-};
+});
+
+exports.getImportPage = catchAsync(async (req, res, next) => {
+  res.status(200).render('import-page', {
+    title: 'Import page'
+  });
+});
+
 exports.afterSSO = (req, res) => {
   res.status(200).render('after-sso');
 };

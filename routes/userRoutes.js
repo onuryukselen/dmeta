@@ -11,4 +11,6 @@ router.use(authController.isLoggedIn);
 router.use(authController.requireLogin);
 router.get('/me', userController.getMe, userController.getUser);
 
+router.route('/').get(authController.restrictTo('admin'), userController.getAllUsers);
+
 module.exports = router;

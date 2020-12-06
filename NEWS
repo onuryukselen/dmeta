@@ -1,3 +1,28 @@
+04.12.2020 Version 0.0.17
+Existing run insert feature added.
+
+04.12.2020 Version 0.0.16
+Server model updated url removed, and url_server & url_client added.
+
+30.11.2020 Version 0.0.15
+File and Sample collection support added.
+
+17.11.2020 Version 0.0.14
+Permission control module updated. Write permission allows read access.
+
+17.11.2020 Version 0.0.13
+Project routes added.
+Run submission control added.
+
+11.11.2020 Version 0.0.12
+Admin dashboard added.
+Software changelog box added to the header.
+
+10.11.2020 Version 0.0.11
+The dashboard page added.
+Primary color changed
+Webpack config updated.
+
 23.10.2020 Version 0.0.10
 ${req.protocol}://${req.get('host')} replaced with process.env.BASE_URL.
 

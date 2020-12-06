@@ -93,7 +93,12 @@ exports.createOne = Model =>
     }
     const doc = await Model.create(req.body);
     if (res.locals.After) res.locals.After();
-    if (res.locals.Event) res.locals.Event('insert', Model.collection.collectionName, doc);
+    if (res.locals.Event) {
+      const eventRet = await res.locals.Event('insert', Model.collection.collectionName, doc);
+      if (eventRet && eventRet.status == 'error') {
+        return next(new AppError(`${eventRet.message} ${eventRet.error}`, 404));
+      }
+    }
 
     res.status(201).json({
       status: 'success',
@@ -141,8 +146,11 @@ exports.getAll = Model =>
       .sort()
       .limitFields()
       .paginate();
+
+    const jsonFilter = new APIFeatures(features.query, req.body).filter();
+
     //const doc = await features.query.explain();
-    const doc = await features.query;
+    const doc = await jsonFilter.query;
     if (!doc || (Array.isArray(doc) && doc.length === 0)) {
       return next(new AppError(`No document found!`, 404));
     }

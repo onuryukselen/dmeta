@@ -1,5 +1,5 @@
-CREATE FIELDS: 
-POST:{{URL}}/api/v1/data/exp_series 
+INSERT DATA: 
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp_series 
 
 exp_series _id: 5f58f13a7845820a1c7883a8
 {
@@ -8,7 +8,7 @@ exp_series _id: 5f58f13a7845820a1c7883a8
 }
 
 ----------------------------------------------------------------
-POST:{{URL}}/api/v1/data/exp
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp
 
 exp _id1: 5f58f1887845820a1c7883a9  _id2:5f5a98f6abe3fd2d31e3ce68
     
@@ -32,7 +32,7 @@ biosamp: 5f7e281372b9fc71c9ad5a78
 }
 
 ----------------------------------------------------------------
-POST:{{URL}}/api/v1/data/biosamp    _id2 (test_biosample): 5f5a9988abe3fd2d31e3ce69
+POST:{{URL}}/api/v1/projects/vitiligo/data/biosamp    _id2 (test_biosample): 5f5a9988abe3fd2d31e3ce69
 
 biosamp _id: 5f58f23b7845820a1c7883aa
 {
@@ -41,59 +41,75 @@ biosamp _id: 5f58f23b7845820a1c7883aa
     "exp_id": "5f58f1887845820a1c7883a9"
 }
 
+
 ----------------------------------------------------------------
-sample _id:  5f74a29bc02b703f634c8100
+POST:{{URL}}/api/v1/project/vitiligo/data/file
+
+file _id:  
 {
-"name": "CB17_H2",
-"file_used": [["CB17_H2.fastq.gz"]],
-"file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_15_17/dolphin_import","9"],
-"file_type": "fastq",
-"collection_type": "single",
-"file_env": "amazon",
-"biosamp_id": "5f58f23b7845820a1c7883aa",
-"server_id": "5f622c67721d09b3670c4b66"
+    "name": "test",
+    "file_used": [["VB74_NL2_S1_L001_R1_001.fastq.gz","VB74_NL2_S1_L001_R2_001.fastq.gz","VB74_NL2_S1_L001_R3_001.fastq.gz"],["VB74_NL2_S1_L002_R1_001.fastq.gz","VB74_NL2_S1_L002_R2_001.fastq.gz","VB74_NL2_S1_L002_R3_001.fastq.gz"]],
+    "file_dir": [["/project/umw_garberlab/yukseleo/fastqfiles/indroptest"]],
+    "file_type": "fastq",
+    "collection_type": "triple",
+    "file_env": "ghpcc06.umassrc.org",
+    "sample_id": "5f99a264f1b38dade4bfbe2f",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
 }
 
-sample _id:  5f74a2b5c02b703f634c8102
 {
-    "name": "control",
-    "file_used": [["control_rep1.1.fastq.gz","control_rep1.2.fastq.gz"],["control_rep2.1.fastq.gz","control_rep2.2.fastq.gz"]],
-    "file_dir": ["/home/oy28w/fastqfiles"],
+    "name": "test2",
+    "file_used": [["VB74_NL2_S1_L001_R1_001_R1_valid_00.fastq.gz"],["VB74_NL2_S2_L002_R1_001_R1_valid_00.fastq.gz"]],
+    "file_dir": [["/project/umw_garberlab/yukseleo/fastqfiles/indroptest/valid_fastq"]],
     "file_type": "fastq",
-    "collection_type": "pair",
-    "file_env": "cluster-5",
-    "biosamp_id": "5f58f23b7845820a1c7883aa",
-    "server_id": "5f622c67721d09b3670c4b66"
+    "collection_type": "single",
+    "file_env": "ghpcc06.umassrc.org",
+    "sample_id": "5f99a264f1b38dade4bfbe2f",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
 }
 
-sample _id:  5f74a3988f319e401b67e926
-{
-    "name": "experiment",
-    "file_used": [["exper_rep1.1.fastq.gz","exper_rep1.2.fastq.gz"],["exper_rep2.1.fastq.gz","exper_rep2.2.fastq.gz"]],
-    "file_dir": ["/home/oy28w/fastqfiles"],
+
+id= 5fbeaa9fe71265b775a76e33
+{ 
+    "name": "test3",
+    "file_used": [["VB75_NL2_S1_L001_R1_001_R1_valid_00.fastq.gz"]],
+    "file_dir": [["/project/umw_garberlab/yukseleo/fastqfiles/indroptest/valid_fastq"]],
     "file_type": "fastq",
-    "collection_type": "pair",
-    "file_env": "cluster-5",
-    "biosamp_id": "5f58f23b7845820a1c7883aa",
-    "server_id": "5f622c67721d09b3670c4b66"
-}
-sample _id: 5f7de4d963be669309b7f5f6
-{
-    "name": "experiment-rep3",
-    "file_used": [["exper_rep3.1.fastq","exper_rep3.2.fastq"]],
-    "file_dir": ["/home/oy28w/fastqfiles"],
-    "file_type": "fastq",
-    "collection_type": "pair",
-    "file_env": "cluster-5",
-    "biosamp_id": "5f58f23b7845820a1c7883aa",
-    "server_id": "5f622c67721d09b3670c4b66"
+    "collection_type": "single",
+    "file_env": "ghpcc06.umassrc.org",
+    "sample_id": "5f99a264f1b38dade4bfbe2f",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
 }
 
------------------------------------------------
+id =5fc53e4dc08bf8794bd440e6
+{
+    "name": "test4",
+    "file_used": [["VB75_NL2_S1_L001_R1_001_R1_valid_00.fastq.gz"]],
+    "file_dir": [["/project/umw_garberlab/yukseleo/fastqfiles/indroptest/valid_fastq"]],
+    "file_type": "fastq",
+    "collection_type": "single",
+    "file_env": "ghpcc06.umassrc.org",
+    "sample_id": "5f99a264f1b38dade4bfbe2f",
+    "server_id": "5f622c67721d09b3670c4b66",
+    "archive_dir": "/project/umw_garberlab/yukseleo/dmeta_archive",
+    "s3_archive_dir":["s3://biocorebackup/dolphinnext_test/dmeta_archive"]
+}
+
+
+
+----------------------------------------------------------------
+OLD DATA: IGNORE IT
+
 {
     "name": "CB17_H2",
     "file_used": [["CB17_H2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_15_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_15_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -112,7 +128,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB19_HA",
     "file_used": [["CB19_HA.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -133,7 +149,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB19_H2",
     "file_used": [["CB19_H2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -155,7 +171,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB20_H1",
     "file_used": [["CB20_H1.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -178,7 +194,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB20_H2",
     "file_used": [["CB20_H2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -200,7 +216,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB20_H2",
     "file_used": [["CB20_H2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -221,7 +237,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB21_H2",
     "file_used": [["CB21_H2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_12_18_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -242,7 +258,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "CB22",
     "file_used": [["CB22_H1.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_1_17_18/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_1_17_18/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -261,7 +277,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB114",
     "file_used": [["VB114_NL_S2_L001.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_7_30_18/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_7_30_18/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -277,7 +293,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB114_L",
     "file_used": [["VB114_L_S1_L001.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_7_30_18/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_7_30_18/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -293,7 +309,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB65_NL_rep2",
     "file_used": [["VB65_NL.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -308,7 +324,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB65_L2",
     "file_used": [["VB65_L2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_14_17_RTI/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_14_17_RTI/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -323,7 +339,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB66_NL",
     "file_used": [["VB66_NL.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -338,7 +354,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB66_NL_rep2",
     "file_used": [["VB66_NL.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_27_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_27_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -353,7 +369,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB66_L1",
     "file_used": [["VB66_L1.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_20_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -368,7 +384,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB75_NL1",
     "file_used": [["VB75_NL1.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_21_17/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -383,7 +399,7 @@ sample _id: 5f7de4d963be669309b7f5f6
 {
     "name": "VB75_NL2",
     "file_used": [["VB75_NL2.fastq.gz"]],
-    "file_dir": ["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_27_17_RTI/dolphin_import","9"],
+    "file_dir": [["s3://biocorebackup/garberlab/human/skin/inDrop/Vitiligo_11_27_17_RTI/dolphin_import"]],
     "file_type": "fastq",
     "collection_type": "single",
     "file_env": "cluster-5",
@@ -398,28 +414,24 @@ sample _id: 5f7de4d963be669309b7f5f6
 ----------------------------------------------------------------
 run _id: 
 {
-    "name": "test_run",
-    "pipe_id": 298,
-    "tmplt_id": 577,
+    "name": "dmeta_test_single",
+    "pipe_id": 719,
+    "tmplt_id": 3696,
+    "run_env" : "ghpcc06.umassrc.org",
+    "work_dir": "/test",
     "in": { 
-        "reads": { "!sample_id":["5f74a2b5c02b703f634c8102","5f74a3988f319e401b67e926"] },
-        "mate" : "pair"
+        "reads": { "!file_id":["5fbc459927a0c78d39914e75"] },
+        "mate" : "single"
     },  
-    "out": {"sample_summary" : {}},
+    "out": {"sample_summary" : {},"analysis" :{}},
     "server_id": "5f622c67721d09b3670c4b66"
-}
+} 
+ 
+ single test file: 5fbc459927a0c78d39914e75
+ triple test file: 5fbc43c727a0c78d39914e73
+ 
+ 
 
-{
-    "name": "test_run",
-    "pipe_id": 298,
-    "tmplt_id": 577,
-    "in": { 
-        "reads": { "!sample_id":["5f7de4d963be669309b7f5f6"] },
-        "mate" : "pair"
-    },  
-    "out": {"sample_summary" : {}},
-    "server_id": "5f622c67721d09b3670c4b66"
-}
  
  
 ----------------------------------------------------------------

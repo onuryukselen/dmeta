@@ -9,14 +9,50 @@ const collectionsSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      unique: true,
-      required: [true, 'A collection must have a name']
+      required: [true, 'A collection must have a name'],
+      validate: {
+        validator: async function(v) {
+          v = v.replace(/\s+/g, '_').toLowerCase();
+          let projectID;
+          if (this.projectID) {
+            // for createNewField
+            projectID = this.projectID;
+          } else if (this.r && this.r.projectID) {
+            // for findByIdAndUpdate
+            projectID = this.r.projectID;
+          }
+
+          const docs = await mongoose.model('Collection').find({
+            name: v,
+            projectID: projectID
+          });
+          return docs.length === 0;
+        },
+        message: 'Name exists in the project. It has to be unique in the project!'
+      }
     },
     slug: String,
     label: {
       type: String,
-      unique: true,
-      required: [true, 'A collection must have a label']
+      required: [true, 'A collection must have a label'],
+      validate: {
+        validator: async function(v) {
+          let projectID;
+          if (this.projectID) {
+            // for createNewField
+            projectID = this.projectID;
+          } else if (this.r && this.r.projectID) {
+            // for findByIdAndUpdate
+            projectID = this.r.projectID;
+          }
+          const docs = await mongoose.model('Collection').find({
+            label: v,
+            projectID: projectID
+          });
+          return docs.length === 0;
+        },
+        message: 'Label exits in the project. It has to be unique in the project!'
+      }
     },
     parentCollectionID: {
       type: mongoose.Schema.ObjectId,
@@ -60,6 +96,18 @@ const collectionsSchema = new mongoose.Schema(
     lastUpdatedUser: {
       type: mongoose.Schema.ObjectId,
       ref: 'User'
+    },
+    projectID: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Project',
+      validate: {
+        validator: async function(v) {
+          if (v === null) return true;
+          const docs = await mongoose.model('Project').find({ _id: v });
+          return docs.length > 0;
+        },
+        message: 'Project id is not exist!'
+      }
     }
   },
   {

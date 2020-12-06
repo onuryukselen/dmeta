@@ -1,0 +1,257 @@
+# add new field to sample collecion: 
+
+POST {{URL}}/api/v1/fields
+{
+    "name": "status",
+    "label": "Status",
+    "type": "String",
+    "collectionID":"$sampleCollectionId"
+}
+
+* to get $sampleCollectionId:
+(GET {{URL}}/api/v1/collections?name=sample and use id field)
+$sampleCollectionId = 5f74a0e05443973d2bfd870c
+----------------------------------------------------------------
+
+# update sample status:
+PATCH {{URL}}/api/v1/projects/vitiligo/data/sample/$sampleID
+{ "status": "Sequenced"}
+
+* get $sampleID
+GET {{URL}}/api/v1/projects/vitiligo/data/sample?name=CB17_H2
+$sampleID (for CB17_H2): 5f7e18cb72b9fc71c9ad5a4f
+$sampleID (for test_sample): 5f9871c30fd8ff46556ef361
+
+----------------------------------------------------------------
+#delete sample:
+DELETE {{URL}}/api/v1/projects/vitiligo/data/sample/$sampleID
+
+----------------------------------------------------------------
+#insert experiment series:
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp_series 
+
+{
+    "name": "Vitiligo experiment series",
+    "design":"Vitiligo experiment series design"
+}
+
+----------------------------------------------------------------
+#insert experiment:
+POST:{{URL}}/api/v1/projects/vitiligo/data/exp
+{
+    "name": "Vitiligo experiment1",
+    "summary":"Vitiligo experiment1 summary",
+    "exp_series_id":"$exp_series_id"
+}
+
+
+* get $exp_series_id
+GET {{URL}}/api/v1/projects/vitiligo/data/exp_series
+$exp_series_id (for Vitiligo experiment series): 5f58f13a7845820a1c7883a8
+----------------------------------------------------------------
+
+
+#insert biosample:
+POST:{{URL}}/api/v1/projects/vitiligo/data/biosamp    
+{
+    "exp_id": "$experimentID",
+    "unique_id": "1",
+    "name": "CL067_L2",
+    "organism": "Human",
+    "patient": "CL067",
+    "aliquot": "L2",
+    "gender": "M",
+    "ethnicity": "White",
+    "patient_note": "1st visit (2nd was an SLE flare-up).",
+    "col_date": "10/18/2017",
+    "visit_num":"1",
+    "clin_pheno":"Lupus Erythermatosus",
+    "type":"SLE",
+    "skin":"Lesional",
+    "total_cells": "",
+    "perc_live_cells": "",
+    "volume_bf": "",
+    "bead_batch": "",
+    "bead_occup": "65-70%",
+    "blister_loc": "",
+    "blister_num": "",
+    "blister_comments":""
+}
+
+* get $experimentID
+GET {{URL}}/api/v1/projects/vitiligo/data/exp
+$experimentID (for Vitiligo experiment1): 5f58f1887845820a1c7883a9
+
+
+----------------------------------------------------------------
+#insert sample:
+{
+    "biosamp_id": "$biosamp_id",
+    "name": "CL067_L2",
+    "contract":"scRNA-Seq",
+    "status":"Sequenced",
+    "sc_lib_status":"",
+    "cell_density_tc": "",
+    "cell_density_indrop":"",
+    "seq_details":"",
+    "sequence_date":"",
+    "library_tube_id": 38,
+    "index_id":"",
+    "index_seq":"",
+    "pool_id": "V3-12",
+    "run_comments":"",
+    "seq_comments":"",
+    "comment":""
+}
+
+$biosamp_id = 5f58f23b7845820a1c7883aa
+
+* get $biosample_id: 
+GET {{URL}}/api/v1/projects/vitiligo/data/biosamp
+$biosamp_id (for test_sample): 5f5a9988abe3fd2d31e3ce69
+
+
+----------------------------------------------------------------
+#insert file:
+POST:{{URL}}/api/v1/project/vitiligo/data/file
+{
+    "name": "test",
+    "file_used": [["VB74_NL2_S1_L001_R1_001.fastq.gz","VB74_NL2_S1_L001_R2_001.fastq.gz","VB74_NL2_S1_L001_R3_001.fastq.gz"],["VB74_NL2_S1_L002_R1_001.fastq.gz","VB74_NL2_S1_L002_R2_001.fastq.gz","VB74_NL2_S1_L002_R3_001.fastq.gz"]],
+    "file_dir": [["/project/umw_garberlab/yukseleo/fastqfiles/indroptest"]],
+    "file_type": "fastq",
+    "collection_type": "triple",
+    "file_env": "ghpcc06.umassrc.org",
+    "sample_id": "$sample_id",
+    "server_id": "$server_id",
+    "archive_dir": "/project/dmeta_archive",
+    "s3_archive_dir":["s3://dmeta_archive"]
+}
+
+5fc5b7f112b71915ef5f3531
+
+
+$server_id = 5f622c67721d09b3670c4b66
+* get $sample_id: 
+GET {{URL}}/api/v1/projects/vitiligo/data/sample
+
+
+----------------------------------------------------------------
+
+#insert run:
+POST {{URL}}/api/v1/projects/vitiligo/data/run
+{
+    "name": "test_run",
+    "pipe_id": $pipeline_id,
+    "tmplt_id": $templateRunID,
+    "run_env" : "$runEnv",
+    "work_dir": "$workdir",
+    "in": { 
+        "reads": { "!file_id":["$file_id1", "$file_id2"] },
+        "mate" : "single"
+    },  
+    "out": {"sample_summary" : {}, "analysis": {}},
+    "server_id": "$server_id"
+}
+
+* $workdir: (optional) work path for run
+* $runEnv: target_hostname or "amazon","google"
+* get $templateRunID: 3535
+* get $pipeline_id: 719
+* get $file_id: 
+GET {{URL}}/api/v1/projects/vitiligo/data/file?name=CB17_H2
+
+* get $server_id:
+GET {{URL}}/api/v1/servers?type=dnext
+$server_id (for DolphinNext Umassmed Biocore): 5f622c67721d09b3670c4b66
+
+example-1
+{
+    "name": "test_run",
+    "pipe_id": 719,
+    "tmplt_id": 3535,
+    "run_env" : "ghpcc06.umassrc.org",
+    "work_dir": "/new_work_dir",
+    "in": { 
+        "reads": { "!file_id":["5f5a9988abe3fd2d31e3ce69"] },
+        "mate" : "single"
+    },  
+    "out": {"sample_summary" : {}, "analysis": {}},
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+
+example-2
+{
+    "name": "CB17H_run",
+    "pipe_id": 719,
+    "tmplt_id": 3535,
+    "run_env" : "amazon",
+    "work_dir": "/new_work_dir",
+    "in": { 
+        "reads": { "!sample_id":["5f7e18cb72b9fc71c9ad5a4f"] },
+        "mate" : "single"
+    },  
+    "out": {"sample_summary" : {}, "analysis": {}},
+    "server_id": "5f622c67721d09b3670c4b66"
+}
+
+
+------------------------------------------------------------------------------
+Group Permissions:
+
+1. ADD USERS to DSSO:
+> mongo
+> use dsso
+> db.users.insertOne({"email":"test@gmail.com", "loginType" : "ldap", "active" : true, "name" : "test user", "username" : "test_user"})
+
+2. insert groups to dmeta: 
+    vitiligo_project: read access: (5fb4575faa5adff6f407f2d1)
+    vitiligo_project_admin: read+write access: (5fb45793aa5adff6f407f2d2)
+
+POST {{URL}}/api/v1/groups 
+{
+    "name": "vitiligo_project"
+}
+{
+    "name": "vitiligo_project_admin"
+}
+    
+3. add users to group
+ 5f924e4b3b60e245039758fd user -> vitiligo_project_admin
+ 5f91c4533b60e245039758d3 user -> vitiligo_project
+
+POST {{URL}}/api/v1/usergroups
+// vitiligo_project:
+{
+    "group_id": "5fb4575faa5adff6f407f2d1",
+    "user_id": "5f91c4533b60e245039758d3"
+}
+// vitiligo_project_admin:
+{
+    "group_id": "5fb45793aa5adff6f407f2d2",
+    "user_id": "5f92529b89c7d0b3bf31ac27"
+}
+{
+    "group_id": "5fb45793aa5adff6f407f2d2",
+    "user_id": "5f946ee3985973177ba30209"
+}
+{
+    "group_id": "5fb45793aa5adff6f407f2d2",
+    "user_id": "5f39add38db6c9a200168a22"
+}
+
+4. update permission of collections: (required for initial setup, new documents will inherit permissions)
+
+db.vitiligo_biosamp.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_exp.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_exp_series.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_run.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_sample.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+db.vitiligo_sample_summary.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1"] }} }})
+
+db.collections.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.fields.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+db.projects.updateMany({}, {$set: { "perms":{"write":{"group":["5fb45793aa5adff6f407f2d2"]}, "read":{"group":["5fb4575faa5adff6f407f2d1","5fb45793aa5adff6f407f2d2"] }} }})
+
+db.collections.updateMany({}, {$set: { "restrictTo": {"group":["5fb45793aa5adff6f407f2d2"] } }})
+
+        
