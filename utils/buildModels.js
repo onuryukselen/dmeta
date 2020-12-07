@@ -2,6 +2,7 @@
 // eslint-disable-next-line no-unused-vars
 const validator = require('validator');
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 const Project = require('../models/projectsModel');
 const Collection = require('../models/collectionsModel');
 const collectionsController = require('../controllers/collectionsController');
@@ -82,6 +83,7 @@ const createSchema = async (fields, col) => {
         'active',
         'default',
         'ref',
+        'unique',
         'enum',
         'min',
         'max',
@@ -197,6 +199,7 @@ exports.updateModel = async collectionId => {
     const schema = await createSchema(fields, col);
     // { minimize: false } => allows saving empty objects
     const Schema = new mongoose.Schema(schema, { minimize: false });
+    Schema.plugin(uniqueValidator);
     const Model = mongoose.model(modelName, Schema, modelName);
     modelObj[modelName] = Model;
     console.log(modelName, schema);
@@ -228,6 +231,7 @@ exports.buildModels = async () => {
       if (!modelObj[modelName]) {
         // { minimize: false } => allows saving empty objects
         const Schema = new mongoose.Schema(schema, { minimize: false });
+        Schema.plugin(uniqueValidator);
         const Model = mongoose.model(modelName, Schema, modelName);
         modelObj[modelName] = Model;
       }
