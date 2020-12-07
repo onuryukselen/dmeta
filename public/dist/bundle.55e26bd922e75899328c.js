@@ -12137,48 +12137,56 @@ const bindEventHandlers = () => {
 
 const compareWithDB = async (gdata, ddata, tabId) => {
   //console.log(ddata[0].name);
-  const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${colls[Number(tabId) - 1]}`);
+  // get parentCollection data
+  const parentColl = colls[Number(tabId) - 1];
+  const currColl = colls[tabId];
+  const dat = await ajaxCall('GET', `/api/v1/${projectPart}data/${parentColl}`);
+  const parentData = dat.data;
 
   for (var i = 0; i < gdata.length; i++) {
     let recordfound = [];
 
     try {
+      //name should be unique for this check
       recordfound = ddata.filter(ddata => ddata.name === gdata[i].name);
     } catch (err) {
       console.log(err);
-    }
+    } //record found -> then compare it and patch if necessary
 
-    if (recordfound.length > 0) {
+
+    if (recordfound.length) {
       //console.log('recordfound:', recordfound);
       let k = 0;
       Object.keys(gdata[i]).forEach(key => {
         if (gdata[i][key] != recordfound[0][key]) {
           k++;
         }
-      });
+      }); // ** Consider removing unused keys
 
       if (k > 0) {
         console.log(ddata);
         console.log('Patch ', gdata[i].name);
-        const res = await crudCall('PATCH', `/api/v1/${projectPart}data/${colls[tabId]}/${recordfound[0]._id}`, gdata[i]);
-      }
+        const res = await crudCall('PATCH', `/api/v1/${projectPart}data/${currColl}/${recordfound[0]._id}`, gdata[i]);
+      } // record not found -> insert document
+
     } else {
       let m = 0;
-      console.log('Dat:', dat);
 
       if (tabId == 1 && !gdata[i].exp_id) {
         m++;
-        console.log(dat.data[0]._id);
-        gdata[i].exp_id = dat.data[0]._id;
+        console.log(parentData[0]._id); // there is only one experiment for now
+
+        gdata[i].exp_id = parentData[0]._id;
       } else if (tabId == 2 && !gdata[i].biosamp_id) {
-        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        // find parent data based on their unique_id
+        const recordfound = parentData.filter(dat => dat.unique_id === gdata[i].unique_id);
 
         if (recordfound.length > 0) {
           m++;
           gdata[i].biosamp_id = recordfound[0]._id;
         }
       } else if (tabId == 3 && !gdata[i].sample_id) {
-        const recordfound = dat.data.filter(dat => dat.unique_id === gdata[i].unique_id);
+        const recordfound = parentData.filter(dat => dat.unique_id === gdata[i].unique_id);
 
         if (recordfound.length > 0) {
           m++;
@@ -12188,7 +12196,7 @@ const compareWithDB = async (gdata, ddata, tabId) => {
 
       if (m > 0) {
         console.log('DATA:[', i, ']', gdata[i]);
-        const res = await crudCall('POST', `/api/v1/${projectPart}data/${colls[tabId]}`, gdata[i]);
+        const res = await crudCall('POST', `/api/v1/${projectPart}data/${currColl}`, gdata[i]);
       }
     }
   }
@@ -60056,4 +60064,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.2925c2bea7a8413ce61b.js.map
+//# sourceMappingURL=bundle.55e26bd922e75899328c.js.map
