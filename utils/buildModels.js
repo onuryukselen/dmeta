@@ -96,11 +96,6 @@ const createSchema = async (fields, col) => {
 
       if (defParams.includes(k)) {
         entry[k] = field[k];
-        if (k == 'unique') {
-          console.log(entry);
-          console.log(field);
-        }
-
         //exception for parent reference
         if (k == 'type' && field[k] == 'mongoose.Schema.ObjectId') {
           entry[k] = mongoose.Schema.ObjectId;
