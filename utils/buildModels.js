@@ -198,7 +198,7 @@ exports.updateModel = async collectionId => {
     }
     const schema = await createSchema(fields, col);
     // { minimize: false } => allows saving empty objects
-    const Schema = new mongoose.Schema(schema, { minimize: false });
+    const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
     Schema.plugin(uniqueValidator);
     const Model = mongoose.model(modelName, Schema, modelName);
     modelObj[modelName] = Model;
@@ -230,7 +230,7 @@ exports.buildModels = async () => {
       console.log(modelName, schema);
       if (!modelObj[modelName]) {
         // { minimize: false } => allows saving empty objects
-        const Schema = new mongoose.Schema(schema, { minimize: false });
+        const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
         Schema.plugin(uniqueValidator);
         const Model = mongoose.model(modelName, Schema, modelName);
         modelObj[modelName] = Model;

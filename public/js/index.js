@@ -13,8 +13,10 @@ require('datatables.net-bs4/js/dataTables.bootstrap4.js'); // Datatables Bootstr
 require('datatables.net-bs4/css/dataTables.bootstrap4.css'); // Datatables Bootstrap 4
 require('datatables.net-colreorder');
 require('datatables.net-colreorder-bs4');
-require('datatables.net-buttons');
-require('datatables.net-buttons-bs4');
+// require('datatables.net-buttons');
+// require('datatables.net-buttons-bs4');
+// require('bootstrap-select');
+// require('bootstrap-select/js/i18n/defaults-en_US');
 
 // import './../css/style.css';
 import './../vendors/@coreui/icons/css/free.min.css';
@@ -123,7 +125,6 @@ if (loginForm)
       }
     }
   }
-
   if (importpageNav && googleSheetId) {
     const importpage = await getImportPageNavBar(googleSheetId);
     $('#import-page').append(importpage);
