@@ -47,8 +47,13 @@ biosamp _id: 5f57fff635db5980ba020ff5
 }
 {
     "name": "organism",
-    "unique": true,
     "label": "Organism",
+    "type": "String",
+    "collectionID":"5f57fff635db5980ba020ff5"
+}
+{
+    "name": "unique_id",
+    "label": "uniqueID",
     "type": "String",
     "collectionID":"5f57fff635db5980ba020ff5"
 }

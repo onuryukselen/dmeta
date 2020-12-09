@@ -10,6 +10,7 @@ PATCH {{URL}}/api/v1/fields/5f585a5ed2992602d475867c
 PATCH {{URL}}/api/v1/fields/5f74a14d5443973d2bfd870d
 PATCH {{URL}}/api/v1/fields/5fc640b65e8e0080a635e270
 {
-    "unique": true
+    "unique": true,
+    "required": true
 }
 
