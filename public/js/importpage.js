@@ -440,7 +440,6 @@ const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
       var tr = $(this).closest('tr');
       var row = api.row(tr);
       const rowIdx = $s[TableID].row(this).index();
-      console.log(rowIdx);
       if (row.child.isShown()) {
         // close child row
         row.child.hide();
@@ -448,13 +447,9 @@ const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
         icon.removeClass('cil-minus').addClass('cil-plus');
       } else {
         // Open child row
-        if (!row.child()) {
-          const rowdata = row.data();
-          const formattedRow = await formatChildRow(rowdata, rowIdx, TableID);
-          row.child(formattedRow).show();
-        } else {
-          row.child.show();
-        }
+        const rowdata = row.data();
+        const formattedRow = await formatChildRow(rowdata, rowIdx, TableID);
+        row.child(formattedRow).show();
         tr.addClass('shown');
         icon.removeClass('cil-plus').addClass('cil-minus');
       }
