@@ -11793,6 +11793,298 @@ const getAdminProjectNavbar = async rowdata => {
 
 /***/ }),
 
+/***/ "./public/js/crudData.js":
+/*!*******************************!*\
+  !*** ./public/js/crudData.js ***!
+  \*******************************/
+/*! namespace exports */
+/*! export getInsertDataDiv [provided] [no usage info] [missing usage info prevents renaming] */
+/*! other exports [not provided] [no usage info] */
+/*! runtime requirements: __webpack_require__, __webpack_require__.n, __webpack_require__.r, __webpack_exports__, __webpack_require__.d, __webpack_require__.* */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "getInsertDataDiv": () => /* binding */ getInsertDataDiv
+/* harmony export */ });
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _jsfuncs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./jsfuncs */ "./public/js/jsfuncs.js");
+/* eslint-disable */
+;
+ // GLOBAL SCOPE
+
+let $s = {
+  data: {},
+  collections: {},
+  fields: {}
+};
+const project = 'vitiligo';
+
+const ajaxCall = async (method, url) => {
+  try {
+    const res = await axios__WEBPACK_IMPORTED_MODULE_0___default()({
+      method,
+      url
+    });
+    console.log(res.data.data.data);
+    return res.data.data.data;
+  } catch (err) {
+    console.log(err);
+    return '';
+  }
+};
+
+const getCollectionFieldData = async () => {
+  let [collections, fields] = await Promise.all([ajaxCall('GET', '/api/v1/collections'), ajaxCall('GET', '/api/v1/fields')]);
+  $s.collections = collections;
+  $s.fields = fields;
+};
+
+const getDataDropdown = (id, el_class, el_name, data, def) => {
+  let dropdown = `<select class="form-control ${el_class}" id="${id}" name="${el_name}">`;
+  data.forEach(i => {
+    const selected = def == i.name ? 'selected' : '';
+    dropdown += `<option ${selected} value="${i._id}">${i.name}</option>`;
+  });
+  dropdown += `</select>`;
+  return dropdown;
+};
+
+const getFormRow = (element, label, settings) => {
+  let required = '';
+  let description = '';
+
+  if (settings && settings.required) {
+    required = '<span style="color:red";>*</span>';
+  }
+
+  let ret = `
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label text-right">${label}${required}</label>
+        <div class="col-md-9">
+            ${element}
+        </div>
+    </div>`;
+  return ret;
+};
+
+const getRefFieldDropdown = async (ref, name) => {
+  try {
+    let refData;
+    var re = new RegExp(project + '_(.*)');
+
+    if (ref.match(re)) {
+      const coll = ref.match(re)[1];
+      console.log(coll);
+      const projectPart = project ? `projects/${project}/` : '';
+      refData = await ajaxCall('GET', `/api/v1/${projectPart}data/${coll}`);
+    } else {
+      refData = await ajaxCall('GET', `/api/v1/${ref}`);
+    }
+
+    const collDropdown = getDataDropdown(`ref-${ref}`, 'ref-control', name, refData);
+    return collDropdown;
+  } catch {
+    return '';
+  }
+};
+
+const getFormElement = async field => {
+  console.log(field);
+  let ret = '';
+  const type = field.type;
+
+  if (type == 'String' || type == 'Number') {
+    if (field.enum) {
+      const options = field.enum.map(i => {
+        return {
+          _id: i,
+          name: i
+        };
+      });
+      ret = getDataDropdown('', '', field.name, options, field.default);
+    } else {
+      const def = field.default ? field.default : '';
+      ret = `<input class="form-control" type="text" name="${field.name}">${def}</input>`;
+    }
+  } else if (type == 'Date') {
+    ret = `<input class="form-control" type="date" name="${field.name}"></input>`;
+  } else if (type == 'Mixed' || type == 'Array') {
+    ret = `<input class="form-control" type="text" name="${field.name}"></input>`;
+  } else if (type == 'mongoose.Schema.ObjectId') {
+    if (field.ref) {
+      ret = await getRefFieldDropdown(field.ref, field.name);
+    }
+  }
+
+  return ret;
+};
+
+const getFieldsOfCollection = collectionID => {
+  return $s.fields.filter(field => field.collectionID === collectionID);
+};
+
+const getParentCollection = collectionID => {
+  let parentCollID = '';
+  let parentCollLabel = '';
+  let parentCollName = '';
+  const col = $s.collections.filter(col => col.id === collectionID);
+
+  if (col[0] && col[0].parentCollectionID) {
+    parentCollID = col[0].parentCollectionID;
+    const parentColl = $s.collections.filter(col => col.id === parentCollID);
+    if (parentColl[0] && parentColl[0].name) parentCollName = parentColl[0].name;
+    parentCollLabel = parentColl[0] && parentColl[0].label ? parentColl[0].label : parentCollName;
+  }
+
+  return {
+    parentCollLabel,
+    parentCollName
+  };
+}; // get all form fields of selected data collection
+
+
+const getFieldsDiv = async collectionID => {
+  let ret = ''; // 1. if parent collection id is defined, insert as a new field
+
+  const {
+    parentCollLabel,
+    parentCollName
+  } = getParentCollection(collectionID);
+
+  if (parentCollLabel && parentCollName) {
+    const ref = project ? `${project}_${parentCollName}` : parentCollName;
+    const parentField = {
+      ref: ref,
+      name: `${parentCollName}_id`,
+      type: 'mongoose.Schema.ObjectId',
+      required: true
+    };
+    const element = await getFormElement(parentField);
+    ret += getFormRow(element, parentCollLabel, parentField);
+  } // 2. get all fields of collection
+
+
+  const fields = getFieldsOfCollection(collectionID);
+  console.log('fields', fields);
+
+  for (var k = 0; k < fields.length; k++) {
+    const label = fields[k].label;
+    const element = await getFormElement(fields[k]);
+    ret += getFormRow(element, label, fields[k]);
+  }
+
+  return ret;
+};
+
+const bindEventHandlers = () => {
+  // update form fields based on selected data collection
+  $(document).on('change', `select.collection-control`, async function (e) {
+    const collectionID = $(this).val();
+    const fieldsDiv = await getFieldsDiv(collectionID);
+    $('#fieldsOfColl').empty();
+    $('#fieldsOfColl').append(fieldsDiv); // clean log section
+
+    $('#insert-data-coll-body').parent().css('display', 'none');
+    $('#insert-data-coll-log').html('');
+  });
+  $(document).on('click', `.insert-data-coll`, async function (e) {
+    e.preventDefault();
+    const formValues = $(this).closest('form').find('input,select');
+    const requiredFields = [];
+    const [formObj, stop] = (0,_jsfuncs__WEBPACK_IMPORTED_MODULE_1__.createFormObj)(formValues, requiredFields, true);
+    console.log(formObj);
+    const collectionName = $('#allcollections option:selected').text();
+    let body = '';
+    body += '<h4 style="text-align: center; margin-bottom:10px;">Request</h4>';
+    body += '<table class="table" style="width:100%"><tbody>';
+    Object.keys(formObj).forEach(key => {
+      body += `<tr><td>${key}</td><td>${formObj[key]}</td></tr>`;
+
+      try {
+        if (formObj[key] && (formObj[key].charAt(0) == '{' || formObj[key].charAt(0) == '[')) {
+          console.log(formObj[key]);
+          let val = JSON.parse(formObj[key]);
+          console.log(val);
+          formObj[key] = val;
+        }
+      } catch (err) {
+        console.log('format error', err);
+      }
+    });
+    console.log(formObj);
+    body += '</tbody></table>';
+    $('#insert-data-coll-body').parent().css('display', 'block');
+    $('#insert-data-coll-body').empty();
+    $('#insert-data-coll-body').append(body);
+
+    if (stop === false && collectionName) {
+      const projectPart = project ? `projects/${project}/` : '';
+
+      try {
+        const res = await axios__WEBPACK_IMPORTED_MODULE_0___default()({
+          method: 'POST',
+          url: `/api/v1/${projectPart}data/${collectionName}`,
+          data: formObj
+        });
+        console.log(res);
+
+        if (res && res.data && res.data.status === 'success') {
+          console.log('success');
+          $('#insert-data-coll-log').html('success');
+        }
+      } catch (e) {
+        let err = '';
+
+        if (e.response && e.response.data) {
+          if (e.response.data.error) err += JSON.stringify(e.response.data.error);
+          if (e.response.data.message) err += JSON.stringify(e.response.data.message);
+        }
+
+        if (!err) err = JSON.stringify(e);
+        $('#insert-data-coll-log').html(err);
+      }
+    }
+  });
+}; // prepare all form fields for selected collection
+
+
+const getInsertDataDiv = async () => {
+  bindEventHandlers();
+  await getCollectionFieldData();
+  const collDropdown = getDataDropdown('allcollections', 'collection-control', 'collection', $s.collections);
+  const collDropdownDiv = getFormRow(collDropdown, 'Collection', '');
+  let ret = `
+    <div class="col-sm-6" style="margin-top: 20px;">
+        ${collDropdownDiv}
+    </div>
+  <form class="form-horizontal" >
+    <div class="col-sm-6">
+        <div id="fieldsOfColl">
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <button class="btn insert-data-coll btn-primary float-right" type="button" >Insert Data</button>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-sm-12">
+                <div class="card" style="display:none;">
+                  <div id="insert-data-coll-body" class="card-body summary_card" style="overflow:auto; ">
+                  </div>
+                </div>
+                <p id="insert-data-coll-log"></p>
+            </div>
+        </div>
+    </div>
+  </form>`;
+  return ret;
+};
+
+/***/ }),
+
 /***/ "./public/js/dashboard.js":
 /*!********************************!*\
   !*** ./public/js/dashboard.js ***!
@@ -12053,8 +12345,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _jsfuncs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./jsfuncs */ "./public/js/jsfuncs.js");
+/* harmony import */ var _crudData__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./crudData */ "./public/js/crudData.js");
 /* eslint-disable */
 ;
+
  // GLOBAL SCOPE
 
 let $s = {
@@ -12494,9 +12788,13 @@ const getDbData = async tabId => {
 
 const showTableTabs = async googleSheetId => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function (e) {
+    const collName = $(e.target).attr('collName');
     const tableID = $(e.target).attr('tableID');
     const contentDivId = $(e.target).attr('href');
-    refreshDataTables(googleSheetId, tableID, contentDivId);
+
+    if (collName != 'Run') {
+      refreshDataTables(googleSheetId, tableID, contentDivId);
+    }
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function (e) {
     $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
@@ -12504,10 +12802,13 @@ const showTableTabs = async googleSheetId => {
 };
 
 const prepareData = async (googleSheetId, tableID) => {
-  const data = await ajaxCall('GET', ` /api/v1/misc/getGoogleSheet/${googleSheetId}/${tableID}`);
-  console.log(JSON.parse(data));
-  $g.data[tableID] = JSON.parse(data);
-  return JSON.parse(data);
+  try {
+    const data = await ajaxCall('GET', ` /api/v1/misc/getGoogleSheet/${googleSheetId}/${tableID}`);
+    $g.data[tableID] = JSON.parse(data);
+    return JSON.parse(data);
+  } catch (err) {
+    return '';
+  }
 };
 
 const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
@@ -12581,49 +12882,52 @@ const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
 
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
     const data = await prepareData(googleSheetId, TableID);
-    const tableContent = getImportTable(data, TableID);
-    $(contentDivId).append(tableContent);
-    const cols = getTableColumns(data);
-    let columns = [];
 
-    for (var i = 0; i < cols.length; i++) {
-      if (cols[i] == '$plusButton') {
-        columns.push({
-          className: `details-control-${TableID}`,
-          orderable: false,
-          data: null,
-          defaultContent: '<i class="cil-plus"></i>'
-        });
-      } else {
-        columns.push({
-          data: cols[i]
-        });
+    if (data) {
+      const tableContent = getImportTable(data, TableID);
+      $(contentDivId).append(tableContent);
+      const cols = getTableColumns(data);
+      let columns = [];
+
+      for (var i = 0; i < cols.length; i++) {
+        if (cols[i] == '$plusButton') {
+          columns.push({
+            className: `details-control-${TableID}`,
+            orderable: false,
+            data: null,
+            defaultContent: '<i class="cil-plus"></i>'
+          });
+        } else {
+          columns.push({
+            data: cols[i]
+          });
+        }
       }
+
+      var dataTableObj = {
+        columns: columns,
+        columnDefs: [{
+          defaultContent: '-',
+          targets: '_all'
+        } //hides undefined error
+        ],
+        order: [[2, 'asc']],
+        initComplete: initCompImport,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']]
+      };
+      dataTableObj.pageLength = 25;
+      dataTableObj.dom = '<"' + searchBarID + '.pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
+      dataTableObj.destroy = true;
+      dataTableObj.data = data;
+      dataTableObj.hover = true; // speed up the table loading
+
+      dataTableObj.deferRender = true;
+      dataTableObj.scroller = true;
+      dataTableObj.scrollCollapse = true;
+      dataTableObj.colReorder = true;
+      dataTableObj.sScrollX = true;
+      $s[TableID] = $(`#${TableID}`).DataTable(dataTableObj);
     }
-
-    var dataTableObj = {
-      columns: columns,
-      columnDefs: [{
-        defaultContent: '-',
-        targets: '_all'
-      } //hides undefined error
-      ],
-      order: [[2, 'asc']],
-      initComplete: initCompImport,
-      lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']]
-    };
-    dataTableObj.pageLength = 25;
-    dataTableObj.dom = '<"' + searchBarID + '.pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
-    dataTableObj.destroy = true;
-    dataTableObj.data = data;
-    dataTableObj.hover = true; // speed up the table loading
-
-    dataTableObj.deferRender = true;
-    dataTableObj.scroller = true;
-    dataTableObj.scrollCollapse = true;
-    dataTableObj.colReorder = true;
-    dataTableObj.sScrollX = true;
-    $s[TableID] = $(`#${TableID}`).DataTable(dataTableObj);
   }
 };
 
@@ -12632,7 +12936,7 @@ const getImportPageNavBar = async googleSheetId => {
   showTableTabs(googleSheetId);
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
-  let tabNames = ['Biosample', 'Sample', 'Files'];
+  let tabNames = ['Biosample', 'Sample', 'Files', 'Run'];
 
   for (var i = 0; i < tabNames.length; i++) {
     const tabId = i + 1;
@@ -12646,7 +12950,7 @@ const getImportPageNavBar = async googleSheetId => {
           <a class="nav-link ${active} collection" data-toggle="tab" collName="${Name}" tableID="${tabId}" href="#${importTabId}" aria-expanded="true">${Label}</a>
       </li>`;
     header += headerLi;
-    const contentDiv = `
+    let contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${importTabId}">
         <div class="row" style="margin-top: 10px;">
           <div class="col-sm-12">
@@ -12654,6 +12958,12 @@ const getImportPageNavBar = async googleSheetId => {
           </div>
         </div>
       </div>`;
+
+    if (Name == 'Run') {
+      const insertDiv = await (0,_crudData__WEBPACK_IMPORTED_MODULE_2__.getInsertDataDiv)();
+      contentDiv = `<div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${importTabId}">${insertDiv}</div>`;
+    }
+
     content += contentDiv;
   }
 
@@ -12819,7 +13129,13 @@ if (loginForm) loginForm.addEventListener('submit', e => {
   if (importpageNav && googleSheetId) {
     const importpage = await (0,_importpage_js__WEBPACK_IMPORTED_MODULE_5__.getImportPageNavBar)(googleSheetId);
     $('#import-page').append(importpage);
-    $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
+    $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab'); // choose run collection of the run tab
+
+    const runID = $('#allcollections option').filter(function () {
+      return $(this).text() == 'run';
+    }).val();
+    $('#allcollections').val(runID);
+    $(`select.collection-control`).trigger('change');
   }
 })();
 
@@ -12830,7 +13146,9 @@ if (loginForm) loginForm.addEventListener('submit', e => {
   !*** ./public/js/jsfuncs.js ***!
   \******************************/
 /*! namespace exports */
+/*! export createFormObj [provided] [no usage info] [missing usage info prevents renaming] */
 /*! export getCleanDivId [provided] [no usage info] [missing usage info prevents renaming] */
+/*! export showFormError [provided] [no usage info] [missing usage info prevents renaming] */
 /*! other exports [not provided] [no usage info] */
 /*! runtime requirements: __webpack_require__.r, __webpack_exports__, __webpack_require__.d, __webpack_require__.* */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
@@ -12838,7 +13156,9 @@ if (loginForm) loginForm.addEventListener('submit', e => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "getCleanDivId": () => /* binding */ getCleanDivId
+/* harmony export */   "getCleanDivId": () => /* binding */ getCleanDivId,
+/* harmony export */   "createFormObj": () => /* binding */ createFormObj,
+/* harmony export */   "showFormError": () => /* binding */ showFormError
 /* harmony export */ });
 /* eslint-disable */
 const getCleanDivId = n => {
@@ -12847,6 +13167,80 @@ const getCleanDivId = n => {
   }
 
   return n;
+}; // creates object of the form fields and change color of requiredFields
+// if warn set to true, 'Please provide a valid information.' information will be added to field
+
+const createFormObj = (formValues, requiredFields, warn) => {
+  var formObj = {};
+  var stop = false;
+
+  for (var i = 0; i < formValues.length; i++) {
+    var name = $(formValues[i]).attr('name');
+    var type = $(formValues[i]).attr('type');
+    var val = '';
+
+    if (type == 'radio') {
+      for (var k = 0; k < formValues.length; k++) {
+        if ($(formValues[k]).attr('name')) {
+          if ($(formValues[k]).attr('name') == name && $(formValues[k]).is(':checked')) {
+            val = $(formValues[k]).val();
+            break;
+          }
+        }
+      }
+    } else if (type == 'checkbox') {
+      if ($(formValues[i]).is(':checked')) {
+        val = 'on';
+      }
+    } else {
+      val = $(formValues[i]).val();
+    }
+
+    if (requiredFields.includes(name)) {
+      if (val != '') {
+        $(formValues[i]).removeClass('is-invalid');
+
+        if (warn && $(formValues[i]).next('div.invalid-feedback').length == 1) {
+          $(formValues[i]).next('div.invalid-feedback').remove();
+        }
+      } else {
+        $(formValues[i]).addClass('is-invalid');
+
+        if (warn && $(formValues[i]).next('div.invalid-feedback').length == 0) {
+          $(formValues[i]).after('<div class="invalid-feedback text-left">Please provide a valid information.</div>');
+        }
+
+        stop = true;
+      }
+    }
+
+    formObj[name] = val;
+  }
+
+  return [formObj, stop];
+};
+const showFormError = (formValues, errorFields, warn) => {
+  console.log(errorFields);
+
+  if (errorFields) {
+    for (var i = 0; i < formValues.length; i++) {
+      var name = $(formValues[i]).attr('name');
+
+      if (name in errorFields) {
+        $(formValues[i]).addClass('is-invalid');
+
+        if (errorFields[name]['message'] && warn) {
+          const errorText = errorFields[name]['message'];
+
+          if ($(formValues[i]).next('div.invalid-feedback').length == 0) {
+            $(formValues[i]).after(`<div class="invalid-feedback text-left">${errorText}</div>`);
+          } else {
+            $(formValues[i]).next('div.invalid-feedback').remove().after(`<div class="invalid-feedback text-left">${errorText}</div>`);
+          }
+        }
+      }
+    }
+  }
 };
 
 /***/ }),
@@ -58213,4 +58607,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.38cdd5c9d4d1b5d69731.js.map
+//# sourceMappingURL=bundle.354a64a6526196d5cf42.js.map

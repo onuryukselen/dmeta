@@ -161,7 +161,7 @@ POST {{URL}}/api/v1/projects/vitiligo/data/run
 GET {{URL}}/api/v1/projects/vitiligo/data/file?name=CB17_H2
 
 * get $server_id:
-GET {{URL}}/api/v1/servers?type=dnext
+GET {{URL}}/api/v1/server?type=dnext
 $server_id (for DolphinNext Umassmed Biocore): 5f622c67721d09b3670c4b66
 
 example-1
