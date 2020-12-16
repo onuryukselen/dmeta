@@ -129,5 +129,14 @@ if (loginForm)
     const importpage = await getImportPageNavBar(googleSheetId);
     $('#import-page').append(importpage);
     $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
+
+    // choose run collection of the run tab
+    const runID = $('#allcollections option')
+      .filter(function() {
+        return $(this).text() == 'run';
+      })
+      .val();
+    $('#allcollections').val(runID);
+    $(`select.collection-control`).trigger('change');
   }
 })();

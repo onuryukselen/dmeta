@@ -1,6 +1,7 @@
 /* eslint-disable */
 import axios from 'axios';
 import { getCleanDivId } from './jsfuncs';
+import { getInsertDataDiv } from './crudData';
 // GLOBAL SCOPE
 let $s = { data: {}, compare: {}, diff: {} };
 let $g = { data: {} };
@@ -397,9 +398,12 @@ const getDbData = async tabId => {
 
 const showTableTabs = async googleSheetId => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
+    const collName = $(e.target).attr('collName');
     const tableID = $(e.target).attr('tableID');
     const contentDivId = $(e.target).attr('href');
-    refreshDataTables(googleSheetId, tableID, contentDivId);
+    if (collName != 'Run') {
+      refreshDataTables(googleSheetId, tableID, contentDivId);
+    }
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     $($.fn.dataTable.tables(true))
@@ -408,10 +412,13 @@ const showTableTabs = async googleSheetId => {
   });
 };
 const prepareData = async (googleSheetId, tableID) => {
-  const data = await ajaxCall('GET', ` /api/v1/misc/getGoogleSheet/${googleSheetId}/${tableID}`);
-  console.log(JSON.parse(data));
-  $g.data[tableID] = JSON.parse(data);
-  return JSON.parse(data);
+  try {
+    const data = await ajaxCall('GET', ` /api/v1/misc/getGoogleSheet/${googleSheetId}/${tableID}`);
+    $g.data[tableID] = JSON.parse(data);
+    return JSON.parse(data);
+  } catch (err) {
+    return '';
+  }
 };
 
 const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
@@ -485,48 +492,50 @@ const refreshDataTables = async (googleSheetId, TableID, contentDivId) => {
 
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
     const data = await prepareData(googleSheetId, TableID);
-    const tableContent = getImportTable(data, TableID);
-    $(contentDivId).append(tableContent);
+    if (data) {
+      const tableContent = getImportTable(data, TableID);
+      $(contentDivId).append(tableContent);
 
-    const cols = getTableColumns(data);
-    let columns = [];
-    for (var i = 0; i < cols.length; i++) {
-      if (cols[i] == '$plusButton') {
-        columns.push({
-          className: `details-control-${TableID}`,
-          orderable: false,
-          data: null,
-          defaultContent: '<i class="cil-plus"></i>'
-        });
-      } else {
-        columns.push({ data: cols[i] });
+      const cols = getTableColumns(data);
+      let columns = [];
+      for (var i = 0; i < cols.length; i++) {
+        if (cols[i] == '$plusButton') {
+          columns.push({
+            className: `details-control-${TableID}`,
+            orderable: false,
+            data: null,
+            defaultContent: '<i class="cil-plus"></i>'
+          });
+        } else {
+          columns.push({ data: cols[i] });
+        }
       }
-    }
-    var dataTableObj = {
-      columns: columns,
-      columnDefs: [
-        { defaultContent: '-', targets: '_all' } //hides undefined error
-      ],
-      order: [[2, 'asc']],
-      initComplete: initCompImport,
-      lengthMenu: [
-        [10, 25, 50, -1],
-        [10, 25, 50, 'All']
-      ]
-    };
-    dataTableObj.pageLength = 25;
-    dataTableObj.dom = '<"' + searchBarID + '.pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
-    dataTableObj.destroy = true;
-    dataTableObj.data = data;
-    dataTableObj.hover = true;
-    // speed up the table loading
-    dataTableObj.deferRender = true;
-    dataTableObj.scroller = true;
-    dataTableObj.scrollCollapse = true;
-    dataTableObj.colReorder = true;
-    dataTableObj.sScrollX = true;
+      var dataTableObj = {
+        columns: columns,
+        columnDefs: [
+          { defaultContent: '-', targets: '_all' } //hides undefined error
+        ],
+        order: [[2, 'asc']],
+        initComplete: initCompImport,
+        lengthMenu: [
+          [10, 25, 50, -1],
+          [10, 25, 50, 'All']
+        ]
+      };
+      dataTableObj.pageLength = 25;
+      dataTableObj.dom = '<"' + searchBarID + '.pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
+      dataTableObj.destroy = true;
+      dataTableObj.data = data;
+      dataTableObj.hover = true;
+      // speed up the table loading
+      dataTableObj.deferRender = true;
+      dataTableObj.scroller = true;
+      dataTableObj.scrollCollapse = true;
+      dataTableObj.colReorder = true;
+      dataTableObj.sScrollX = true;
 
-    $s[TableID] = $(`#${TableID}`).DataTable(dataTableObj);
+      $s[TableID] = $(`#${TableID}`).DataTable(dataTableObj);
+    }
   }
 };
 
@@ -536,7 +545,7 @@ export const getImportPageNavBar = async googleSheetId => {
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
 
-  let tabNames = ['Biosample', 'Sample', 'Files'];
+  let tabNames = ['Biosample', 'Sample', 'Files', 'Run'];
   for (var i = 0; i < tabNames.length; i++) {
     const tabId = i + 1;
     const Name = tabNames[i];
@@ -549,7 +558,7 @@ export const getImportPageNavBar = async googleSheetId => {
           <a class="nav-link ${active} collection" data-toggle="tab" collName="${Name}" tableID="${tabId}" href="#${importTabId}" aria-expanded="true">${Label}</a>
       </li>`;
     header += headerLi;
-    const contentDiv = `
+    let contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${importTabId}">
         <div class="row" style="margin-top: 10px;">
           <div class="col-sm-12">
@@ -557,6 +566,10 @@ export const getImportPageNavBar = async googleSheetId => {
           </div>
         </div>
       </div>`;
+    if (Name == 'Run') {
+      const insertDiv = await getInsertDataDiv();
+      contentDiv = `<div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${importTabId}">${insertDiv}</div>`;
+    }
     content += contentDiv;
   }
   header += `</ul>`;
