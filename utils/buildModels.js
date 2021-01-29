@@ -176,7 +176,7 @@ exports.getModelNameByColId = async collectionId => {
   if (projectID) {
     const project = await projectsController.getProjectById(projectID);
     console.log(project);
-    if (project.name) modelName = `${project.name}_${colName}`;
+    if (project && project.name) modelName = `${project.name}_${colName}`;
   }
   return modelName;
 };

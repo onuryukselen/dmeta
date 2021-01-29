@@ -11625,7 +11625,7 @@ __webpack_require__.r(__webpack_exports__);
 let $s = {
   data: {}
 };
-$s.AdminCollectionFields = ['name', 'label', 'type', 'required', 'unique', 'hidden', 'default', 'enum', 'checkvalid', 'min', 'max', 'lowercase', 'uppercase', 'minlength', 'maxlength', 'trim', 'ref', 'collectionID', 'id', 'creationDate', 'lastUpdateDate'];
+$s.AdminCollectionFields = ['name', 'label', 'type', 'required', 'unique', 'hidden', 'default', 'enum', 'ontology', 'checkvalid', 'min', 'max', 'lowercase', 'uppercase', 'minlength', 'maxlength', 'trim', 'ref', 'collectionID', 'id', 'creationDate', 'lastUpdateDate'];
 $s.AdminAllCollectionFields = ['name', 'label', 'slug', 'version', 'required', 'parentCollectionID', 'projectID', 'id', 'perms', 'restrictTo', 'owner', 'creationDate', 'lastUpdateDate'];
 $s.AdminAllProjectFields = ['name', 'label', 'slug', 'id', 'perms', 'restrictTo', 'owner', 'creationDate', 'lastUpdateDate'];
 const fieldsOfProjectModel = {
@@ -11740,6 +11740,11 @@ const fieldsOfFieldsModel = {
     type: 'Mixed',
     default: false
   },
+  ontology: {
+    name: 'ontology',
+    label: 'Ontology',
+    type: 'Mixed'
+  },
   checkvalid: {
     name: 'checkvalid',
     label: 'CheckValid',
@@ -11798,6 +11803,8 @@ const fieldsOfFieldsModel = {
 };
 
 const ajaxCall = async (method, url) => {
+  console.log(method, url);
+
   try {
     const res = await axios__WEBPACK_IMPORTED_MODULE_0___default()({
       method,
@@ -11952,8 +11959,6 @@ const showTableTabs = () => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function (e) {
     const tableID = $(e.target).attr('tableID');
     const projectID = $(e.target).attr('projectID');
-    console.log(tableID);
-    console.log(projectID);
     refreshDataTables(tableID, projectID);
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function (e) {
@@ -12172,9 +12177,7 @@ const bindEventHandlers = () => {
 const refreshCollectionNavbar = async projectId => {
   console.log('refreshCollectionNavbar');
   const projectTabID = 'projectTab_' + (0,_jsfuncs__WEBPACK_IMPORTED_MODULE_1__.getCleanDivId)(projectId);
-  console.log(projectTabID);
   const isNavbarExist = $(`#${projectTabID}`).html();
-  console.log('isNavbarExist', isNavbarExist);
 
   if (isNavbarExist) {
     await getAjaxData();
@@ -12379,6 +12382,7 @@ const getFieldsOfProjectDiv = async () => {
 /*! export getFormRow [provided] [no usage info] [missing usage info prevents renaming] */
 /*! export getInsertDataDiv [provided] [no usage info] [missing usage info prevents renaming] */
 /*! export getParentCollection [provided] [no usage info] [missing usage info prevents renaming] */
+/*! export prepOntologyDropdown [provided] [no usage info] [missing usage info prevents renaming] */
 /*! other exports [not provided] [no usage info] */
 /*! runtime requirements: __webpack_require__, __webpack_require__.n, __webpack_require__.r, __webpack_exports__, __webpack_require__.d, __webpack_require__.* */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
@@ -12390,6 +12394,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "getFormRow": () => /* binding */ getFormRow,
 /* harmony export */   "getFormElement": () => /* binding */ getFormElement,
 /* harmony export */   "getParentCollection": () => /* binding */ getParentCollection,
+/* harmony export */   "prepOntologyDropdown": () => /* binding */ prepOntologyDropdown,
 /* harmony export */   "getFieldsDiv": () => /* binding */ getFieldsDiv,
 /* harmony export */   "getInsertDataDiv": () => /* binding */ getInsertDataDiv
 /* harmony export */ });
@@ -12427,8 +12432,10 @@ const getCollectionFieldData = async () => {
   $s.fields = fields;
 };
 
-const getDataDropdown = (id, el_class, el_name, data, def, required) => {
-  let dropdown = `<select ${required} class="form-control ${el_class}" id="${id}" name="${el_name}">`;
+const getDataDropdown = (id, el_class, el_name, data, def, required, fieldID) => {
+  const idText = id ? `id="${id}"` : '';
+  const fieldIDText = fieldID ? `fieldID="${fieldID}"` : '';
+  let dropdown = `<select ${required} class="form-control ${el_class}" ${fieldIDText} ${idText} name="${el_name}">`;
   if (!required) dropdown += `<option value="" >--- Select ---</option>`;
   data.forEach(i => {
     const selected = def == i.name ? 'selected' : '';
@@ -12471,7 +12478,7 @@ const getRefFieldDropdown = async (ref, name, required, def) => {
       refData = await ajaxCall('GET', `/api/v1/${ref}`);
     }
 
-    const collDropdown = getDataDropdown(`ref-${ref}`, 'ref-control', name, refData, def, required);
+    const collDropdown = getDataDropdown(`ref-${ref}`, 'ref-control', name, refData, def, required, '');
     return collDropdown;
   } catch {
     return '';
@@ -12479,12 +12486,12 @@ const getRefFieldDropdown = async (ref, name, required, def) => {
 };
 
 const getFormElement = async field => {
-  console.log(field);
   let ret = '';
   const type = field.type;
   const required = field.required ? 'required' : '';
   const dbType = type ? `dbType="${type}"` : '';
   const def = field.default ? field.default : '';
+  const fieldID = field._id;
 
   if (type == 'String' || type == 'Number') {
     if (field.enum) {
@@ -12494,7 +12501,9 @@ const getFormElement = async field => {
           name: i
         };
       });
-      ret = getDataDropdown('', '', field.name, options, def, required);
+      ret = getDataDropdown('', '', field.name, options, def, required, fieldID);
+    } else if (field.ontology) {
+      ret = getDataDropdown('', 'ontology', field.name, [], def, required, fieldID);
     } else {
       ret = `<input ${dbType} class="form-control" type="text" name="${field.name}" ${required} value="${def}"></input>`;
     }
@@ -12535,6 +12544,134 @@ const getParentCollection = collectionID => {
     parentCollLabel,
     parentCollName
   };
+};
+const prepOntologyDropdown = async (formId, data) => {
+  const formValues = $(formId).find('select.ontology');
+
+  for (var k = 0; k < formValues.length; k++) {
+    const fieldID = $(formValues[k]).attr('fieldID');
+    const nameAttr = $(formValues[k]).attr('name');
+    const ontologyField = $s.fields.filter(field => field._id === fieldID);
+    const settings = ontologyField[0] && ontologyField[0].ontology ? ontologyField[0].ontology : '';
+    console.log('settings', settings);
+    if (!settings) continue;
+    let url;
+    let authorization = '';
+    let include = [];
+    let exclude = [];
+    let filter = '';
+    let create; // --- NCBO bioportal Example ---
+    // { "url":"http://data.bioontology.org/search/?q=",
+    //  "filter":"&ontologies=EFO&suggest=true"
+    //  "authorization":"apikey token=39a74770-b709-4c1c-a69d-45d8e117e87a",
+    //  "include":["Test1-Seq","Test2-Seq"],
+    //  "exclude":["RNA-Seq"],
+    //  "field":"collection.prefLabel",
+    //  "create":true
+    // }
+    //
+    // ontologies: https://bioportal.bioontology.org/ontologies
+    // EFO:Experimental Factor Ontology
+    // BAO:BioAssay Ontology
+    // e.g. filter = '&ontologies=EFO&suggest=true';
+    // e.g. filter = '&roots_only=true&ontologies=BAO&suggest=true';
+    // --- GITHUB API Example ---
+    // { "url":"https://api.github.com/legacy/repos/search/", "field":"repositories.name" }
+    // e.g. for collection.prefLabel => valueField:prefLabel, treeField:collection
+
+    let valueField = '';
+    let treeField = '';
+
+    if (typeof settings === 'string') {
+      url = settings;
+    } else {
+      url = settings.url ? settings.url : '';
+      authorization = settings.authorization ? settings.authorization : '';
+      create = settings.create ? settings.create : false;
+      filter = settings.filter ? settings.filter : '';
+      exclude = settings.exclude ? settings.exclude : [];
+      include = settings.include ? settings.include : [];
+
+      if (settings.field) {
+        if (settings.field.match(/\./)) {
+          valueField = settings.field.substr(settings.field.lastIndexOf('.') + 1);
+          treeField = settings.field.substr(0, settings.field.lastIndexOf('.'));
+        } else {
+          valueField = settings.field;
+          treeField = '';
+        }
+      }
+    }
+
+    console.log('valueField', valueField);
+    console.log('treeField', treeField);
+    if (!url) continue;
+    const options = {
+      valueField: valueField,
+      labelField: valueField,
+      searchField: valueField,
+      preload: true,
+      create: create,
+      load: function (query, callback) {
+        if (!query.length) return callback();
+
+        try {
+          axios__WEBPACK_IMPORTED_MODULE_0___default().post('/api/v1/misc/remoteData', {
+            url: url + encodeURIComponent(query) + filter,
+            authorization: authorization
+          }).then(res => {
+            console.log(res);
+            let prepedData = [];
+            let selData = [];
+
+            if (treeField && res.data.data[treeField]) {
+              selData = res.data.data[treeField];
+            } else {
+              selData = res.data.data;
+            }
+
+            for (var n = 0; n < selData.length; n++) {
+              if (selData[n][valueField] && !exclude.includes(selData[n][valueField])) {
+                let obj = {};
+                obj[valueField] = selData[n][valueField];
+                prepedData.push(obj);
+              }
+            }
+
+            console.log(prepedData);
+
+            if (prepedData.length) {
+              callback(prepedData);
+            } else {
+              callback();
+            }
+          });
+        } catch (err) {
+          console.log(err);
+          callback();
+        }
+      },
+      onInitialize: function () {
+        var selectize = this; // include extra options on start
+
+        if (include && include.length) {
+          for (var t = 0; t < include.length; t++) {
+            let opt = {};
+            opt[valueField] = include[t];
+            selectize.addOption([opt]);
+          }
+        }
+
+        if (data[nameAttr]) {
+          let opt = {};
+          opt[valueField] = data[nameAttr];
+          selectize.addOption([opt]);
+          selectize.setValue([data[nameAttr]]);
+        }
+      }
+    };
+    $(formValues[k]).selectize(options);
+  }
 }; // get all form fields of selected data collection
 
 const getFieldsDiv = async collectionID => {
@@ -12701,6 +12838,8 @@ let $s = {
 };
 
 const ajaxCall = async (method, url) => {
+  console.log(method, url);
+
   try {
     const res = await axios__WEBPACK_IMPORTED_MODULE_0___default()({
       method,
@@ -12766,6 +12905,7 @@ const bindEventHandlers = () => {
     const selectedData = tableData.filter(f => rows_selected.indexOf(f._id) >= 0);
     $('#crudModal').on('show.coreui.modal', function (e) {
       (0,_jsfuncs__WEBPACK_IMPORTED_MODULE_1__.fillFormByName)('#crudModal', 'input, select', selectedData[0]);
+      (0,_crudData__WEBPACK_IMPORTED_MODULE_2__.prepOntologyDropdown)('#crudModal', selectedData[0]);
 
       if (rows_selected.length > 1) {
         (0,_jsfuncs__WEBPACK_IMPORTED_MODULE_1__.prepareMultiUpdateModal)('#crudModal', '#crudModalBody', 'input, select');
@@ -12832,6 +12972,7 @@ const bindEventHandlers = () => {
     $('#crudModalBody').append(getErrorDiv());
     $('#crudModalBody').append(collectionFields);
     $('#crudModal').off();
+    (0,_crudData__WEBPACK_IMPORTED_MODULE_2__.prepOntologyDropdown)('#crudModal', {});
     (0,_jsfuncs__WEBPACK_IMPORTED_MODULE_1__.prepareClickToActivateModal)('#crudModal', '#crudModalBody', 'input, select', {});
     $('#crudModal').on('click', '#crudModalYes', async function (e) {
       e.preventDefault();
@@ -12990,12 +13131,13 @@ const crudAjaxRequest = async (targetCollection, method, id, projectID, collName
 };
 
 const prepareDataForSingleColumn = async (collName, projectID) => {
+  let ret = [];
+  if (!collName) return ret;
   const {
     projectPart,
     projectName
   } = getProjectData(projectID);
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}`);
-  let ret = [];
 
   if (data) {
     const saveDataPath = `${projectName}_${collName}`;
@@ -13161,7 +13303,7 @@ const getProjectNavbar = async () => {
     const active = i === 0 ? 'active' : '';
     const headerLi = `
     <li class="nav-item">
-        <a class="nav-link ${active}" data-toggle="tab" href="#${projectTabID}" aria-expanded="true">${projectLabel}</a>
+        <a class="nav-link ${active} collection" data-toggle="tab" href="#${projectTabID}" aria-expanded="true">${projectLabel}</a>
     </li>`;
     header += headerLi;
     const colNavbar = await getCollectionNavbar(projectId);
@@ -13886,7 +14028,11 @@ __webpack_require__(/*! datatables.net-colreorder */ "./node_modules/datatables.
 
 __webpack_require__(/*! datatables.net-colreorder-bs4 */ "./node_modules/datatables.net-colreorder-bs4/js/colReorder.bootstrap4.js");
 
-__webpack_require__(/*! jquery-datatables-checkboxes */ "./node_modules/jquery-datatables-checkboxes/js/dataTables.checkboxes.js"); // require('datatables.net-buttons');
+__webpack_require__(/*! jquery-datatables-checkboxes */ "./node_modules/jquery-datatables-checkboxes/js/dataTables.checkboxes.js");
+
+__webpack_require__(/*! selectize/dist/js/selectize.js */ "./node_modules/selectize/dist/js/selectize.js");
+
+__webpack_require__(/*! selectize/dist/css/selectize.bootstrap3.css */ "./node_modules/selectize/dist/css/selectize.bootstrap3.css"); // require('datatables.net-buttons');
 // require('datatables.net-buttons-bs4');
 // require('bootstrap-select');
 // require('bootstrap-select/js/i18n/defaults-en_US');
@@ -14019,7 +14165,7 @@ if (loginForm) loginForm.addEventListener('submit', e => {
 /*! export showFormError [provided] [no usage info] [missing usage info prevents renaming] */
 /*! export showInfoModal [provided] [no usage info] [missing usage info prevents renaming] */
 /*! other exports [not provided] [no usage info] */
-/*! runtime requirements: __webpack_require__.r, __webpack_exports__, __webpack_require__.d, __webpack_require__.* */
+/*! runtime requirements: __webpack_require__.r, __webpack_exports__, __webpack_require__, __webpack_require__.d, __webpack_require__.* */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -14037,16 +14183,33 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "fillFormByName": () => /* binding */ fillFormByName
 /* harmony export */ });
 /* eslint-disable */
+const JSON5 = __webpack_require__(/*! json5 */ "./node_modules/json5/dist/index.js");
+
 const globalEventBinders = () => {
   /* modal show form values on multiple values */
+  //show field
   $(document).on('click', `.multi-value`, function (e) {
     $(this).css('display', 'none');
-    $(this).next().css('display', 'block');
+    const field = $(this).next();
+    const isSelectized = field.hasClass('selectized');
+
+    if (isSelectized) {
+      field.css('display', 'none');
+      field.next().css('display', 'block');
+    } else {
+      field.css('display', 'block');
+    }
+
     $(this).siblings('.multi-restore').css('display', 'block');
-  });
+  }); //hide field
+
   $(document).on('click', `.multi-restore`, function (e) {
     $(this).css('display', 'none');
-    $(this).siblings('.multi-value').css('display', 'block').next().css('display', 'none');
+    const field = $(this).siblings('.multi-value').next();
+    const isSelectized = field.hasClass('selectized');
+    $(this).siblings('.multi-value').css('display', 'block');
+    field.css('display', 'none');
+    if (isSelectized) field.next().css('display', 'none');
   });
 };
 const getCleanDivId = n => {
@@ -14058,6 +14221,7 @@ const getCleanDivId = n => {
 }; // creates object of the form fields and change color of requiredFields
 // if warn set to true, 'Please provide a valid information.' information will be added to field
 // if visible set to true => display of field shouldn't be none;
+// if visible set to "undefined" => hidden fields set to "undefined" to remove from db.
 
 const createFormObj = (formValues, requiredFields, warn, visible) => {
   var formObj = {};
@@ -14066,6 +14230,7 @@ const createFormObj = (formValues, requiredFields, warn, visible) => {
   for (var i = 0; i < formValues.length; i++) {
     var name = $(formValues[i]).attr('name');
     var type = $(formValues[i]).attr('type');
+    const isSelectized = $(formValues[i]).hasClass('selectized');
     var val = '';
 
     if (type == 'radio') {
@@ -14111,7 +14276,7 @@ const createFormObj = (formValues, requiredFields, warn, visible) => {
       }
     }
 
-    if (visible && $(formValues[i]).css('display') == 'none') {
+    if (!isSelectized && visible && $(formValues[i]).css('display') == 'none') {
       if (visible == 'undefined') {
         val = 'undefined';
       } else {
@@ -14119,7 +14284,7 @@ const createFormObj = (formValues, requiredFields, warn, visible) => {
       }
     }
 
-    formObj[name] = val;
+    if (name) formObj[name] = val;
   }
 
   return [formObj, stop];
@@ -14129,7 +14294,7 @@ const convertFormObj = formObj => {
   Object.keys(formObj).forEach(key => {
     try {
       if (formObj[key] && typeof formObj[key] === 'string' && (formObj[key].charAt(0) == '{' || formObj[key].charAt(0) == '[')) {
-        let val = JSON.parse(formObj[key]);
+        let val = JSON5.parse(formObj[key]);
         formObj[key] = val;
       }
     } catch (err) {
@@ -14196,9 +14361,20 @@ const prepareMultiUpdateModal = (formId, formBodyId, find) => {
   $(formBodyId).prepend('<p> Each field contains different values for that input. To edit and set all items to the same value, click on the field, otherwise they will retain their individual values.</p>');
 
   for (var k = 0; k < formValues.length; k++) {
-    $(formValues[k]).before(`<div class="multi-value" > Multiple Values</div>`);
-    $(formValues[k]).after(`<div class="multi-restore" style="display:none;"> Undo changes</div>`);
-    $(formValues[k]).css('display', 'none');
+    const isSelectized = $(formValues[k]).hasClass('selectized');
+    const nameAttr = $(formValues[k]).attr('name');
+
+    if (nameAttr) {
+      $(formValues[k]).before(`<div class="multi-value" > Multiple Values</div>`);
+      $(formValues[k]).css('display', 'none');
+
+      if (isSelectized) {
+        $(formValues[k]).next().css('display', 'none');
+        $(formValues[k]).next().after(`<div class="multi-restore" style="display:none;"> Undo changes</div>`);
+      } else {
+        $(formValues[k]).after(`<div class="multi-restore" style="display:none;"> Undo changes</div>`);
+      }
+    }
   }
 };
 const prepareClickToActivateModal = (formId, formBodyId, find, data) => {
@@ -14208,18 +14384,29 @@ const prepareClickToActivateModal = (formId, formBodyId, find, data) => {
   for (var k = 0; k < formValues.length; k++) {
     const isRequired = $(formValues[k]).attr('required');
     const nameAttr = $(formValues[k]).attr('name');
-    console.log('isRequired', isRequired);
+    const isSelectized = $(formValues[k]).hasClass('selectized');
 
-    if (!isRequired) {
+    if (!isRequired && nameAttr) {
       // value not filled
       if (!(nameAttr in data) || data[nameAttr] === null) {
         $(formValues[k]).before(`<div class="multi-value" > Click to Set Field </div>`);
-        $(formValues[k]).after(`<div class="multi-restore" style="display:none;"> Unset Field</div>`);
-        $(formValues[k]).css('display', 'none');
+
+        if (isSelectized) {
+          $(formValues[k]).next().after(`<div class="multi-restore" style="display:none;"> Unset Field</div>`);
+          $(formValues[k]).css('display', 'none').next().css('display', 'none');
+        } else {
+          $(formValues[k]).after(`<div class="multi-restore" style="display:none;"> Unset Field</div>`);
+          $(formValues[k]).css('display', 'none');
+        }
       } else {
         // value filled
         $(formValues[k]).before(`<div class="multi-value" style="display:none;"> Click to Set Field </div>`);
-        $(formValues[k]).after(`<div class="multi-restore" > Unset Field</div>`);
+
+        if (isSelectized) {
+          $(formValues[k]).next().after(`<div class="multi-restore" > Unset Field</div>`);
+        } else {
+          $(formValues[k]).after(`<div class="multi-restore" > Unset Field</div>`);
+        }
       }
     }
   }
@@ -24172,6 +24359,37 @@ __webpack_require__.r(__webpack_exports__);
 var ___CSS_LOADER_EXPORT___ = _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, "table.dataTable {\n  clear: both;\n  margin-top: 6px !important;\n  margin-bottom: 6px !important;\n  max-width: none !important;\n  border-collapse: separate !important;\n  border-spacing: 0;\n}\ntable.dataTable td,\ntable.dataTable th {\n  -webkit-box-sizing: content-box;\n  box-sizing: content-box;\n}\ntable.dataTable td.dataTables_empty,\ntable.dataTable th.dataTables_empty {\n  text-align: center;\n}\ntable.dataTable.nowrap th,\ntable.dataTable.nowrap td {\n  white-space: nowrap;\n}\n\ndiv.dataTables_wrapper div.dataTables_length label {\n  font-weight: normal;\n  text-align: left;\n  white-space: nowrap;\n}\ndiv.dataTables_wrapper div.dataTables_length select {\n  width: auto;\n  display: inline-block;\n}\ndiv.dataTables_wrapper div.dataTables_filter {\n  text-align: right;\n}\ndiv.dataTables_wrapper div.dataTables_filter label {\n  font-weight: normal;\n  white-space: nowrap;\n  text-align: left;\n}\ndiv.dataTables_wrapper div.dataTables_filter input {\n  margin-left: 0.5em;\n  display: inline-block;\n  width: auto;\n}\ndiv.dataTables_wrapper div.dataTables_info {\n  padding-top: 0.85em;\n}\ndiv.dataTables_wrapper div.dataTables_paginate {\n  margin: 0;\n  white-space: nowrap;\n  text-align: right;\n}\ndiv.dataTables_wrapper div.dataTables_paginate ul.pagination {\n  margin: 2px 0;\n  white-space: nowrap;\n  justify-content: flex-end;\n}\ndiv.dataTables_wrapper div.dataTables_processing {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 200px;\n  margin-left: -100px;\n  margin-top: -26px;\n  text-align: center;\n  padding: 1em 0;\n}\n\ntable.dataTable > thead > tr > th:active,\ntable.dataTable > thead > tr > td:active {\n  outline: none;\n}\ntable.dataTable > thead > tr > th:not(.sorting_disabled),\ntable.dataTable > thead > tr > td:not(.sorting_disabled) {\n  padding-right: 30px;\n}\ntable.dataTable > thead .sorting,\ntable.dataTable > thead .sorting_asc,\ntable.dataTable > thead .sorting_desc,\ntable.dataTable > thead .sorting_asc_disabled,\ntable.dataTable > thead .sorting_desc_disabled {\n  cursor: pointer;\n  position: relative;\n}\ntable.dataTable > thead .sorting:before, table.dataTable > thead .sorting:after,\ntable.dataTable > thead .sorting_asc:before,\ntable.dataTable > thead .sorting_asc:after,\ntable.dataTable > thead .sorting_desc:before,\ntable.dataTable > thead .sorting_desc:after,\ntable.dataTable > thead .sorting_asc_disabled:before,\ntable.dataTable > thead .sorting_asc_disabled:after,\ntable.dataTable > thead .sorting_desc_disabled:before,\ntable.dataTable > thead .sorting_desc_disabled:after {\n  position: absolute;\n  bottom: 0.9em;\n  display: block;\n  opacity: 0.3;\n}\ntable.dataTable > thead .sorting:before,\ntable.dataTable > thead .sorting_asc:before,\ntable.dataTable > thead .sorting_desc:before,\ntable.dataTable > thead .sorting_asc_disabled:before,\ntable.dataTable > thead .sorting_desc_disabled:before {\n  right: 1em;\n  content: \"\\2191\";\n}\ntable.dataTable > thead .sorting:after,\ntable.dataTable > thead .sorting_asc:after,\ntable.dataTable > thead .sorting_desc:after,\ntable.dataTable > thead .sorting_asc_disabled:after,\ntable.dataTable > thead .sorting_desc_disabled:after {\n  right: 0.5em;\n  content: \"\\2193\";\n}\ntable.dataTable > thead .sorting_asc:before,\ntable.dataTable > thead .sorting_desc:after {\n  opacity: 1;\n}\ntable.dataTable > thead .sorting_asc_disabled:before,\ntable.dataTable > thead .sorting_desc_disabled:after {\n  opacity: 0;\n}\n\ndiv.dataTables_scrollHead table.dataTable {\n  margin-bottom: 0 !important;\n}\n\ndiv.dataTables_scrollBody table {\n  border-top: none;\n  margin-top: 0 !important;\n  margin-bottom: 0 !important;\n}\ndiv.dataTables_scrollBody table thead .sorting:before,\ndiv.dataTables_scrollBody table thead .sorting_asc:before,\ndiv.dataTables_scrollBody table thead .sorting_desc:before,\ndiv.dataTables_scrollBody table thead .sorting:after,\ndiv.dataTables_scrollBody table thead .sorting_asc:after,\ndiv.dataTables_scrollBody table thead .sorting_desc:after {\n  display: none;\n}\ndiv.dataTables_scrollBody table tbody tr:first-child th,\ndiv.dataTables_scrollBody table tbody tr:first-child td {\n  border-top: none;\n}\n\ndiv.dataTables_scrollFoot > .dataTables_scrollFootInner {\n  box-sizing: content-box;\n}\ndiv.dataTables_scrollFoot > .dataTables_scrollFootInner > table {\n  margin-top: 0 !important;\n  border-top: none;\n}\n\n@media screen and (max-width: 767px) {\n  div.dataTables_wrapper div.dataTables_length,\n  div.dataTables_wrapper div.dataTables_filter,\n  div.dataTables_wrapper div.dataTables_info,\n  div.dataTables_wrapper div.dataTables_paginate {\n    text-align: center;\n  }\n  div.dataTables_wrapper div.dataTables_paginate ul.pagination {\n    justify-content: center !important;\n  }\n}\ntable.dataTable.table-sm > thead > tr > th:not(.sorting_disabled) {\n  padding-right: 20px;\n}\ntable.dataTable.table-sm .sorting:before,\ntable.dataTable.table-sm .sorting_asc:before,\ntable.dataTable.table-sm .sorting_desc:before {\n  top: 5px;\n  right: 0.85em;\n}\ntable.dataTable.table-sm .sorting:after,\ntable.dataTable.table-sm .sorting_asc:after,\ntable.dataTable.table-sm .sorting_desc:after {\n  top: 5px;\n}\n\ntable.table-bordered.dataTable {\n  border-right-width: 0;\n}\ntable.table-bordered.dataTable th,\ntable.table-bordered.dataTable td {\n  border-left-width: 0;\n}\ntable.table-bordered.dataTable th:last-child, table.table-bordered.dataTable th:last-child,\ntable.table-bordered.dataTable td:last-child,\ntable.table-bordered.dataTable td:last-child {\n  border-right-width: 1px;\n}\ntable.table-bordered.dataTable tbody th,\ntable.table-bordered.dataTable tbody td {\n  border-bottom-width: 0;\n}\n\ndiv.dataTables_scrollHead table.table-bordered {\n  border-bottom-width: 0;\n}\n\ndiv.table-responsive > div.dataTables_wrapper > div.row {\n  margin: 0;\n}\ndiv.table-responsive > div.dataTables_wrapper > div.row > div[class^=\"col-\"]:first-child {\n  padding-left: 0;\n}\ndiv.table-responsive > div.dataTables_wrapper > div.row > div[class^=\"col-\"]:last-child {\n  padding-right: 0;\n}\n", "",{"version":3,"sources":["webpack://./node_modules/datatables.net-bs4/css/dataTables.bootstrap4.css"],"names":[],"mappings":"AAAA;EACE,WAAW;EACX,0BAA0B;EAC1B,6BAA6B;EAC7B,0BAA0B;EAC1B,oCAAoC;EACpC,iBAAiB;AACnB;AACA;;EAEE,+BAA+B;EAC/B,uBAAuB;AACzB;AACA;;EAEE,kBAAkB;AACpB;AACA;;EAEE,mBAAmB;AACrB;;AAEA;EACE,mBAAmB;EACnB,gBAAgB;EAChB,mBAAmB;AACrB;AACA;EACE,WAAW;EACX,qBAAqB;AACvB;AACA;EACE,iBAAiB;AACnB;AACA;EACE,mBAAmB;EACnB,mBAAmB;EACnB,gBAAgB;AAClB;AACA;EACE,kBAAkB;EAClB,qBAAqB;EACrB,WAAW;AACb;AACA;EACE,mBAAmB;AACrB;AACA;EACE,SAAS;EACT,mBAAmB;EACnB,iBAAiB;AACnB;AACA;EACE,aAAa;EACb,mBAAmB;EACnB,yBAAyB;AAC3B;AACA;EACE,kBAAkB;EAClB,QAAQ;EACR,SAAS;EACT,YAAY;EACZ,mBAAmB;EACnB,iBAAiB;EACjB,kBAAkB;EAClB,cAAc;AAChB;;AAEA;;EAEE,aAAa;AACf;AACA;;EAEE,mBAAmB;AACrB;AACA;;;;;EAKE,eAAe;EACf,kBAAkB;AACpB;AACA;;;;;;;;;EASE,kBAAkB;EAClB,aAAa;EACb,cAAc;EACd,YAAY;AACd;AACA;;;;;EAKE,UAAU;EACV,gBAAgB;AAClB;AACA;;;;;EAKE,YAAY;EACZ,gBAAgB;AAClB;AACA;;EAEE,UAAU;AACZ;AACA;;EAEE,UAAU;AACZ;;AAEA;EACE,2BAA2B;AAC7B;;AAEA;EACE,gBAAgB;EAChB,wBAAwB;EACxB,2BAA2B;AAC7B;AACA;;;;;;EAME,aAAa;AACf;AACA;;EAEE,gBAAgB;AAClB;;AAEA;EACE,uBAAuB;AACzB;AACA;EACE,wBAAwB;EACxB,gBAAgB;AAClB;;AAEA;EACE;;;;IAIE,kBAAkB;EACpB;EACA;IACE,kCAAkC;EACpC;AACF;AACA;EACE,mBAAmB;AACrB;AACA;;;EAGE,QAAQ;EACR,aAAa;AACf;AACA;;;EAGE,QAAQ;AACV;;AAEA;EACE,qBAAqB;AACvB;AACA;;EAEE,oBAAoB;AACtB;AACA;;;EAGE,uBAAuB;AACzB;AACA;;EAEE,sBAAsB;AACxB;;AAEA;EACE,sBAAsB;AACxB;;AAEA;EACE,SAAS;AACX;AACA;EACE,eAAe;AACjB;AACA;EACE,gBAAgB;AAClB","sourcesContent":["table.dataTable {\n  clear: both;\n  margin-top: 6px !important;\n  margin-bottom: 6px !important;\n  max-width: none !important;\n  border-collapse: separate !important;\n  border-spacing: 0;\n}\ntable.dataTable td,\ntable.dataTable th {\n  -webkit-box-sizing: content-box;\n  box-sizing: content-box;\n}\ntable.dataTable td.dataTables_empty,\ntable.dataTable th.dataTables_empty {\n  text-align: center;\n}\ntable.dataTable.nowrap th,\ntable.dataTable.nowrap td {\n  white-space: nowrap;\n}\n\ndiv.dataTables_wrapper div.dataTables_length label {\n  font-weight: normal;\n  text-align: left;\n  white-space: nowrap;\n}\ndiv.dataTables_wrapper div.dataTables_length select {\n  width: auto;\n  display: inline-block;\n}\ndiv.dataTables_wrapper div.dataTables_filter {\n  text-align: right;\n}\ndiv.dataTables_wrapper div.dataTables_filter label {\n  font-weight: normal;\n  white-space: nowrap;\n  text-align: left;\n}\ndiv.dataTables_wrapper div.dataTables_filter input {\n  margin-left: 0.5em;\n  display: inline-block;\n  width: auto;\n}\ndiv.dataTables_wrapper div.dataTables_info {\n  padding-top: 0.85em;\n}\ndiv.dataTables_wrapper div.dataTables_paginate {\n  margin: 0;\n  white-space: nowrap;\n  text-align: right;\n}\ndiv.dataTables_wrapper div.dataTables_paginate ul.pagination {\n  margin: 2px 0;\n  white-space: nowrap;\n  justify-content: flex-end;\n}\ndiv.dataTables_wrapper div.dataTables_processing {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  width: 200px;\n  margin-left: -100px;\n  margin-top: -26px;\n  text-align: center;\n  padding: 1em 0;\n}\n\ntable.dataTable > thead > tr > th:active,\ntable.dataTable > thead > tr > td:active {\n  outline: none;\n}\ntable.dataTable > thead > tr > th:not(.sorting_disabled),\ntable.dataTable > thead > tr > td:not(.sorting_disabled) {\n  padding-right: 30px;\n}\ntable.dataTable > thead .sorting,\ntable.dataTable > thead .sorting_asc,\ntable.dataTable > thead .sorting_desc,\ntable.dataTable > thead .sorting_asc_disabled,\ntable.dataTable > thead .sorting_desc_disabled {\n  cursor: pointer;\n  position: relative;\n}\ntable.dataTable > thead .sorting:before, table.dataTable > thead .sorting:after,\ntable.dataTable > thead .sorting_asc:before,\ntable.dataTable > thead .sorting_asc:after,\ntable.dataTable > thead .sorting_desc:before,\ntable.dataTable > thead .sorting_desc:after,\ntable.dataTable > thead .sorting_asc_disabled:before,\ntable.dataTable > thead .sorting_asc_disabled:after,\ntable.dataTable > thead .sorting_desc_disabled:before,\ntable.dataTable > thead .sorting_desc_disabled:after {\n  position: absolute;\n  bottom: 0.9em;\n  display: block;\n  opacity: 0.3;\n}\ntable.dataTable > thead .sorting:before,\ntable.dataTable > thead .sorting_asc:before,\ntable.dataTable > thead .sorting_desc:before,\ntable.dataTable > thead .sorting_asc_disabled:before,\ntable.dataTable > thead .sorting_desc_disabled:before {\n  right: 1em;\n  content: \"\\2191\";\n}\ntable.dataTable > thead .sorting:after,\ntable.dataTable > thead .sorting_asc:after,\ntable.dataTable > thead .sorting_desc:after,\ntable.dataTable > thead .sorting_asc_disabled:after,\ntable.dataTable > thead .sorting_desc_disabled:after {\n  right: 0.5em;\n  content: \"\\2193\";\n}\ntable.dataTable > thead .sorting_asc:before,\ntable.dataTable > thead .sorting_desc:after {\n  opacity: 1;\n}\ntable.dataTable > thead .sorting_asc_disabled:before,\ntable.dataTable > thead .sorting_desc_disabled:after {\n  opacity: 0;\n}\n\ndiv.dataTables_scrollHead table.dataTable {\n  margin-bottom: 0 !important;\n}\n\ndiv.dataTables_scrollBody table {\n  border-top: none;\n  margin-top: 0 !important;\n  margin-bottom: 0 !important;\n}\ndiv.dataTables_scrollBody table thead .sorting:before,\ndiv.dataTables_scrollBody table thead .sorting_asc:before,\ndiv.dataTables_scrollBody table thead .sorting_desc:before,\ndiv.dataTables_scrollBody table thead .sorting:after,\ndiv.dataTables_scrollBody table thead .sorting_asc:after,\ndiv.dataTables_scrollBody table thead .sorting_desc:after {\n  display: none;\n}\ndiv.dataTables_scrollBody table tbody tr:first-child th,\ndiv.dataTables_scrollBody table tbody tr:first-child td {\n  border-top: none;\n}\n\ndiv.dataTables_scrollFoot > .dataTables_scrollFootInner {\n  box-sizing: content-box;\n}\ndiv.dataTables_scrollFoot > .dataTables_scrollFootInner > table {\n  margin-top: 0 !important;\n  border-top: none;\n}\n\n@media screen and (max-width: 767px) {\n  div.dataTables_wrapper div.dataTables_length,\n  div.dataTables_wrapper div.dataTables_filter,\n  div.dataTables_wrapper div.dataTables_info,\n  div.dataTables_wrapper div.dataTables_paginate {\n    text-align: center;\n  }\n  div.dataTables_wrapper div.dataTables_paginate ul.pagination {\n    justify-content: center !important;\n  }\n}\ntable.dataTable.table-sm > thead > tr > th:not(.sorting_disabled) {\n  padding-right: 20px;\n}\ntable.dataTable.table-sm .sorting:before,\ntable.dataTable.table-sm .sorting_asc:before,\ntable.dataTable.table-sm .sorting_desc:before {\n  top: 5px;\n  right: 0.85em;\n}\ntable.dataTable.table-sm .sorting:after,\ntable.dataTable.table-sm .sorting_asc:after,\ntable.dataTable.table-sm .sorting_desc:after {\n  top: 5px;\n}\n\ntable.table-bordered.dataTable {\n  border-right-width: 0;\n}\ntable.table-bordered.dataTable th,\ntable.table-bordered.dataTable td {\n  border-left-width: 0;\n}\ntable.table-bordered.dataTable th:last-child, table.table-bordered.dataTable th:last-child,\ntable.table-bordered.dataTable td:last-child,\ntable.table-bordered.dataTable td:last-child {\n  border-right-width: 1px;\n}\ntable.table-bordered.dataTable tbody th,\ntable.table-bordered.dataTable tbody td {\n  border-bottom-width: 0;\n}\n\ndiv.dataTables_scrollHead table.table-bordered {\n  border-bottom-width: 0;\n}\n\ndiv.table-responsive > div.dataTables_wrapper > div.row {\n  margin: 0;\n}\ndiv.table-responsive > div.dataTables_wrapper > div.row > div[class^=\"col-\"]:first-child {\n  padding-left: 0;\n}\ndiv.table-responsive > div.dataTables_wrapper > div.row > div[class^=\"col-\"]:last-child {\n  padding-right: 0;\n}\n"],"sourceRoot":""}]);
+// Exports
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
+
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/dist/cjs.js!./node_modules/selectize/dist/css/selectize.bootstrap3.css":
+/*!********************************************************************************************************!*\
+  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/selectize/dist/css/selectize.bootstrap3.css ***!
+  \********************************************************************************************************/
+/*! namespace exports */
+/*! export default [provided] [no usage info] [missing usage info prevents renaming] */
+/*! other exports [not provided] [no usage info] */
+/*! runtime requirements: __webpack_require__, __webpack_require__.n, __webpack_exports__, __webpack_require__.r, module.id, __webpack_require__.d, __webpack_require__.*, module */
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => __WEBPACK_DEFAULT_EXPORT__
+/* harmony export */ });
+/* harmony import */ var _css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../css-loader/dist/runtime/cssWithMappingToString.js */ "./node_modules/css-loader/dist/runtime/cssWithMappingToString.js");
+/* harmony import */ var _css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../../css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
+/* harmony import */ var _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
+// Imports
+;
+
+var ___CSS_LOADER_EXPORT___ = _css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_css_loader_dist_runtime_cssWithMappingToString_js__WEBPACK_IMPORTED_MODULE_0___default()));
+// Module
+___CSS_LOADER_EXPORT___.push([module.id, "/**\n * selectize.bootstrap3.css (v0.12.6) - Bootstrap 3 Theme\n * Copyright (c) 2013–2015 Brian Reavis & contributors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this\n * file except in compliance with the License. You may obtain a copy of the License at:\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software distributed under\n * the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF\n * ANY KIND, either express or implied. See the License for the specific language\n * governing permissions and limitations under the License.\n *\n * @author Brian Reavis <brian@thirdroute.com>\n */\n.selectize-control.plugin-drag_drop.multi > .selectize-input > div.ui-sortable-placeholder {\n  visibility: visible !important;\n  background: #f2f2f2 !important;\n  background: rgba(0, 0, 0, 0.06) !important;\n  border: 0 none !important;\n  -webkit-box-shadow: inset 0 0 12px 4px #fff;\n  box-shadow: inset 0 0 12px 4px #fff;\n}\n.selectize-control.plugin-drag_drop .ui-sortable-placeholder::after {\n  content: '!';\n  visibility: hidden;\n}\n.selectize-control.plugin-drag_drop .ui-sortable-helper {\n  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);\n  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);\n}\n.selectize-dropdown-header {\n  position: relative;\n  padding: 3px 12px;\n  border-bottom: 1px solid #d0d0d0;\n  background: #f8f8f8;\n  -webkit-border-radius: 4px 4px 0 0;\n  -moz-border-radius: 4px 4px 0 0;\n  border-radius: 4px 4px 0 0;\n}\n.selectize-dropdown-header-close {\n  position: absolute;\n  right: 12px;\n  top: 50%;\n  color: #333333;\n  opacity: 0.4;\n  margin-top: -12px;\n  line-height: 20px;\n  font-size: 20px !important;\n}\n.selectize-dropdown-header-close:hover {\n  color: #000000;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup {\n  border-right: 1px solid #f2f2f2;\n  border-top: 0 none;\n  float: left;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup:last-child {\n  border-right: 0 none;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup:before {\n  display: none;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup-header {\n  border-top: 0 none;\n}\n.selectize-control.plugin-remove_button [data-value] {\n  position: relative;\n  padding-right: 24px !important;\n}\n.selectize-control.plugin-remove_button [data-value] .remove {\n  z-index: 1;\n  /* fixes ie bug (see #392) */\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  width: 17px;\n  text-align: center;\n  font-weight: bold;\n  font-size: 12px;\n  color: inherit;\n  text-decoration: none;\n  vertical-align: middle;\n  display: inline-block;\n  padding: 1px 0 0 0;\n  border-left: 1px solid rgba(0, 0, 0, 0);\n  -webkit-border-radius: 0 2px 2px 0;\n  -moz-border-radius: 0 2px 2px 0;\n  border-radius: 0 2px 2px 0;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.selectize-control.plugin-remove_button [data-value] .remove:hover {\n  background: rgba(0, 0, 0, 0.05);\n}\n.selectize-control.plugin-remove_button [data-value].active .remove {\n  border-left-color: rgba(0, 0, 0, 0);\n}\n.selectize-control.plugin-remove_button .disabled [data-value] .remove:hover {\n  background: none;\n}\n.selectize-control.plugin-remove_button .disabled [data-value] .remove {\n  border-left-color: rgba(77, 77, 77, 0);\n}\n.selectize-control.plugin-remove_button .remove-single {\n  position: absolute;\n  right: 0;\n  top: 0;\n  font-size: 23px;\n}\n.selectize-control {\n  position: relative;\n}\n.selectize-dropdown,\n.selectize-input,\n.selectize-input input {\n  color: #333333;\n  font-family: inherit;\n  font-size: inherit;\n  line-height: 20px;\n  -webkit-font-smoothing: inherit;\n}\n.selectize-input,\n.selectize-control.single .selectize-input.input-active {\n  background: #fff;\n  cursor: text;\n  display: inline-block;\n}\n.selectize-input {\n  border: 1px solid #ccc;\n  padding: 6px 12px;\n  display: inline-block;\n  width: 100%;\n  overflow: hidden;\n  position: relative;\n  z-index: 1;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.selectize-control.multi .selectize-input.has-items {\n  padding: 5px 12px 2px;\n}\n.selectize-input.full {\n  background-color: #fff;\n}\n.selectize-input.disabled,\n.selectize-input.disabled * {\n  cursor: default !important;\n}\n.selectize-input.focus {\n  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);\n}\n.selectize-input.dropdown-active {\n  -webkit-border-radius: 4px 4px 0 0;\n  -moz-border-radius: 4px 4px 0 0;\n  border-radius: 4px 4px 0 0;\n}\n.selectize-input > * {\n  vertical-align: baseline;\n  display: -moz-inline-stack;\n  display: inline-block;\n  zoom: 1;\n  *display: inline;\n}\n.selectize-control.multi .selectize-input > div {\n  cursor: pointer;\n  margin: 0 3px 3px 0;\n  padding: 1px 3px;\n  background: #efefef;\n  color: #333333;\n  border: 0 solid rgba(0, 0, 0, 0);\n}\n.selectize-control.multi .selectize-input > div.active {\n  background: #428bca;\n  color: #fff;\n  border: 0 solid rgba(0, 0, 0, 0);\n}\n.selectize-control.multi .selectize-input.disabled > div,\n.selectize-control.multi .selectize-input.disabled > div.active {\n  color: #808080;\n  background: #ffffff;\n  border: 0 solid rgba(77, 77, 77, 0);\n}\n.selectize-input > input {\n  display: inline-block !important;\n  padding: 0 !important;\n  min-height: 0 !important;\n  max-height: none !important;\n  max-width: 100% !important;\n  margin: 0 !important;\n  text-indent: 0 !important;\n  border: 0 none !important;\n  background: none !important;\n  line-height: inherit !important;\n  -webkit-user-select: auto !important;\n  -webkit-box-shadow: none !important;\n  box-shadow: none !important;\n}\n.selectize-input > input::-ms-clear {\n  display: none;\n}\n.selectize-input > input:focus {\n  outline: none !important;\n}\n.selectize-input::after {\n  content: ' ';\n  display: block;\n  clear: left;\n}\n.selectize-input.dropdown-active::before {\n  content: ' ';\n  display: block;\n  position: absolute;\n  background: #ffffff;\n  height: 1px;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.selectize-dropdown {\n  position: absolute;\n  z-index: 10;\n  border: 1px solid #d0d0d0;\n  background: #fff;\n  margin: -1px 0 0 0;\n  border-top: 0 none;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);\n  -webkit-border-radius: 0 0 4px 4px;\n  -moz-border-radius: 0 0 4px 4px;\n  border-radius: 0 0 4px 4px;\n}\n.selectize-dropdown [data-selectable] {\n  cursor: pointer;\n  overflow: hidden;\n}\n.selectize-dropdown [data-selectable] .highlight {\n  background: rgba(255, 237, 40, 0.4);\n  -webkit-border-radius: 1px;\n  -moz-border-radius: 1px;\n  border-radius: 1px;\n}\n.selectize-dropdown .option,\n.selectize-dropdown .optgroup-header {\n  padding: 3px 12px;\n}\n.selectize-dropdown .option,\n.selectize-dropdown [data-disabled],\n.selectize-dropdown [data-disabled] [data-selectable].option {\n  cursor: inherit;\n  opacity: 0.5;\n}\n.selectize-dropdown [data-selectable].option {\n  opacity: 1;\n}\n.selectize-dropdown .optgroup:first-child .optgroup-header {\n  border-top: 0 none;\n}\n.selectize-dropdown .optgroup-header {\n  color: #777777;\n  background: #fff;\n  cursor: default;\n}\n.selectize-dropdown .active {\n  background-color: #f5f5f5;\n  color: #262626;\n}\n.selectize-dropdown .active.create {\n  color: #262626;\n}\n.selectize-dropdown .create {\n  color: rgba(51, 51, 51, 0.5);\n}\n.selectize-dropdown-content {\n  overflow-y: auto;\n  overflow-x: hidden;\n  max-height: 200px;\n  -webkit-overflow-scrolling: touch;\n}\n.selectize-control.single .selectize-input,\n.selectize-control.single .selectize-input input {\n  cursor: pointer;\n}\n.selectize-control.single .selectize-input.input-active,\n.selectize-control.single .selectize-input.input-active input {\n  cursor: text;\n}\n.selectize-control.single .selectize-input:after {\n  content: ' ';\n  display: block;\n  position: absolute;\n  top: 50%;\n  right: 17px;\n  margin-top: -3px;\n  width: 0;\n  height: 0;\n  border-style: solid;\n  border-width: 5px 5px 0 5px;\n  border-color: #333333 transparent transparent transparent;\n}\n.selectize-control.single .selectize-input.dropdown-active:after {\n  margin-top: -4px;\n  border-width: 0 5px 5px 5px;\n  border-color: transparent transparent #333333 transparent;\n}\n.selectize-control.rtl.single .selectize-input:after {\n  left: 17px;\n  right: auto;\n}\n.selectize-control.rtl .selectize-input > input {\n  margin: 0 4px 0 -2px !important;\n}\n.selectize-control .selectize-input.disabled {\n  opacity: 0.5;\n  background-color: #fff;\n}\n.selectize-dropdown,\n.selectize-dropdown.form-control {\n  height: auto;\n  padding: 0;\n  margin: 2px 0 0 0;\n  z-index: 1000;\n  background: #fff;\n  border: 1px solid #ccc;\n  border: 1px solid rgba(0, 0, 0, 0.15);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);\n  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);\n}\n.selectize-dropdown .optgroup-header {\n  font-size: 12px;\n  line-height: 1.42857143;\n}\n.selectize-dropdown .optgroup:first-child:before {\n  display: none;\n}\n.selectize-dropdown .optgroup:before {\n  content: ' ';\n  display: block;\n  height: 1px;\n  margin: 9px 0;\n  overflow: hidden;\n  background-color: #e5e5e5;\n  margin-left: -12px;\n  margin-right: -12px;\n}\n.selectize-dropdown-content {\n  padding: 5px 0;\n}\n.selectize-dropdown-header {\n  padding: 6px 12px;\n}\n.selectize-input {\n  min-height: 34px;\n}\n.selectize-input.dropdown-active {\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.selectize-input.dropdown-active::before {\n  display: none;\n}\n.selectize-input.focus {\n  border-color: #66afe9;\n  outline: 0;\n  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, 0.6);\n  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, 0.6);\n}\n.has-error .selectize-input {\n  border-color: #a94442;\n  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);\n  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);\n}\n.has-error .selectize-input:focus {\n  border-color: #843534;\n  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ce8483;\n  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ce8483;\n}\n.selectize-control.multi .selectize-input.has-items {\n  padding-left: 9px;\n  padding-right: 9px;\n}\n.selectize-control.multi .selectize-input > div {\n  -webkit-border-radius: 3px;\n  -moz-border-radius: 3px;\n  border-radius: 3px;\n}\n.form-control.selectize-control {\n  padding: 0;\n  height: auto;\n  border: none;\n  background: none;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-border-radius: 0;\n  -moz-border-radius: 0;\n  border-radius: 0;\n}\n", "",{"version":3,"sources":["webpack://./node_modules/selectize/dist/css/selectize.bootstrap3.css"],"names":[],"mappings":"AAAA;;;;;;;;;;;;;;EAcE;AACF;EACE,8BAA8B;EAC9B,8BAA8B;EAC9B,0CAA0C;EAC1C,yBAAyB;EACzB,2CAA2C;EAC3C,mCAAmC;AACrC;AACA;EACE,YAAY;EACZ,kBAAkB;AACpB;AACA;EACE,gDAAgD;EAChD,wCAAwC;AAC1C;AACA;EACE,kBAAkB;EAClB,iBAAiB;EACjB,gCAAgC;EAChC,mBAAmB;EACnB,kCAAkC;EAClC,+BAA+B;EAC/B,0BAA0B;AAC5B;AACA;EACE,kBAAkB;EAClB,WAAW;EACX,QAAQ;EACR,cAAc;EACd,YAAY;EACZ,iBAAiB;EACjB,iBAAiB;EACjB,0BAA0B;AAC5B;AACA;EACE,cAAc;AAChB;AACA;EACE,+BAA+B;EAC/B,kBAAkB;EAClB,WAAW;EACX,8BAA8B;EAC9B,2BAA2B;EAC3B,sBAAsB;AACxB;AACA;EACE,oBAAoB;AACtB;AACA;EACE,aAAa;AACf;AACA;EACE,kBAAkB;AACpB;AACA;EACE,kBAAkB;EAClB,8BAA8B;AAChC;AACA;EACE,UAAU;EACV,4BAA4B;EAC5B,kBAAkB;EAClB,MAAM;EACN,QAAQ;EACR,SAAS;EACT,WAAW;EACX,kBAAkB;EAClB,iBAAiB;EACjB,eAAe;EACf,cAAc;EACd,qBAAqB;EACrB,sBAAsB;EACtB,qBAAqB;EACrB,kBAAkB;EAClB,uCAAuC;EACvC,kCAAkC;EAClC,+BAA+B;EAC/B,0BAA0B;EAC1B,8BAA8B;EAC9B,2BAA2B;EAC3B,sBAAsB;AACxB;AACA;EACE,+BAA+B;AACjC;AACA;EACE,mCAAmC;AACrC;AACA;EACE,gBAAgB;AAClB;AACA;EACE,sCAAsC;AACxC;AACA;EACE,kBAAkB;EAClB,QAAQ;EACR,MAAM;EACN,eAAe;AACjB;AACA;EACE,kBAAkB;AACpB;AACA;;;EAGE,cAAc;EACd,oBAAoB;EACpB,kBAAkB;EAClB,iBAAiB;EACjB,+BAA+B;AACjC;AACA;;EAEE,gBAAgB;EAChB,YAAY;EACZ,qBAAqB;AACvB;AACA;EACE,sBAAsB;EACtB,iBAAiB;EACjB,qBAAqB;EACrB,WAAW;EACX,gBAAgB;EAChB,kBAAkB;EAClB,UAAU;EACV,8BAA8B;EAC9B,2BAA2B;EAC3B,sBAAsB;EACtB,wBAAwB;EACxB,gBAAgB;EAChB,0BAA0B;EAC1B,uBAAuB;EACvB,kBAAkB;AACpB;AACA;EACE,qBAAqB;AACvB;AACA;EACE,sBAAsB;AACxB;AACA;;EAEE,0BAA0B;AAC5B;AACA;EACE,uDAAuD;EACvD,+CAA+C;AACjD;AACA;EACE,kCAAkC;EAClC,+BAA+B;EAC/B,0BAA0B;AAC5B;AACA;EACE,wBAAwB;EACxB,0BAA0B;EAC1B,qBAAqB;EACrB,OAAO;GACP,eAAgB;AAClB;AACA;EACE,eAAe;EACf,mBAAmB;EACnB,gBAAgB;EAChB,mBAAmB;EACnB,cAAc;EACd,gCAAgC;AAClC;AACA;EACE,mBAAmB;EACnB,WAAW;EACX,gCAAgC;AAClC;AACA;;EAEE,cAAc;EACd,mBAAmB;EACnB,mCAAmC;AACrC;AACA;EACE,gCAAgC;EAChC,qBAAqB;EACrB,wBAAwB;EACxB,2BAA2B;EAC3B,0BAA0B;EAC1B,oBAAoB;EACpB,yBAAyB;EACzB,yBAAyB;EACzB,2BAA2B;EAC3B,+BAA+B;EAC/B,oCAAoC;EACpC,mCAAmC;EACnC,2BAA2B;AAC7B;AACA;EACE,aAAa;AACf;AACA;EACE,wBAAwB;AAC1B;AACA;EACE,YAAY;EACZ,cAAc;EACd,WAAW;AACb;AACA;EACE,YAAY;EACZ,cAAc;EACd,kBAAkB;EAClB,mBAAmB;EACnB,WAAW;EACX,SAAS;EACT,OAAO;EACP,QAAQ;AACV;AACA;EACE,kBAAkB;EAClB,WAAW;EACX,yBAAyB;EACzB,gBAAgB;EAChB,kBAAkB;EAClB,kBAAkB;EAClB,8BAA8B;EAC9B,2BAA2B;EAC3B,sBAAsB;EACtB,gDAAgD;EAChD,wCAAwC;EACxC,kCAAkC;EAClC,+BAA+B;EAC/B,0BAA0B;AAC5B;AACA;EACE,eAAe;EACf,gBAAgB;AAClB;AACA;EACE,mCAAmC;EACnC,0BAA0B;EAC1B,uBAAuB;EACvB,kBAAkB;AACpB;AACA;;EAEE,iBAAiB;AACnB;AACA;;;EAGE,eAAe;EACf,YAAY;AACd;AACA;EACE,UAAU;AACZ;AACA;EACE,kBAAkB;AACpB;AACA;EACE,cAAc;EACd,gBAAgB;EAChB,eAAe;AACjB;AACA;EACE,yBAAyB;EACzB,cAAc;AAChB;AACA;EACE,cAAc;AAChB;AACA;EACE,4BAA4B;AAC9B;AACA;EACE,gBAAgB;EAChB,kBAAkB;EAClB,iBAAiB;EACjB,iCAAiC;AACnC;AACA;;EAEE,eAAe;AACjB;AACA;;EAEE,YAAY;AACd;AACA;EACE,YAAY;EACZ,cAAc;EACd,kBAAkB;EAClB,QAAQ;EACR,WAAW;EACX,gBAAgB;EAChB,QAAQ;EACR,SAAS;EACT,mBAAmB;EACnB,2BAA2B;EAC3B,yDAAyD;AAC3D;AACA;EACE,gBAAgB;EAChB,2BAA2B;EAC3B,yDAAyD;AAC3D;AACA;EACE,UAAU;EACV,WAAW;AACb;AACA;EACE,+BAA+B;AACjC;AACA;EACE,YAAY;EACZ,sBAAsB;AACxB;AACA;;EAEE,YAAY;EACZ,UAAU;EACV,iBAAiB;EACjB,aAAa;EACb,gBAAgB;EAChB,sBAAsB;EACtB,qCAAqC;EACrC,0BAA0B;EAC1B,uBAAuB;EACvB,kBAAkB;EAClB,mDAAmD;EACnD,2CAA2C;AAC7C;AACA;EACE,eAAe;EACf,uBAAuB;AACzB;AACA;EACE,aAAa;AACf;AACA;EACE,YAAY;EACZ,cAAc;EACd,WAAW;EACX,aAAa;EACb,gBAAgB;EAChB,yBAAyB;EACzB,kBAAkB;EAClB,mBAAmB;AACrB;AACA;EACE,cAAc;AAChB;AACA;EACE,iBAAiB;AACnB;AACA;EACE,gBAAgB;AAClB;AACA;EACE,0BAA0B;EAC1B,uBAAuB;EACvB,kBAAkB;AACpB;AACA;EACE,aAAa;AACf;AACA;EACE,qBAAqB;EACrB,UAAU;EACV,sFAAsF;EACtF,8EAA8E;AAChF;AACA;EACE,qBAAqB;EACrB,wDAAwD;EACxD,gDAAgD;AAClD;AACA;EACE,qBAAqB;EACrB,yEAAyE;EACzE,iEAAiE;AACnE;AACA;EACE,iBAAiB;EACjB,kBAAkB;AACpB;AACA;EACE,0BAA0B;EAC1B,uBAAuB;EACvB,kBAAkB;AACpB;AACA;EACE,UAAU;EACV,YAAY;EACZ,YAAY;EACZ,gBAAgB;EAChB,wBAAwB;EACxB,gBAAgB;EAChB,wBAAwB;EACxB,qBAAqB;EACrB,gBAAgB;AAClB","sourcesContent":["/**\n * selectize.bootstrap3.css (v0.12.6) - Bootstrap 3 Theme\n * Copyright (c) 2013–2015 Brian Reavis & contributors\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this\n * file except in compliance with the License. You may obtain a copy of the License at:\n * http://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software distributed under\n * the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF\n * ANY KIND, either express or implied. See the License for the specific language\n * governing permissions and limitations under the License.\n *\n * @author Brian Reavis <brian@thirdroute.com>\n */\n.selectize-control.plugin-drag_drop.multi > .selectize-input > div.ui-sortable-placeholder {\n  visibility: visible !important;\n  background: #f2f2f2 !important;\n  background: rgba(0, 0, 0, 0.06) !important;\n  border: 0 none !important;\n  -webkit-box-shadow: inset 0 0 12px 4px #fff;\n  box-shadow: inset 0 0 12px 4px #fff;\n}\n.selectize-control.plugin-drag_drop .ui-sortable-placeholder::after {\n  content: '!';\n  visibility: hidden;\n}\n.selectize-control.plugin-drag_drop .ui-sortable-helper {\n  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);\n  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);\n}\n.selectize-dropdown-header {\n  position: relative;\n  padding: 3px 12px;\n  border-bottom: 1px solid #d0d0d0;\n  background: #f8f8f8;\n  -webkit-border-radius: 4px 4px 0 0;\n  -moz-border-radius: 4px 4px 0 0;\n  border-radius: 4px 4px 0 0;\n}\n.selectize-dropdown-header-close {\n  position: absolute;\n  right: 12px;\n  top: 50%;\n  color: #333333;\n  opacity: 0.4;\n  margin-top: -12px;\n  line-height: 20px;\n  font-size: 20px !important;\n}\n.selectize-dropdown-header-close:hover {\n  color: #000000;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup {\n  border-right: 1px solid #f2f2f2;\n  border-top: 0 none;\n  float: left;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup:last-child {\n  border-right: 0 none;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup:before {\n  display: none;\n}\n.selectize-dropdown.plugin-optgroup_columns .optgroup-header {\n  border-top: 0 none;\n}\n.selectize-control.plugin-remove_button [data-value] {\n  position: relative;\n  padding-right: 24px !important;\n}\n.selectize-control.plugin-remove_button [data-value] .remove {\n  z-index: 1;\n  /* fixes ie bug (see #392) */\n  position: absolute;\n  top: 0;\n  right: 0;\n  bottom: 0;\n  width: 17px;\n  text-align: center;\n  font-weight: bold;\n  font-size: 12px;\n  color: inherit;\n  text-decoration: none;\n  vertical-align: middle;\n  display: inline-block;\n  padding: 1px 0 0 0;\n  border-left: 1px solid rgba(0, 0, 0, 0);\n  -webkit-border-radius: 0 2px 2px 0;\n  -moz-border-radius: 0 2px 2px 0;\n  border-radius: 0 2px 2px 0;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.selectize-control.plugin-remove_button [data-value] .remove:hover {\n  background: rgba(0, 0, 0, 0.05);\n}\n.selectize-control.plugin-remove_button [data-value].active .remove {\n  border-left-color: rgba(0, 0, 0, 0);\n}\n.selectize-control.plugin-remove_button .disabled [data-value] .remove:hover {\n  background: none;\n}\n.selectize-control.plugin-remove_button .disabled [data-value] .remove {\n  border-left-color: rgba(77, 77, 77, 0);\n}\n.selectize-control.plugin-remove_button .remove-single {\n  position: absolute;\n  right: 0;\n  top: 0;\n  font-size: 23px;\n}\n.selectize-control {\n  position: relative;\n}\n.selectize-dropdown,\n.selectize-input,\n.selectize-input input {\n  color: #333333;\n  font-family: inherit;\n  font-size: inherit;\n  line-height: 20px;\n  -webkit-font-smoothing: inherit;\n}\n.selectize-input,\n.selectize-control.single .selectize-input.input-active {\n  background: #fff;\n  cursor: text;\n  display: inline-block;\n}\n.selectize-input {\n  border: 1px solid #ccc;\n  padding: 6px 12px;\n  display: inline-block;\n  width: 100%;\n  overflow: hidden;\n  position: relative;\n  z-index: 1;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.selectize-control.multi .selectize-input.has-items {\n  padding: 5px 12px 2px;\n}\n.selectize-input.full {\n  background-color: #fff;\n}\n.selectize-input.disabled,\n.selectize-input.disabled * {\n  cursor: default !important;\n}\n.selectize-input.focus {\n  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);\n}\n.selectize-input.dropdown-active {\n  -webkit-border-radius: 4px 4px 0 0;\n  -moz-border-radius: 4px 4px 0 0;\n  border-radius: 4px 4px 0 0;\n}\n.selectize-input > * {\n  vertical-align: baseline;\n  display: -moz-inline-stack;\n  display: inline-block;\n  zoom: 1;\n  *display: inline;\n}\n.selectize-control.multi .selectize-input > div {\n  cursor: pointer;\n  margin: 0 3px 3px 0;\n  padding: 1px 3px;\n  background: #efefef;\n  color: #333333;\n  border: 0 solid rgba(0, 0, 0, 0);\n}\n.selectize-control.multi .selectize-input > div.active {\n  background: #428bca;\n  color: #fff;\n  border: 0 solid rgba(0, 0, 0, 0);\n}\n.selectize-control.multi .selectize-input.disabled > div,\n.selectize-control.multi .selectize-input.disabled > div.active {\n  color: #808080;\n  background: #ffffff;\n  border: 0 solid rgba(77, 77, 77, 0);\n}\n.selectize-input > input {\n  display: inline-block !important;\n  padding: 0 !important;\n  min-height: 0 !important;\n  max-height: none !important;\n  max-width: 100% !important;\n  margin: 0 !important;\n  text-indent: 0 !important;\n  border: 0 none !important;\n  background: none !important;\n  line-height: inherit !important;\n  -webkit-user-select: auto !important;\n  -webkit-box-shadow: none !important;\n  box-shadow: none !important;\n}\n.selectize-input > input::-ms-clear {\n  display: none;\n}\n.selectize-input > input:focus {\n  outline: none !important;\n}\n.selectize-input::after {\n  content: ' ';\n  display: block;\n  clear: left;\n}\n.selectize-input.dropdown-active::before {\n  content: ' ';\n  display: block;\n  position: absolute;\n  background: #ffffff;\n  height: 1px;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.selectize-dropdown {\n  position: absolute;\n  z-index: 10;\n  border: 1px solid #d0d0d0;\n  background: #fff;\n  margin: -1px 0 0 0;\n  border-top: 0 none;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box;\n  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);\n  -webkit-border-radius: 0 0 4px 4px;\n  -moz-border-radius: 0 0 4px 4px;\n  border-radius: 0 0 4px 4px;\n}\n.selectize-dropdown [data-selectable] {\n  cursor: pointer;\n  overflow: hidden;\n}\n.selectize-dropdown [data-selectable] .highlight {\n  background: rgba(255, 237, 40, 0.4);\n  -webkit-border-radius: 1px;\n  -moz-border-radius: 1px;\n  border-radius: 1px;\n}\n.selectize-dropdown .option,\n.selectize-dropdown .optgroup-header {\n  padding: 3px 12px;\n}\n.selectize-dropdown .option,\n.selectize-dropdown [data-disabled],\n.selectize-dropdown [data-disabled] [data-selectable].option {\n  cursor: inherit;\n  opacity: 0.5;\n}\n.selectize-dropdown [data-selectable].option {\n  opacity: 1;\n}\n.selectize-dropdown .optgroup:first-child .optgroup-header {\n  border-top: 0 none;\n}\n.selectize-dropdown .optgroup-header {\n  color: #777777;\n  background: #fff;\n  cursor: default;\n}\n.selectize-dropdown .active {\n  background-color: #f5f5f5;\n  color: #262626;\n}\n.selectize-dropdown .active.create {\n  color: #262626;\n}\n.selectize-dropdown .create {\n  color: rgba(51, 51, 51, 0.5);\n}\n.selectize-dropdown-content {\n  overflow-y: auto;\n  overflow-x: hidden;\n  max-height: 200px;\n  -webkit-overflow-scrolling: touch;\n}\n.selectize-control.single .selectize-input,\n.selectize-control.single .selectize-input input {\n  cursor: pointer;\n}\n.selectize-control.single .selectize-input.input-active,\n.selectize-control.single .selectize-input.input-active input {\n  cursor: text;\n}\n.selectize-control.single .selectize-input:after {\n  content: ' ';\n  display: block;\n  position: absolute;\n  top: 50%;\n  right: 17px;\n  margin-top: -3px;\n  width: 0;\n  height: 0;\n  border-style: solid;\n  border-width: 5px 5px 0 5px;\n  border-color: #333333 transparent transparent transparent;\n}\n.selectize-control.single .selectize-input.dropdown-active:after {\n  margin-top: -4px;\n  border-width: 0 5px 5px 5px;\n  border-color: transparent transparent #333333 transparent;\n}\n.selectize-control.rtl.single .selectize-input:after {\n  left: 17px;\n  right: auto;\n}\n.selectize-control.rtl .selectize-input > input {\n  margin: 0 4px 0 -2px !important;\n}\n.selectize-control .selectize-input.disabled {\n  opacity: 0.5;\n  background-color: #fff;\n}\n.selectize-dropdown,\n.selectize-dropdown.form-control {\n  height: auto;\n  padding: 0;\n  margin: 2px 0 0 0;\n  z-index: 1000;\n  background: #fff;\n  border: 1px solid #ccc;\n  border: 1px solid rgba(0, 0, 0, 0.15);\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);\n  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);\n}\n.selectize-dropdown .optgroup-header {\n  font-size: 12px;\n  line-height: 1.42857143;\n}\n.selectize-dropdown .optgroup:first-child:before {\n  display: none;\n}\n.selectize-dropdown .optgroup:before {\n  content: ' ';\n  display: block;\n  height: 1px;\n  margin: 9px 0;\n  overflow: hidden;\n  background-color: #e5e5e5;\n  margin-left: -12px;\n  margin-right: -12px;\n}\n.selectize-dropdown-content {\n  padding: 5px 0;\n}\n.selectize-dropdown-header {\n  padding: 6px 12px;\n}\n.selectize-input {\n  min-height: 34px;\n}\n.selectize-input.dropdown-active {\n  -webkit-border-radius: 4px;\n  -moz-border-radius: 4px;\n  border-radius: 4px;\n}\n.selectize-input.dropdown-active::before {\n  display: none;\n}\n.selectize-input.focus {\n  border-color: #66afe9;\n  outline: 0;\n  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, 0.6);\n  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, 0.6);\n}\n.has-error .selectize-input {\n  border-color: #a94442;\n  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);\n  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);\n}\n.has-error .selectize-input:focus {\n  border-color: #843534;\n  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ce8483;\n  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ce8483;\n}\n.selectize-control.multi .selectize-input.has-items {\n  padding-left: 9px;\n  padding-right: 9px;\n}\n.selectize-control.multi .selectize-input > div {\n  -webkit-border-radius: 3px;\n  -moz-border-radius: 3px;\n  border-radius: 3px;\n}\n.form-control.selectize-control {\n  padding: 0;\n  height: auto;\n  border: none;\n  background: none;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-border-radius: 0;\n  -moz-border-radius: 0;\n  border-radius: 0;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -58235,6 +58453,1876 @@ return jQuery;
 
 /***/ }),
 
+/***/ "./node_modules/json5/dist/index.js":
+/*!******************************************!*\
+  !*** ./node_modules/json5/dist/index.js ***!
+  \******************************************/
+/*! unknown exports (runtime-defined) */
+/*! runtime requirements: module, top-level-this-exports */
+/*! CommonJS bailout: this is used directly at 5:2-6 */
+/*! CommonJS bailout: module.exports is used directly at 2:64-78 */
+/***/ (function(module) {
+
+(function (global, factory) {
+	 true ? module.exports = factory() :
+	0;
+}(this, (function () { 'use strict';
+
+	function createCommonjsModule(fn, module) {
+		return module = { exports: {} }, fn(module, module.exports), module.exports;
+	}
+
+	var _global = createCommonjsModule(function (module) {
+	// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+	var global = module.exports = typeof window != 'undefined' && window.Math == Math
+	  ? window : typeof self != 'undefined' && self.Math == Math ? self
+	  // eslint-disable-next-line no-new-func
+	  : Function('return this')();
+	if (typeof __g == 'number') { __g = global; } // eslint-disable-line no-undef
+	});
+
+	var _core = createCommonjsModule(function (module) {
+	var core = module.exports = { version: '2.6.5' };
+	if (typeof __e == 'number') { __e = core; } // eslint-disable-line no-undef
+	});
+	var _core_1 = _core.version;
+
+	var _isObject = function (it) {
+	  return typeof it === 'object' ? it !== null : typeof it === 'function';
+	};
+
+	var _anObject = function (it) {
+	  if (!_isObject(it)) { throw TypeError(it + ' is not an object!'); }
+	  return it;
+	};
+
+	var _fails = function (exec) {
+	  try {
+	    return !!exec();
+	  } catch (e) {
+	    return true;
+	  }
+	};
+
+	// Thank's IE8 for his funny defineProperty
+	var _descriptors = !_fails(function () {
+	  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
+	});
+
+	var document = _global.document;
+	// typeof document.createElement is 'object' in old IE
+	var is = _isObject(document) && _isObject(document.createElement);
+	var _domCreate = function (it) {
+	  return is ? document.createElement(it) : {};
+	};
+
+	var _ie8DomDefine = !_descriptors && !_fails(function () {
+	  return Object.defineProperty(_domCreate('div'), 'a', { get: function () { return 7; } }).a != 7;
+	});
+
+	// 7.1.1 ToPrimitive(input [, PreferredType])
+
+	// instead of the ES6 spec version, we didn't implement @@toPrimitive case
+	// and the second argument - flag - preferred type is a string
+	var _toPrimitive = function (it, S) {
+	  if (!_isObject(it)) { return it; }
+	  var fn, val;
+	  if (S && typeof (fn = it.toString) == 'function' && !_isObject(val = fn.call(it))) { return val; }
+	  if (typeof (fn = it.valueOf) == 'function' && !_isObject(val = fn.call(it))) { return val; }
+	  if (!S && typeof (fn = it.toString) == 'function' && !_isObject(val = fn.call(it))) { return val; }
+	  throw TypeError("Can't convert object to primitive value");
+	};
+
+	var dP = Object.defineProperty;
+
+	var f = _descriptors ? Object.defineProperty : function defineProperty(O, P, Attributes) {
+	  _anObject(O);
+	  P = _toPrimitive(P, true);
+	  _anObject(Attributes);
+	  if (_ie8DomDefine) { try {
+	    return dP(O, P, Attributes);
+	  } catch (e) { /* empty */ } }
+	  if ('get' in Attributes || 'set' in Attributes) { throw TypeError('Accessors not supported!'); }
+	  if ('value' in Attributes) { O[P] = Attributes.value; }
+	  return O;
+	};
+
+	var _objectDp = {
+		f: f
+	};
+
+	var _propertyDesc = function (bitmap, value) {
+	  return {
+	    enumerable: !(bitmap & 1),
+	    configurable: !(bitmap & 2),
+	    writable: !(bitmap & 4),
+	    value: value
+	  };
+	};
+
+	var _hide = _descriptors ? function (object, key, value) {
+	  return _objectDp.f(object, key, _propertyDesc(1, value));
+	} : function (object, key, value) {
+	  object[key] = value;
+	  return object;
+	};
+
+	var hasOwnProperty = {}.hasOwnProperty;
+	var _has = function (it, key) {
+	  return hasOwnProperty.call(it, key);
+	};
+
+	var id = 0;
+	var px = Math.random();
+	var _uid = function (key) {
+	  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
+	};
+
+	var _library = false;
+
+	var _shared = createCommonjsModule(function (module) {
+	var SHARED = '__core-js_shared__';
+	var store = _global[SHARED] || (_global[SHARED] = {});
+
+	(module.exports = function (key, value) {
+	  return store[key] || (store[key] = value !== undefined ? value : {});
+	})('versions', []).push({
+	  version: _core.version,
+	  mode: _library ? 'pure' : 'global',
+	  copyright: '© 2019 Denis Pushkarev (zloirock.ru)'
+	});
+	});
+
+	var _functionToString = _shared('native-function-to-string', Function.toString);
+
+	var _redefine = createCommonjsModule(function (module) {
+	var SRC = _uid('src');
+
+	var TO_STRING = 'toString';
+	var TPL = ('' + _functionToString).split(TO_STRING);
+
+	_core.inspectSource = function (it) {
+	  return _functionToString.call(it);
+	};
+
+	(module.exports = function (O, key, val, safe) {
+	  var isFunction = typeof val == 'function';
+	  if (isFunction) { _has(val, 'name') || _hide(val, 'name', key); }
+	  if (O[key] === val) { return; }
+	  if (isFunction) { _has(val, SRC) || _hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key))); }
+	  if (O === _global) {
+	    O[key] = val;
+	  } else if (!safe) {
+	    delete O[key];
+	    _hide(O, key, val);
+	  } else if (O[key]) {
+	    O[key] = val;
+	  } else {
+	    _hide(O, key, val);
+	  }
+	// add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
+	})(Function.prototype, TO_STRING, function toString() {
+	  return typeof this == 'function' && this[SRC] || _functionToString.call(this);
+	});
+	});
+
+	var _aFunction = function (it) {
+	  if (typeof it != 'function') { throw TypeError(it + ' is not a function!'); }
+	  return it;
+	};
+
+	// optional / simple context binding
+
+	var _ctx = function (fn, that, length) {
+	  _aFunction(fn);
+	  if (that === undefined) { return fn; }
+	  switch (length) {
+	    case 1: return function (a) {
+	      return fn.call(that, a);
+	    };
+	    case 2: return function (a, b) {
+	      return fn.call(that, a, b);
+	    };
+	    case 3: return function (a, b, c) {
+	      return fn.call(that, a, b, c);
+	    };
+	  }
+	  return function (/* ...args */) {
+	    return fn.apply(that, arguments);
+	  };
+	};
+
+	var PROTOTYPE = 'prototype';
+
+	var $export = function (type, name, source) {
+	  var IS_FORCED = type & $export.F;
+	  var IS_GLOBAL = type & $export.G;
+	  var IS_STATIC = type & $export.S;
+	  var IS_PROTO = type & $export.P;
+	  var IS_BIND = type & $export.B;
+	  var target = IS_GLOBAL ? _global : IS_STATIC ? _global[name] || (_global[name] = {}) : (_global[name] || {})[PROTOTYPE];
+	  var exports = IS_GLOBAL ? _core : _core[name] || (_core[name] = {});
+	  var expProto = exports[PROTOTYPE] || (exports[PROTOTYPE] = {});
+	  var key, own, out, exp;
+	  if (IS_GLOBAL) { source = name; }
+	  for (key in source) {
+	    // contains in native
+	    own = !IS_FORCED && target && target[key] !== undefined;
+	    // export native or passed
+	    out = (own ? target : source)[key];
+	    // bind timers to global for call from export context
+	    exp = IS_BIND && own ? _ctx(out, _global) : IS_PROTO && typeof out == 'function' ? _ctx(Function.call, out) : out;
+	    // extend global
+	    if (target) { _redefine(target, key, out, type & $export.U); }
+	    // export
+	    if (exports[key] != out) { _hide(exports, key, exp); }
+	    if (IS_PROTO && expProto[key] != out) { expProto[key] = out; }
+	  }
+	};
+	_global.core = _core;
+	// type bitmap
+	$export.F = 1;   // forced
+	$export.G = 2;   // global
+	$export.S = 4;   // static
+	$export.P = 8;   // proto
+	$export.B = 16;  // bind
+	$export.W = 32;  // wrap
+	$export.U = 64;  // safe
+	$export.R = 128; // real proto method for `library`
+	var _export = $export;
+
+	// 7.1.4 ToInteger
+	var ceil = Math.ceil;
+	var floor = Math.floor;
+	var _toInteger = function (it) {
+	  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
+	};
+
+	// 7.2.1 RequireObjectCoercible(argument)
+	var _defined = function (it) {
+	  if (it == undefined) { throw TypeError("Can't call method on  " + it); }
+	  return it;
+	};
+
+	// true  -> String#at
+	// false -> String#codePointAt
+	var _stringAt = function (TO_STRING) {
+	  return function (that, pos) {
+	    var s = String(_defined(that));
+	    var i = _toInteger(pos);
+	    var l = s.length;
+	    var a, b;
+	    if (i < 0 || i >= l) { return TO_STRING ? '' : undefined; }
+	    a = s.charCodeAt(i);
+	    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff
+	      ? TO_STRING ? s.charAt(i) : a
+	      : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
+	  };
+	};
+
+	var $at = _stringAt(false);
+	_export(_export.P, 'String', {
+	  // 21.1.3.3 String.prototype.codePointAt(pos)
+	  codePointAt: function codePointAt(pos) {
+	    return $at(this, pos);
+	  }
+	});
+
+	var codePointAt = _core.String.codePointAt;
+
+	var max = Math.max;
+	var min = Math.min;
+	var _toAbsoluteIndex = function (index, length) {
+	  index = _toInteger(index);
+	  return index < 0 ? max(index + length, 0) : min(index, length);
+	};
+
+	var fromCharCode = String.fromCharCode;
+	var $fromCodePoint = String.fromCodePoint;
+
+	// length should be 1, old FF problem
+	_export(_export.S + _export.F * (!!$fromCodePoint && $fromCodePoint.length != 1), 'String', {
+	  // 21.1.2.2 String.fromCodePoint(...codePoints)
+	  fromCodePoint: function fromCodePoint(x) {
+	    var arguments$1 = arguments;
+	 // eslint-disable-line no-unused-vars
+	    var res = [];
+	    var aLen = arguments.length;
+	    var i = 0;
+	    var code;
+	    while (aLen > i) {
+	      code = +arguments$1[i++];
+	      if (_toAbsoluteIndex(code, 0x10ffff) !== code) { throw RangeError(code + ' is not a valid code point'); }
+	      res.push(code < 0x10000
+	        ? fromCharCode(code)
+	        : fromCharCode(((code -= 0x10000) >> 10) + 0xd800, code % 0x400 + 0xdc00)
+	      );
+	    } return res.join('');
+	  }
+	});
+
+	var fromCodePoint = _core.String.fromCodePoint;
+
+	// This is a generated file. Do not edit.
+	var Space_Separator = /[\u1680\u2000-\u200A\u202F\u205F\u3000]/;
+	var ID_Start = /[\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u0860-\u086A\u08A0-\u08B4\u08B6-\u08BD\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u09FC\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0AF9\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C58-\u0C5A\u0C60\u0C61\u0C80\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D54-\u0D56\u0D5F-\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F5\u13F8-\u13FD\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u1884\u1887-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1C80-\u1C88\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312E\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FEA\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA69D\uA6A0-\uA6EF\uA717-\uA71F\uA722-\uA788\uA78B-\uA7AE\uA7B0-\uA7B7\uA7F7-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA8FD\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uA9E0-\uA9E4\uA9E6-\uA9EF\uA9FA-\uA9FE\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA7E-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB65\uAB70-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]|\uD800[\uDC00-\uDC0B\uDC0D-\uDC26\uDC28-\uDC3A\uDC3C\uDC3D\uDC3F-\uDC4D\uDC50-\uDC5D\uDC80-\uDCFA\uDD40-\uDD74\uDE80-\uDE9C\uDEA0-\uDED0\uDF00-\uDF1F\uDF2D-\uDF4A\uDF50-\uDF75\uDF80-\uDF9D\uDFA0-\uDFC3\uDFC8-\uDFCF\uDFD1-\uDFD5]|\uD801[\uDC00-\uDC9D\uDCB0-\uDCD3\uDCD8-\uDCFB\uDD00-\uDD27\uDD30-\uDD63\uDE00-\uDF36\uDF40-\uDF55\uDF60-\uDF67]|\uD802[\uDC00-\uDC05\uDC08\uDC0A-\uDC35\uDC37\uDC38\uDC3C\uDC3F-\uDC55\uDC60-\uDC76\uDC80-\uDC9E\uDCE0-\uDCF2\uDCF4\uDCF5\uDD00-\uDD15\uDD20-\uDD39\uDD80-\uDDB7\uDDBE\uDDBF\uDE00\uDE10-\uDE13\uDE15-\uDE17\uDE19-\uDE33\uDE60-\uDE7C\uDE80-\uDE9C\uDEC0-\uDEC7\uDEC9-\uDEE4\uDF00-\uDF35\uDF40-\uDF55\uDF60-\uDF72\uDF80-\uDF91]|\uD803[\uDC00-\uDC48\uDC80-\uDCB2\uDCC0-\uDCF2]|\uD804[\uDC03-\uDC37\uDC83-\uDCAF\uDCD0-\uDCE8\uDD03-\uDD26\uDD50-\uDD72\uDD76\uDD83-\uDDB2\uDDC1-\uDDC4\uDDDA\uDDDC\uDE00-\uDE11\uDE13-\uDE2B\uDE80-\uDE86\uDE88\uDE8A-\uDE8D\uDE8F-\uDE9D\uDE9F-\uDEA8\uDEB0-\uDEDE\uDF05-\uDF0C\uDF0F\uDF10\uDF13-\uDF28\uDF2A-\uDF30\uDF32\uDF33\uDF35-\uDF39\uDF3D\uDF50\uDF5D-\uDF61]|\uD805[\uDC00-\uDC34\uDC47-\uDC4A\uDC80-\uDCAF\uDCC4\uDCC5\uDCC7\uDD80-\uDDAE\uDDD8-\uDDDB\uDE00-\uDE2F\uDE44\uDE80-\uDEAA\uDF00-\uDF19]|\uD806[\uDCA0-\uDCDF\uDCFF\uDE00\uDE0B-\uDE32\uDE3A\uDE50\uDE5C-\uDE83\uDE86-\uDE89\uDEC0-\uDEF8]|\uD807[\uDC00-\uDC08\uDC0A-\uDC2E\uDC40\uDC72-\uDC8F\uDD00-\uDD06\uDD08\uDD09\uDD0B-\uDD30\uDD46]|\uD808[\uDC00-\uDF99]|\uD809[\uDC00-\uDC6E\uDC80-\uDD43]|[\uD80C\uD81C-\uD820\uD840-\uD868\uD86A-\uD86C\uD86F-\uD872\uD874-\uD879][\uDC00-\uDFFF]|\uD80D[\uDC00-\uDC2E]|\uD811[\uDC00-\uDE46]|\uD81A[\uDC00-\uDE38\uDE40-\uDE5E\uDED0-\uDEED\uDF00-\uDF2F\uDF40-\uDF43\uDF63-\uDF77\uDF7D-\uDF8F]|\uD81B[\uDF00-\uDF44\uDF50\uDF93-\uDF9F\uDFE0\uDFE1]|\uD821[\uDC00-\uDFEC]|\uD822[\uDC00-\uDEF2]|\uD82C[\uDC00-\uDD1E\uDD70-\uDEFB]|\uD82F[\uDC00-\uDC6A\uDC70-\uDC7C\uDC80-\uDC88\uDC90-\uDC99]|\uD835[\uDC00-\uDC54\uDC56-\uDC9C\uDC9E\uDC9F\uDCA2\uDCA5\uDCA6\uDCA9-\uDCAC\uDCAE-\uDCB9\uDCBB\uDCBD-\uDCC3\uDCC5-\uDD05\uDD07-\uDD0A\uDD0D-\uDD14\uDD16-\uDD1C\uDD1E-\uDD39\uDD3B-\uDD3E\uDD40-\uDD44\uDD46\uDD4A-\uDD50\uDD52-\uDEA5\uDEA8-\uDEC0\uDEC2-\uDEDA\uDEDC-\uDEFA\uDEFC-\uDF14\uDF16-\uDF34\uDF36-\uDF4E\uDF50-\uDF6E\uDF70-\uDF88\uDF8A-\uDFA8\uDFAA-\uDFC2\uDFC4-\uDFCB]|\uD83A[\uDC00-\uDCC4\uDD00-\uDD43]|\uD83B[\uDE00-\uDE03\uDE05-\uDE1F\uDE21\uDE22\uDE24\uDE27\uDE29-\uDE32\uDE34-\uDE37\uDE39\uDE3B\uDE42\uDE47\uDE49\uDE4B\uDE4D-\uDE4F\uDE51\uDE52\uDE54\uDE57\uDE59\uDE5B\uDE5D\uDE5F\uDE61\uDE62\uDE64\uDE67-\uDE6A\uDE6C-\uDE72\uDE74-\uDE77\uDE79-\uDE7C\uDE7E\uDE80-\uDE89\uDE8B-\uDE9B\uDEA1-\uDEA3\uDEA5-\uDEA9\uDEAB-\uDEBB]|\uD869[\uDC00-\uDED6\uDF00-\uDFFF]|\uD86D[\uDC00-\uDF34\uDF40-\uDFFF]|\uD86E[\uDC00-\uDC1D\uDC20-\uDFFF]|\uD873[\uDC00-\uDEA1\uDEB0-\uDFFF]|\uD87A[\uDC00-\uDFE0]|\uD87E[\uDC00-\uDE1D]/;
+	var ID_Continue = /[\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0300-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u0483-\u0487\u048A-\u052F\u0531-\u0556\u0559\u0561-\u0587\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u05D0-\u05EA\u05F0-\u05F2\u0610-\u061A\u0620-\u0669\u066E-\u06D3\u06D5-\u06DC\u06DF-\u06E8\u06EA-\u06FC\u06FF\u0710-\u074A\u074D-\u07B1\u07C0-\u07F5\u07FA\u0800-\u082D\u0840-\u085B\u0860-\u086A\u08A0-\u08B4\u08B6-\u08BD\u08D4-\u08E1\u08E3-\u0963\u0966-\u096F\u0971-\u0983\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BC-\u09C4\u09C7\u09C8\u09CB-\u09CE\u09D7\u09DC\u09DD\u09DF-\u09E3\u09E6-\u09F1\u09FC\u0A01-\u0A03\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A59-\u0A5C\u0A5E\u0A66-\u0A75\u0A81-\u0A83\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABC-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AD0\u0AE0-\u0AE3\u0AE6-\u0AEF\u0AF9-\u0AFF\u0B01-\u0B03\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3C-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B56\u0B57\u0B5C\u0B5D\u0B5F-\u0B63\u0B66-\u0B6F\u0B71\u0B82\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD0\u0BD7\u0BE6-\u0BEF\u0C00-\u0C03\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C58-\u0C5A\u0C60-\u0C63\u0C66-\u0C6F\u0C80-\u0C83\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBC-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CDE\u0CE0-\u0CE3\u0CE6-\u0CEF\u0CF1\u0CF2\u0D00-\u0D03\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D44\u0D46-\u0D48\u0D4A-\u0D4E\u0D54-\u0D57\u0D5F-\u0D63\u0D66-\u0D6F\u0D7A-\u0D7F\u0D82\u0D83\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2\u0DF3\u0E01-\u0E3A\u0E40-\u0E4E\u0E50-\u0E59\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB9\u0EBB-\u0EBD\u0EC0-\u0EC4\u0EC6\u0EC8-\u0ECD\u0ED0-\u0ED9\u0EDC-\u0EDF\u0F00\u0F18\u0F19\u0F20-\u0F29\u0F35\u0F37\u0F39\u0F3E-\u0F47\u0F49-\u0F6C\u0F71-\u0F84\u0F86-\u0F97\u0F99-\u0FBC\u0FC6\u1000-\u1049\u1050-\u109D\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u135D-\u135F\u1380-\u138F\u13A0-\u13F5\u13F8-\u13FD\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u170C\u170E-\u1714\u1720-\u1734\u1740-\u1753\u1760-\u176C\u176E-\u1770\u1772\u1773\u1780-\u17D3\u17D7\u17DC\u17DD\u17E0-\u17E9\u180B-\u180D\u1810-\u1819\u1820-\u1877\u1880-\u18AA\u18B0-\u18F5\u1900-\u191E\u1920-\u192B\u1930-\u193B\u1946-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u19D0-\u19D9\u1A00-\u1A1B\u1A20-\u1A5E\u1A60-\u1A7C\u1A7F-\u1A89\u1A90-\u1A99\u1AA7\u1AB0-\u1ABD\u1B00-\u1B4B\u1B50-\u1B59\u1B6B-\u1B73\u1B80-\u1BF3\u1C00-\u1C37\u1C40-\u1C49\u1C4D-\u1C7D\u1C80-\u1C88\u1CD0-\u1CD2\u1CD4-\u1CF9\u1D00-\u1DF9\u1DFB-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u203F\u2040\u2054\u2071\u207F\u2090-\u209C\u20D0-\u20DC\u20E1\u20E5-\u20F0\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D7F-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2DE0-\u2DFF\u2E2F\u3005-\u3007\u3021-\u302F\u3031-\u3035\u3038-\u303C\u3041-\u3096\u3099\u309A\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312E\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FEA\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA62B\uA640-\uA66F\uA674-\uA67D\uA67F-\uA6F1\uA717-\uA71F\uA722-\uA788\uA78B-\uA7AE\uA7B0-\uA7B7\uA7F7-\uA827\uA840-\uA873\uA880-\uA8C5\uA8D0-\uA8D9\uA8E0-\uA8F7\uA8FB\uA8FD\uA900-\uA92D\uA930-\uA953\uA960-\uA97C\uA980-\uA9C0\uA9CF-\uA9D9\uA9E0-\uA9FE\uAA00-\uAA36\uAA40-\uAA4D\uAA50-\uAA59\uAA60-\uAA76\uAA7A-\uAAC2\uAADB-\uAADD\uAAE0-\uAAEF\uAAF2-\uAAF6\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB65\uAB70-\uABEA\uABEC\uABED\uABF0-\uABF9\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE00-\uFE0F\uFE20-\uFE2F\uFE33\uFE34\uFE4D-\uFE4F\uFE70-\uFE74\uFE76-\uFEFC\uFF10-\uFF19\uFF21-\uFF3A\uFF3F\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]|\uD800[\uDC00-\uDC0B\uDC0D-\uDC26\uDC28-\uDC3A\uDC3C\uDC3D\uDC3F-\uDC4D\uDC50-\uDC5D\uDC80-\uDCFA\uDD40-\uDD74\uDDFD\uDE80-\uDE9C\uDEA0-\uDED0\uDEE0\uDF00-\uDF1F\uDF2D-\uDF4A\uDF50-\uDF7A\uDF80-\uDF9D\uDFA0-\uDFC3\uDFC8-\uDFCF\uDFD1-\uDFD5]|\uD801[\uDC00-\uDC9D\uDCA0-\uDCA9\uDCB0-\uDCD3\uDCD8-\uDCFB\uDD00-\uDD27\uDD30-\uDD63\uDE00-\uDF36\uDF40-\uDF55\uDF60-\uDF67]|\uD802[\uDC00-\uDC05\uDC08\uDC0A-\uDC35\uDC37\uDC38\uDC3C\uDC3F-\uDC55\uDC60-\uDC76\uDC80-\uDC9E\uDCE0-\uDCF2\uDCF4\uDCF5\uDD00-\uDD15\uDD20-\uDD39\uDD80-\uDDB7\uDDBE\uDDBF\uDE00-\uDE03\uDE05\uDE06\uDE0C-\uDE13\uDE15-\uDE17\uDE19-\uDE33\uDE38-\uDE3A\uDE3F\uDE60-\uDE7C\uDE80-\uDE9C\uDEC0-\uDEC7\uDEC9-\uDEE6\uDF00-\uDF35\uDF40-\uDF55\uDF60-\uDF72\uDF80-\uDF91]|\uD803[\uDC00-\uDC48\uDC80-\uDCB2\uDCC0-\uDCF2]|\uD804[\uDC00-\uDC46\uDC66-\uDC6F\uDC7F-\uDCBA\uDCD0-\uDCE8\uDCF0-\uDCF9\uDD00-\uDD34\uDD36-\uDD3F\uDD50-\uDD73\uDD76\uDD80-\uDDC4\uDDCA-\uDDCC\uDDD0-\uDDDA\uDDDC\uDE00-\uDE11\uDE13-\uDE37\uDE3E\uDE80-\uDE86\uDE88\uDE8A-\uDE8D\uDE8F-\uDE9D\uDE9F-\uDEA8\uDEB0-\uDEEA\uDEF0-\uDEF9\uDF00-\uDF03\uDF05-\uDF0C\uDF0F\uDF10\uDF13-\uDF28\uDF2A-\uDF30\uDF32\uDF33\uDF35-\uDF39\uDF3C-\uDF44\uDF47\uDF48\uDF4B-\uDF4D\uDF50\uDF57\uDF5D-\uDF63\uDF66-\uDF6C\uDF70-\uDF74]|\uD805[\uDC00-\uDC4A\uDC50-\uDC59\uDC80-\uDCC5\uDCC7\uDCD0-\uDCD9\uDD80-\uDDB5\uDDB8-\uDDC0\uDDD8-\uDDDD\uDE00-\uDE40\uDE44\uDE50-\uDE59\uDE80-\uDEB7\uDEC0-\uDEC9\uDF00-\uDF19\uDF1D-\uDF2B\uDF30-\uDF39]|\uD806[\uDCA0-\uDCE9\uDCFF\uDE00-\uDE3E\uDE47\uDE50-\uDE83\uDE86-\uDE99\uDEC0-\uDEF8]|\uD807[\uDC00-\uDC08\uDC0A-\uDC36\uDC38-\uDC40\uDC50-\uDC59\uDC72-\uDC8F\uDC92-\uDCA7\uDCA9-\uDCB6\uDD00-\uDD06\uDD08\uDD09\uDD0B-\uDD36\uDD3A\uDD3C\uDD3D\uDD3F-\uDD47\uDD50-\uDD59]|\uD808[\uDC00-\uDF99]|\uD809[\uDC00-\uDC6E\uDC80-\uDD43]|[\uD80C\uD81C-\uD820\uD840-\uD868\uD86A-\uD86C\uD86F-\uD872\uD874-\uD879][\uDC00-\uDFFF]|\uD80D[\uDC00-\uDC2E]|\uD811[\uDC00-\uDE46]|\uD81A[\uDC00-\uDE38\uDE40-\uDE5E\uDE60-\uDE69\uDED0-\uDEED\uDEF0-\uDEF4\uDF00-\uDF36\uDF40-\uDF43\uDF50-\uDF59\uDF63-\uDF77\uDF7D-\uDF8F]|\uD81B[\uDF00-\uDF44\uDF50-\uDF7E\uDF8F-\uDF9F\uDFE0\uDFE1]|\uD821[\uDC00-\uDFEC]|\uD822[\uDC00-\uDEF2]|\uD82C[\uDC00-\uDD1E\uDD70-\uDEFB]|\uD82F[\uDC00-\uDC6A\uDC70-\uDC7C\uDC80-\uDC88\uDC90-\uDC99\uDC9D\uDC9E]|\uD834[\uDD65-\uDD69\uDD6D-\uDD72\uDD7B-\uDD82\uDD85-\uDD8B\uDDAA-\uDDAD\uDE42-\uDE44]|\uD835[\uDC00-\uDC54\uDC56-\uDC9C\uDC9E\uDC9F\uDCA2\uDCA5\uDCA6\uDCA9-\uDCAC\uDCAE-\uDCB9\uDCBB\uDCBD-\uDCC3\uDCC5-\uDD05\uDD07-\uDD0A\uDD0D-\uDD14\uDD16-\uDD1C\uDD1E-\uDD39\uDD3B-\uDD3E\uDD40-\uDD44\uDD46\uDD4A-\uDD50\uDD52-\uDEA5\uDEA8-\uDEC0\uDEC2-\uDEDA\uDEDC-\uDEFA\uDEFC-\uDF14\uDF16-\uDF34\uDF36-\uDF4E\uDF50-\uDF6E\uDF70-\uDF88\uDF8A-\uDFA8\uDFAA-\uDFC2\uDFC4-\uDFCB\uDFCE-\uDFFF]|\uD836[\uDE00-\uDE36\uDE3B-\uDE6C\uDE75\uDE84\uDE9B-\uDE9F\uDEA1-\uDEAF]|\uD838[\uDC00-\uDC06\uDC08-\uDC18\uDC1B-\uDC21\uDC23\uDC24\uDC26-\uDC2A]|\uD83A[\uDC00-\uDCC4\uDCD0-\uDCD6\uDD00-\uDD4A\uDD50-\uDD59]|\uD83B[\uDE00-\uDE03\uDE05-\uDE1F\uDE21\uDE22\uDE24\uDE27\uDE29-\uDE32\uDE34-\uDE37\uDE39\uDE3B\uDE42\uDE47\uDE49\uDE4B\uDE4D-\uDE4F\uDE51\uDE52\uDE54\uDE57\uDE59\uDE5B\uDE5D\uDE5F\uDE61\uDE62\uDE64\uDE67-\uDE6A\uDE6C-\uDE72\uDE74-\uDE77\uDE79-\uDE7C\uDE7E\uDE80-\uDE89\uDE8B-\uDE9B\uDEA1-\uDEA3\uDEA5-\uDEA9\uDEAB-\uDEBB]|\uD869[\uDC00-\uDED6\uDF00-\uDFFF]|\uD86D[\uDC00-\uDF34\uDF40-\uDFFF]|\uD86E[\uDC00-\uDC1D\uDC20-\uDFFF]|\uD873[\uDC00-\uDEA1\uDEB0-\uDFFF]|\uD87A[\uDC00-\uDFE0]|\uD87E[\uDC00-\uDE1D]|\uDB40[\uDD00-\uDDEF]/;
+
+	var unicode = {
+		Space_Separator: Space_Separator,
+		ID_Start: ID_Start,
+		ID_Continue: ID_Continue
+	};
+
+	var util = {
+	    isSpaceSeparator: function isSpaceSeparator (c) {
+	        return typeof c === 'string' && unicode.Space_Separator.test(c)
+	    },
+
+	    isIdStartChar: function isIdStartChar (c) {
+	        return typeof c === 'string' && (
+	            (c >= 'a' && c <= 'z') ||
+	        (c >= 'A' && c <= 'Z') ||
+	        (c === '$') || (c === '_') ||
+	        unicode.ID_Start.test(c)
+	        )
+	    },
+
+	    isIdContinueChar: function isIdContinueChar (c) {
+	        return typeof c === 'string' && (
+	            (c >= 'a' && c <= 'z') ||
+	        (c >= 'A' && c <= 'Z') ||
+	        (c >= '0' && c <= '9') ||
+	        (c === '$') || (c === '_') ||
+	        (c === '\u200C') || (c === '\u200D') ||
+	        unicode.ID_Continue.test(c)
+	        )
+	    },
+
+	    isDigit: function isDigit (c) {
+	        return typeof c === 'string' && /[0-9]/.test(c)
+	    },
+
+	    isHexDigit: function isHexDigit (c) {
+	        return typeof c === 'string' && /[0-9A-Fa-f]/.test(c)
+	    },
+	};
+
+	var source;
+	var parseState;
+	var stack;
+	var pos;
+	var line;
+	var column;
+	var token;
+	var key;
+	var root;
+
+	var parse = function parse (text, reviver) {
+	    source = String(text);
+	    parseState = 'start';
+	    stack = [];
+	    pos = 0;
+	    line = 1;
+	    column = 0;
+	    token = undefined;
+	    key = undefined;
+	    root = undefined;
+
+	    do {
+	        token = lex();
+
+	        // This code is unreachable.
+	        // if (!parseStates[parseState]) {
+	        //     throw invalidParseState()
+	        // }
+
+	        parseStates[parseState]();
+	    } while (token.type !== 'eof')
+
+	    if (typeof reviver === 'function') {
+	        return internalize({'': root}, '', reviver)
+	    }
+
+	    return root
+	};
+
+	function internalize (holder, name, reviver) {
+	    var value = holder[name];
+	    if (value != null && typeof value === 'object') {
+	        for (var key in value) {
+	            var replacement = internalize(value, key, reviver);
+	            if (replacement === undefined) {
+	                delete value[key];
+	            } else {
+	                value[key] = replacement;
+	            }
+	        }
+	    }
+
+	    return reviver.call(holder, name, value)
+	}
+
+	var lexState;
+	var buffer;
+	var doubleQuote;
+	var sign;
+	var c;
+
+	function lex () {
+	    lexState = 'default';
+	    buffer = '';
+	    doubleQuote = false;
+	    sign = 1;
+
+	    for (;;) {
+	        c = peek();
+
+	        // This code is unreachable.
+	        // if (!lexStates[lexState]) {
+	        //     throw invalidLexState(lexState)
+	        // }
+
+	        var token = lexStates[lexState]();
+	        if (token) {
+	            return token
+	        }
+	    }
+	}
+
+	function peek () {
+	    if (source[pos]) {
+	        return String.fromCodePoint(source.codePointAt(pos))
+	    }
+	}
+
+	function read () {
+	    var c = peek();
+
+	    if (c === '\n') {
+	        line++;
+	        column = 0;
+	    } else if (c) {
+	        column += c.length;
+	    } else {
+	        column++;
+	    }
+
+	    if (c) {
+	        pos += c.length;
+	    }
+
+	    return c
+	}
+
+	var lexStates = {
+	    default: function default$1 () {
+	        switch (c) {
+	        case '\t':
+	        case '\v':
+	        case '\f':
+	        case ' ':
+	        case '\u00A0':
+	        case '\uFEFF':
+	        case '\n':
+	        case '\r':
+	        case '\u2028':
+	        case '\u2029':
+	            read();
+	            return
+
+	        case '/':
+	            read();
+	            lexState = 'comment';
+	            return
+
+	        case undefined:
+	            read();
+	            return newToken('eof')
+	        }
+
+	        if (util.isSpaceSeparator(c)) {
+	            read();
+	            return
+	        }
+
+	        // This code is unreachable.
+	        // if (!lexStates[parseState]) {
+	        //     throw invalidLexState(parseState)
+	        // }
+
+	        return lexStates[parseState]()
+	    },
+
+	    comment: function comment () {
+	        switch (c) {
+	        case '*':
+	            read();
+	            lexState = 'multiLineComment';
+	            return
+
+	        case '/':
+	            read();
+	            lexState = 'singleLineComment';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    multiLineComment: function multiLineComment () {
+	        switch (c) {
+	        case '*':
+	            read();
+	            lexState = 'multiLineCommentAsterisk';
+	            return
+
+	        case undefined:
+	            throw invalidChar(read())
+	        }
+
+	        read();
+	    },
+
+	    multiLineCommentAsterisk: function multiLineCommentAsterisk () {
+	        switch (c) {
+	        case '*':
+	            read();
+	            return
+
+	        case '/':
+	            read();
+	            lexState = 'default';
+	            return
+
+	        case undefined:
+	            throw invalidChar(read())
+	        }
+
+	        read();
+	        lexState = 'multiLineComment';
+	    },
+
+	    singleLineComment: function singleLineComment () {
+	        switch (c) {
+	        case '\n':
+	        case '\r':
+	        case '\u2028':
+	        case '\u2029':
+	            read();
+	            lexState = 'default';
+	            return
+
+	        case undefined:
+	            read();
+	            return newToken('eof')
+	        }
+
+	        read();
+	    },
+
+	    value: function value () {
+	        switch (c) {
+	        case '{':
+	        case '[':
+	            return newToken('punctuator', read())
+
+	        case 'n':
+	            read();
+	            literal('ull');
+	            return newToken('null', null)
+
+	        case 't':
+	            read();
+	            literal('rue');
+	            return newToken('boolean', true)
+
+	        case 'f':
+	            read();
+	            literal('alse');
+	            return newToken('boolean', false)
+
+	        case '-':
+	        case '+':
+	            if (read() === '-') {
+	                sign = -1;
+	            }
+
+	            lexState = 'sign';
+	            return
+
+	        case '.':
+	            buffer = read();
+	            lexState = 'decimalPointLeading';
+	            return
+
+	        case '0':
+	            buffer = read();
+	            lexState = 'zero';
+	            return
+
+	        case '1':
+	        case '2':
+	        case '3':
+	        case '4':
+	        case '5':
+	        case '6':
+	        case '7':
+	        case '8':
+	        case '9':
+	            buffer = read();
+	            lexState = 'decimalInteger';
+	            return
+
+	        case 'I':
+	            read();
+	            literal('nfinity');
+	            return newToken('numeric', Infinity)
+
+	        case 'N':
+	            read();
+	            literal('aN');
+	            return newToken('numeric', NaN)
+
+	        case '"':
+	        case "'":
+	            doubleQuote = (read() === '"');
+	            buffer = '';
+	            lexState = 'string';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    identifierNameStartEscape: function identifierNameStartEscape () {
+	        if (c !== 'u') {
+	            throw invalidChar(read())
+	        }
+
+	        read();
+	        var u = unicodeEscape();
+	        switch (u) {
+	        case '$':
+	        case '_':
+	            break
+
+	        default:
+	            if (!util.isIdStartChar(u)) {
+	                throw invalidIdentifier()
+	            }
+
+	            break
+	        }
+
+	        buffer += u;
+	        lexState = 'identifierName';
+	    },
+
+	    identifierName: function identifierName () {
+	        switch (c) {
+	        case '$':
+	        case '_':
+	        case '\u200C':
+	        case '\u200D':
+	            buffer += read();
+	            return
+
+	        case '\\':
+	            read();
+	            lexState = 'identifierNameEscape';
+	            return
+	        }
+
+	        if (util.isIdContinueChar(c)) {
+	            buffer += read();
+	            return
+	        }
+
+	        return newToken('identifier', buffer)
+	    },
+
+	    identifierNameEscape: function identifierNameEscape () {
+	        if (c !== 'u') {
+	            throw invalidChar(read())
+	        }
+
+	        read();
+	        var u = unicodeEscape();
+	        switch (u) {
+	        case '$':
+	        case '_':
+	        case '\u200C':
+	        case '\u200D':
+	            break
+
+	        default:
+	            if (!util.isIdContinueChar(u)) {
+	                throw invalidIdentifier()
+	            }
+
+	            break
+	        }
+
+	        buffer += u;
+	        lexState = 'identifierName';
+	    },
+
+	    sign: function sign$1 () {
+	        switch (c) {
+	        case '.':
+	            buffer = read();
+	            lexState = 'decimalPointLeading';
+	            return
+
+	        case '0':
+	            buffer = read();
+	            lexState = 'zero';
+	            return
+
+	        case '1':
+	        case '2':
+	        case '3':
+	        case '4':
+	        case '5':
+	        case '6':
+	        case '7':
+	        case '8':
+	        case '9':
+	            buffer = read();
+	            lexState = 'decimalInteger';
+	            return
+
+	        case 'I':
+	            read();
+	            literal('nfinity');
+	            return newToken('numeric', sign * Infinity)
+
+	        case 'N':
+	            read();
+	            literal('aN');
+	            return newToken('numeric', NaN)
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    zero: function zero () {
+	        switch (c) {
+	        case '.':
+	            buffer += read();
+	            lexState = 'decimalPoint';
+	            return
+
+	        case 'e':
+	        case 'E':
+	            buffer += read();
+	            lexState = 'decimalExponent';
+	            return
+
+	        case 'x':
+	        case 'X':
+	            buffer += read();
+	            lexState = 'hexadecimal';
+	            return
+	        }
+
+	        return newToken('numeric', sign * 0)
+	    },
+
+	    decimalInteger: function decimalInteger () {
+	        switch (c) {
+	        case '.':
+	            buffer += read();
+	            lexState = 'decimalPoint';
+	            return
+
+	        case 'e':
+	        case 'E':
+	            buffer += read();
+	            lexState = 'decimalExponent';
+	            return
+	        }
+
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            return
+	        }
+
+	        return newToken('numeric', sign * Number(buffer))
+	    },
+
+	    decimalPointLeading: function decimalPointLeading () {
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            lexState = 'decimalFraction';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    decimalPoint: function decimalPoint () {
+	        switch (c) {
+	        case 'e':
+	        case 'E':
+	            buffer += read();
+	            lexState = 'decimalExponent';
+	            return
+	        }
+
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            lexState = 'decimalFraction';
+	            return
+	        }
+
+	        return newToken('numeric', sign * Number(buffer))
+	    },
+
+	    decimalFraction: function decimalFraction () {
+	        switch (c) {
+	        case 'e':
+	        case 'E':
+	            buffer += read();
+	            lexState = 'decimalExponent';
+	            return
+	        }
+
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            return
+	        }
+
+	        return newToken('numeric', sign * Number(buffer))
+	    },
+
+	    decimalExponent: function decimalExponent () {
+	        switch (c) {
+	        case '+':
+	        case '-':
+	            buffer += read();
+	            lexState = 'decimalExponentSign';
+	            return
+	        }
+
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            lexState = 'decimalExponentInteger';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    decimalExponentSign: function decimalExponentSign () {
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            lexState = 'decimalExponentInteger';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    decimalExponentInteger: function decimalExponentInteger () {
+	        if (util.isDigit(c)) {
+	            buffer += read();
+	            return
+	        }
+
+	        return newToken('numeric', sign * Number(buffer))
+	    },
+
+	    hexadecimal: function hexadecimal () {
+	        if (util.isHexDigit(c)) {
+	            buffer += read();
+	            lexState = 'hexadecimalInteger';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    hexadecimalInteger: function hexadecimalInteger () {
+	        if (util.isHexDigit(c)) {
+	            buffer += read();
+	            return
+	        }
+
+	        return newToken('numeric', sign * Number(buffer))
+	    },
+
+	    string: function string () {
+	        switch (c) {
+	        case '\\':
+	            read();
+	            buffer += escape();
+	            return
+
+	        case '"':
+	            if (doubleQuote) {
+	                read();
+	                return newToken('string', buffer)
+	            }
+
+	            buffer += read();
+	            return
+
+	        case "'":
+	            if (!doubleQuote) {
+	                read();
+	                return newToken('string', buffer)
+	            }
+
+	            buffer += read();
+	            return
+
+	        case '\n':
+	        case '\r':
+	            throw invalidChar(read())
+
+	        case '\u2028':
+	        case '\u2029':
+	            separatorChar(c);
+	            break
+
+	        case undefined:
+	            throw invalidChar(read())
+	        }
+
+	        buffer += read();
+	    },
+
+	    start: function start () {
+	        switch (c) {
+	        case '{':
+	        case '[':
+	            return newToken('punctuator', read())
+
+	        // This code is unreachable since the default lexState handles eof.
+	        // case undefined:
+	        //     return newToken('eof')
+	        }
+
+	        lexState = 'value';
+	    },
+
+	    beforePropertyName: function beforePropertyName () {
+	        switch (c) {
+	        case '$':
+	        case '_':
+	            buffer = read();
+	            lexState = 'identifierName';
+	            return
+
+	        case '\\':
+	            read();
+	            lexState = 'identifierNameStartEscape';
+	            return
+
+	        case '}':
+	            return newToken('punctuator', read())
+
+	        case '"':
+	        case "'":
+	            doubleQuote = (read() === '"');
+	            lexState = 'string';
+	            return
+	        }
+
+	        if (util.isIdStartChar(c)) {
+	            buffer += read();
+	            lexState = 'identifierName';
+	            return
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    afterPropertyName: function afterPropertyName () {
+	        if (c === ':') {
+	            return newToken('punctuator', read())
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    beforePropertyValue: function beforePropertyValue () {
+	        lexState = 'value';
+	    },
+
+	    afterPropertyValue: function afterPropertyValue () {
+	        switch (c) {
+	        case ',':
+	        case '}':
+	            return newToken('punctuator', read())
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    beforeArrayValue: function beforeArrayValue () {
+	        if (c === ']') {
+	            return newToken('punctuator', read())
+	        }
+
+	        lexState = 'value';
+	    },
+
+	    afterArrayValue: function afterArrayValue () {
+	        switch (c) {
+	        case ',':
+	        case ']':
+	            return newToken('punctuator', read())
+	        }
+
+	        throw invalidChar(read())
+	    },
+
+	    end: function end () {
+	        // This code is unreachable since it's handled by the default lexState.
+	        // if (c === undefined) {
+	        //     read()
+	        //     return newToken('eof')
+	        // }
+
+	        throw invalidChar(read())
+	    },
+	};
+
+	function newToken (type, value) {
+	    return {
+	        type: type,
+	        value: value,
+	        line: line,
+	        column: column,
+	    }
+	}
+
+	function literal (s) {
+	    for (var i = 0, list = s; i < list.length; i += 1) {
+	        var c = list[i];
+
+	        var p = peek();
+
+	        if (p !== c) {
+	            throw invalidChar(read())
+	        }
+
+	        read();
+	    }
+	}
+
+	function escape () {
+	    var c = peek();
+	    switch (c) {
+	    case 'b':
+	        read();
+	        return '\b'
+
+	    case 'f':
+	        read();
+	        return '\f'
+
+	    case 'n':
+	        read();
+	        return '\n'
+
+	    case 'r':
+	        read();
+	        return '\r'
+
+	    case 't':
+	        read();
+	        return '\t'
+
+	    case 'v':
+	        read();
+	        return '\v'
+
+	    case '0':
+	        read();
+	        if (util.isDigit(peek())) {
+	            throw invalidChar(read())
+	        }
+
+	        return '\0'
+
+	    case 'x':
+	        read();
+	        return hexEscape()
+
+	    case 'u':
+	        read();
+	        return unicodeEscape()
+
+	    case '\n':
+	    case '\u2028':
+	    case '\u2029':
+	        read();
+	        return ''
+
+	    case '\r':
+	        read();
+	        if (peek() === '\n') {
+	            read();
+	        }
+
+	        return ''
+
+	    case '1':
+	    case '2':
+	    case '3':
+	    case '4':
+	    case '5':
+	    case '6':
+	    case '7':
+	    case '8':
+	    case '9':
+	        throw invalidChar(read())
+
+	    case undefined:
+	        throw invalidChar(read())
+	    }
+
+	    return read()
+	}
+
+	function hexEscape () {
+	    var buffer = '';
+	    var c = peek();
+
+	    if (!util.isHexDigit(c)) {
+	        throw invalidChar(read())
+	    }
+
+	    buffer += read();
+
+	    c = peek();
+	    if (!util.isHexDigit(c)) {
+	        throw invalidChar(read())
+	    }
+
+	    buffer += read();
+
+	    return String.fromCodePoint(parseInt(buffer, 16))
+	}
+
+	function unicodeEscape () {
+	    var buffer = '';
+	    var count = 4;
+
+	    while (count-- > 0) {
+	        var c = peek();
+	        if (!util.isHexDigit(c)) {
+	            throw invalidChar(read())
+	        }
+
+	        buffer += read();
+	    }
+
+	    return String.fromCodePoint(parseInt(buffer, 16))
+	}
+
+	var parseStates = {
+	    start: function start () {
+	        if (token.type === 'eof') {
+	            throw invalidEOF()
+	        }
+
+	        push();
+	    },
+
+	    beforePropertyName: function beforePropertyName () {
+	        switch (token.type) {
+	        case 'identifier':
+	        case 'string':
+	            key = token.value;
+	            parseState = 'afterPropertyName';
+	            return
+
+	        case 'punctuator':
+	            // This code is unreachable since it's handled by the lexState.
+	            // if (token.value !== '}') {
+	            //     throw invalidToken()
+	            // }
+
+	            pop();
+	            return
+
+	        case 'eof':
+	            throw invalidEOF()
+	        }
+
+	        // This code is unreachable since it's handled by the lexState.
+	        // throw invalidToken()
+	    },
+
+	    afterPropertyName: function afterPropertyName () {
+	        // This code is unreachable since it's handled by the lexState.
+	        // if (token.type !== 'punctuator' || token.value !== ':') {
+	        //     throw invalidToken()
+	        // }
+
+	        if (token.type === 'eof') {
+	            throw invalidEOF()
+	        }
+
+	        parseState = 'beforePropertyValue';
+	    },
+
+	    beforePropertyValue: function beforePropertyValue () {
+	        if (token.type === 'eof') {
+	            throw invalidEOF()
+	        }
+
+	        push();
+	    },
+
+	    beforeArrayValue: function beforeArrayValue () {
+	        if (token.type === 'eof') {
+	            throw invalidEOF()
+	        }
+
+	        if (token.type === 'punctuator' && token.value === ']') {
+	            pop();
+	            return
+	        }
+
+	        push();
+	    },
+
+	    afterPropertyValue: function afterPropertyValue () {
+	        // This code is unreachable since it's handled by the lexState.
+	        // if (token.type !== 'punctuator') {
+	        //     throw invalidToken()
+	        // }
+
+	        if (token.type === 'eof') {
+	            throw invalidEOF()
+	        }
+
+	        switch (token.value) {
+	        case ',':
+	            parseState = 'beforePropertyName';
+	            return
+
+	        case '}':
+	            pop();
+	        }
+
+	        // This code is unreachable since it's handled by the lexState.
+	        // throw invalidToken()
+	    },
+
+	    afterArrayValue: function afterArrayValue () {
+	        // This code is unreachable since it's handled by the lexState.
+	        // if (token.type !== 'punctuator') {
+	        //     throw invalidToken()
+	        // }
+
+	        if (token.type === 'eof') {
+	            throw invalidEOF()
+	        }
+
+	        switch (token.value) {
+	        case ',':
+	            parseState = 'beforeArrayValue';
+	            return
+
+	        case ']':
+	            pop();
+	        }
+
+	        // This code is unreachable since it's handled by the lexState.
+	        // throw invalidToken()
+	    },
+
+	    end: function end () {
+	        // This code is unreachable since it's handled by the lexState.
+	        // if (token.type !== 'eof') {
+	        //     throw invalidToken()
+	        // }
+	    },
+	};
+
+	function push () {
+	    var value;
+
+	    switch (token.type) {
+	    case 'punctuator':
+	        switch (token.value) {
+	        case '{':
+	            value = {};
+	            break
+
+	        case '[':
+	            value = [];
+	            break
+	        }
+
+	        break
+
+	    case 'null':
+	    case 'boolean':
+	    case 'numeric':
+	    case 'string':
+	        value = token.value;
+	        break
+
+	    // This code is unreachable.
+	    // default:
+	    //     throw invalidToken()
+	    }
+
+	    if (root === undefined) {
+	        root = value;
+	    } else {
+	        var parent = stack[stack.length - 1];
+	        if (Array.isArray(parent)) {
+	            parent.push(value);
+	        } else {
+	            parent[key] = value;
+	        }
+	    }
+
+	    if (value !== null && typeof value === 'object') {
+	        stack.push(value);
+
+	        if (Array.isArray(value)) {
+	            parseState = 'beforeArrayValue';
+	        } else {
+	            parseState = 'beforePropertyName';
+	        }
+	    } else {
+	        var current = stack[stack.length - 1];
+	        if (current == null) {
+	            parseState = 'end';
+	        } else if (Array.isArray(current)) {
+	            parseState = 'afterArrayValue';
+	        } else {
+	            parseState = 'afterPropertyValue';
+	        }
+	    }
+	}
+
+	function pop () {
+	    stack.pop();
+
+	    var current = stack[stack.length - 1];
+	    if (current == null) {
+	        parseState = 'end';
+	    } else if (Array.isArray(current)) {
+	        parseState = 'afterArrayValue';
+	    } else {
+	        parseState = 'afterPropertyValue';
+	    }
+	}
+
+	// This code is unreachable.
+	// function invalidParseState () {
+	//     return new Error(`JSON5: invalid parse state '${parseState}'`)
+	// }
+
+	// This code is unreachable.
+	// function invalidLexState (state) {
+	//     return new Error(`JSON5: invalid lex state '${state}'`)
+	// }
+
+	function invalidChar (c) {
+	    if (c === undefined) {
+	        return syntaxError(("JSON5: invalid end of input at " + line + ":" + column))
+	    }
+
+	    return syntaxError(("JSON5: invalid character '" + (formatChar(c)) + "' at " + line + ":" + column))
+	}
+
+	function invalidEOF () {
+	    return syntaxError(("JSON5: invalid end of input at " + line + ":" + column))
+	}
+
+	// This code is unreachable.
+	// function invalidToken () {
+	//     if (token.type === 'eof') {
+	//         return syntaxError(`JSON5: invalid end of input at ${line}:${column}`)
+	//     }
+
+	//     const c = String.fromCodePoint(token.value.codePointAt(0))
+	//     return syntaxError(`JSON5: invalid character '${formatChar(c)}' at ${line}:${column}`)
+	// }
+
+	function invalidIdentifier () {
+	    column -= 5;
+	    return syntaxError(("JSON5: invalid identifier character at " + line + ":" + column))
+	}
+
+	function separatorChar (c) {
+	    console.warn(("JSON5: '" + (formatChar(c)) + "' in strings is not valid ECMAScript; consider escaping"));
+	}
+
+	function formatChar (c) {
+	    var replacements = {
+	        "'": "\\'",
+	        '"': '\\"',
+	        '\\': '\\\\',
+	        '\b': '\\b',
+	        '\f': '\\f',
+	        '\n': '\\n',
+	        '\r': '\\r',
+	        '\t': '\\t',
+	        '\v': '\\v',
+	        '\0': '\\0',
+	        '\u2028': '\\u2028',
+	        '\u2029': '\\u2029',
+	    };
+
+	    if (replacements[c]) {
+	        return replacements[c]
+	    }
+
+	    if (c < ' ') {
+	        var hexString = c.charCodeAt(0).toString(16);
+	        return '\\x' + ('00' + hexString).substring(hexString.length)
+	    }
+
+	    return c
+	}
+
+	function syntaxError (message) {
+	    var err = new SyntaxError(message);
+	    err.lineNumber = line;
+	    err.columnNumber = column;
+	    return err
+	}
+
+	var stringify = function stringify (value, replacer, space) {
+	    var stack = [];
+	    var indent = '';
+	    var propertyList;
+	    var replacerFunc;
+	    var gap = '';
+	    var quote;
+
+	    if (
+	        replacer != null &&
+	        typeof replacer === 'object' &&
+	        !Array.isArray(replacer)
+	    ) {
+	        space = replacer.space;
+	        quote = replacer.quote;
+	        replacer = replacer.replacer;
+	    }
+
+	    if (typeof replacer === 'function') {
+	        replacerFunc = replacer;
+	    } else if (Array.isArray(replacer)) {
+	        propertyList = [];
+	        for (var i = 0, list = replacer; i < list.length; i += 1) {
+	            var v = list[i];
+
+	            var item = (void 0);
+
+	            if (typeof v === 'string') {
+	                item = v;
+	            } else if (
+	                typeof v === 'number' ||
+	                v instanceof String ||
+	                v instanceof Number
+	            ) {
+	                item = String(v);
+	            }
+
+	            if (item !== undefined && propertyList.indexOf(item) < 0) {
+	                propertyList.push(item);
+	            }
+	        }
+	    }
+
+	    if (space instanceof Number) {
+	        space = Number(space);
+	    } else if (space instanceof String) {
+	        space = String(space);
+	    }
+
+	    if (typeof space === 'number') {
+	        if (space > 0) {
+	            space = Math.min(10, Math.floor(space));
+	            gap = '          '.substr(0, space);
+	        }
+	    } else if (typeof space === 'string') {
+	        gap = space.substr(0, 10);
+	    }
+
+	    return serializeProperty('', {'': value})
+
+	    function serializeProperty (key, holder) {
+	        var value = holder[key];
+	        if (value != null) {
+	            if (typeof value.toJSON5 === 'function') {
+	                value = value.toJSON5(key);
+	            } else if (typeof value.toJSON === 'function') {
+	                value = value.toJSON(key);
+	            }
+	        }
+
+	        if (replacerFunc) {
+	            value = replacerFunc.call(holder, key, value);
+	        }
+
+	        if (value instanceof Number) {
+	            value = Number(value);
+	        } else if (value instanceof String) {
+	            value = String(value);
+	        } else if (value instanceof Boolean) {
+	            value = value.valueOf();
+	        }
+
+	        switch (value) {
+	        case null: return 'null'
+	        case true: return 'true'
+	        case false: return 'false'
+	        }
+
+	        if (typeof value === 'string') {
+	            return quoteString(value, false)
+	        }
+
+	        if (typeof value === 'number') {
+	            return String(value)
+	        }
+
+	        if (typeof value === 'object') {
+	            return Array.isArray(value) ? serializeArray(value) : serializeObject(value)
+	        }
+
+	        return undefined
+	    }
+
+	    function quoteString (value) {
+	        var quotes = {
+	            "'": 0.1,
+	            '"': 0.2,
+	        };
+
+	        var replacements = {
+	            "'": "\\'",
+	            '"': '\\"',
+	            '\\': '\\\\',
+	            '\b': '\\b',
+	            '\f': '\\f',
+	            '\n': '\\n',
+	            '\r': '\\r',
+	            '\t': '\\t',
+	            '\v': '\\v',
+	            '\0': '\\0',
+	            '\u2028': '\\u2028',
+	            '\u2029': '\\u2029',
+	        };
+
+	        var product = '';
+
+	        for (var i = 0; i < value.length; i++) {
+	            var c = value[i];
+	            switch (c) {
+	            case "'":
+	            case '"':
+	                quotes[c]++;
+	                product += c;
+	                continue
+
+	            case '\0':
+	                if (util.isDigit(value[i + 1])) {
+	                    product += '\\x00';
+	                    continue
+	                }
+	            }
+
+	            if (replacements[c]) {
+	                product += replacements[c];
+	                continue
+	            }
+
+	            if (c < ' ') {
+	                var hexString = c.charCodeAt(0).toString(16);
+	                product += '\\x' + ('00' + hexString).substring(hexString.length);
+	                continue
+	            }
+
+	            product += c;
+	        }
+
+	        var quoteChar = quote || Object.keys(quotes).reduce(function (a, b) { return (quotes[a] < quotes[b]) ? a : b; });
+
+	        product = product.replace(new RegExp(quoteChar, 'g'), replacements[quoteChar]);
+
+	        return quoteChar + product + quoteChar
+	    }
+
+	    function serializeObject (value) {
+	        if (stack.indexOf(value) >= 0) {
+	            throw TypeError('Converting circular structure to JSON5')
+	        }
+
+	        stack.push(value);
+
+	        var stepback = indent;
+	        indent = indent + gap;
+
+	        var keys = propertyList || Object.keys(value);
+	        var partial = [];
+	        for (var i = 0, list = keys; i < list.length; i += 1) {
+	            var key = list[i];
+
+	            var propertyString = serializeProperty(key, value);
+	            if (propertyString !== undefined) {
+	                var member = serializeKey(key) + ':';
+	                if (gap !== '') {
+	                    member += ' ';
+	                }
+	                member += propertyString;
+	                partial.push(member);
+	            }
+	        }
+
+	        var final;
+	        if (partial.length === 0) {
+	            final = '{}';
+	        } else {
+	            var properties;
+	            if (gap === '') {
+	                properties = partial.join(',');
+	                final = '{' + properties + '}';
+	            } else {
+	                var separator = ',\n' + indent;
+	                properties = partial.join(separator);
+	                final = '{\n' + indent + properties + ',\n' + stepback + '}';
+	            }
+	        }
+
+	        stack.pop();
+	        indent = stepback;
+	        return final
+	    }
+
+	    function serializeKey (key) {
+	        if (key.length === 0) {
+	            return quoteString(key, true)
+	        }
+
+	        var firstChar = String.fromCodePoint(key.codePointAt(0));
+	        if (!util.isIdStartChar(firstChar)) {
+	            return quoteString(key, true)
+	        }
+
+	        for (var i = firstChar.length; i < key.length; i++) {
+	            if (!util.isIdContinueChar(String.fromCodePoint(key.codePointAt(i)))) {
+	                return quoteString(key, true)
+	            }
+	        }
+
+	        return key
+	    }
+
+	    function serializeArray (value) {
+	        if (stack.indexOf(value) >= 0) {
+	            throw TypeError('Converting circular structure to JSON5')
+	        }
+
+	        stack.push(value);
+
+	        var stepback = indent;
+	        indent = indent + gap;
+
+	        var partial = [];
+	        for (var i = 0; i < value.length; i++) {
+	            var propertyString = serializeProperty(String(i), value);
+	            partial.push((propertyString !== undefined) ? propertyString : 'null');
+	        }
+
+	        var final;
+	        if (partial.length === 0) {
+	            final = '[]';
+	        } else {
+	            if (gap === '') {
+	                var properties = partial.join(',');
+	                final = '[' + properties + ']';
+	            } else {
+	                var separator = ',\n' + indent;
+	                var properties$1 = partial.join(separator);
+	                final = '[\n' + indent + properties$1 + ',\n' + stepback + ']';
+	            }
+	        }
+
+	        stack.pop();
+	        indent = stepback;
+	        return final
+	    }
+	};
+
+	var JSON5 = {
+	    parse: parse,
+	    stringify: stringify,
+	};
+
+	var lib = JSON5;
+
+	var es5 = lib;
+
+	return es5;
+
+})));
+
+
+/***/ }),
+
+/***/ "./node_modules/microplugin/src/microplugin.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/microplugin/src/microplugin.js ***!
+  \*****************************************************/
+/*! unknown exports (runtime-defined) */
+/*! runtime requirements: top-level-this-exports, __webpack_require__, __webpack_exports__, module */
+/*! CommonJS bailout: this is used directly at 25:2-6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+ * microplugin.js
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+(function(root, factory) {
+	if (true) {
+		!(__WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+		__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+		(__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) :
+		__WEBPACK_AMD_DEFINE_FACTORY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	} else {}
+}(this, function() {
+	var MicroPlugin = {};
+
+	MicroPlugin.mixin = function(Interface) {
+		Interface.plugins = {};
+
+		/**
+		 * Initializes the listed plugins (with options).
+		 * Acceptable formats:
+		 *
+		 * List (without options):
+		 *   ['a', 'b', 'c']
+		 *
+		 * List (with options):
+		 *   [{'name': 'a', options: {}}, {'name': 'b', options: {}}]
+		 *
+		 * Hash (with options):
+		 *   {'a': { ... }, 'b': { ... }, 'c': { ... }}
+		 *
+		 * @param {mixed} plugins
+		 */
+		Interface.prototype.initializePlugins = function(plugins) {
+			var i, n, key;
+			var self  = this;
+			var queue = [];
+
+			self.plugins = {
+				names     : [],
+				settings  : {},
+				requested : {},
+				loaded    : {}
+			};
+
+			if (utils.isArray(plugins)) {
+				for (i = 0, n = plugins.length; i < n; i++) {
+					if (typeof plugins[i] === 'string') {
+						queue.push(plugins[i]);
+					} else {
+						self.plugins.settings[plugins[i].name] = plugins[i].options;
+						queue.push(plugins[i].name);
+					}
+				}
+			} else if (plugins) {
+				for (key in plugins) {
+					if (plugins.hasOwnProperty(key)) {
+						self.plugins.settings[key] = plugins[key];
+						queue.push(key);
+					}
+				}
+			}
+
+			while (queue.length) {
+				self.require(queue.shift());
+			}
+		};
+
+		Interface.prototype.loadPlugin = function(name) {
+			var self    = this;
+			var plugins = self.plugins;
+			var plugin  = Interface.plugins[name];
+
+			if (!Interface.plugins.hasOwnProperty(name)) {
+				throw new Error('Unable to find "' +  name + '" plugin');
+			}
+
+			plugins.requested[name] = true;
+			plugins.loaded[name] = plugin.fn.apply(self, [self.plugins.settings[name] || {}]);
+			plugins.names.push(name);
+		};
+
+		/**
+		 * Initializes a plugin.
+		 *
+		 * @param {string} name
+		 */
+		Interface.prototype.require = function(name) {
+			var self = this;
+			var plugins = self.plugins;
+
+			if (!self.plugins.loaded.hasOwnProperty(name)) {
+				if (plugins.requested[name]) {
+					throw new Error('Plugin has circular dependency ("' + name + '")');
+				}
+				self.loadPlugin(name);
+			}
+
+			return plugins.loaded[name];
+		};
+
+		/**
+		 * Registers a plugin.
+		 *
+		 * @param {string} name
+		 * @param {function} fn
+		 */
+		Interface.define = function(name, fn) {
+			Interface.plugins[name] = {
+				'name' : name,
+				'fn'   : fn
+			};
+		};
+	};
+
+	var utils = {
+		isArray: Array.isArray || function(vArg) {
+			return Object.prototype.toString.call(vArg) === '[object Array]';
+		}
+	};
+
+	return MicroPlugin;
+}));
+
+/***/ }),
+
 /***/ "./node_modules/perfect-scrollbar/dist/perfect-scrollbar.esm.js":
 /*!**********************************************************************!*\
   !*** ./node_modules/perfect-scrollbar/dist/perfect-scrollbar.esm.js ***!
@@ -60356,6 +62444,3783 @@ try {
 
 /***/ }),
 
+/***/ "./node_modules/selectize/dist/js/selectize.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/selectize/dist/js/selectize.js ***!
+  \*****************************************************/
+/*! unknown exports (runtime-defined) */
+/*! runtime requirements: top-level-this-exports, __webpack_require__, __webpack_exports__, module */
+/*! CommonJS bailout: this is used directly at 28:2-6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+ * selectize.js (v0.12.6)
+ * Copyright (c) 2013–2015 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+/*jshint curly:false */
+/*jshint browser:true */
+
+(function(root, factory) {
+	if (true) {
+		!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery-exposed.js"),__webpack_require__(/*! sifter */ "./node_modules/sifter/sifter.js"),__webpack_require__(/*! microplugin */ "./node_modules/microplugin/src/microplugin.js")], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+		__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+		(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	} else {}
+}(this, function($, Sifter, MicroPlugin) {
+	'use strict';
+
+	var highlight = function($element, pattern) {
+		if (typeof pattern === 'string' && !pattern.length) return;
+		var regex = (typeof pattern === 'string') ? new RegExp(pattern, 'i') : pattern;
+	
+		var highlight = function(node) {
+			var skip = 0;
+			// Wrap matching part of text node with highlighting <span>, e.g.
+			// Soccer  ->  <span class="highlight">Soc</span>cer  for regex = /soc/i
+			if (node.nodeType === 3) {
+				var pos = node.data.search(regex);
+				if (pos >= 0 && node.data.length > 0) {
+					var match = node.data.match(regex);
+					var spannode = document.createElement('span');
+					spannode.className = 'highlight';
+					var middlebit = node.splitText(pos);
+					var endbit = middlebit.splitText(match[0].length);
+					var middleclone = middlebit.cloneNode(true);
+					spannode.appendChild(middleclone);
+					middlebit.parentNode.replaceChild(spannode, middlebit);
+					skip = 1;
+				}
+			} 
+			// Recurse element node, looking for child text nodes to highlight, unless element 
+			// is childless, <script>, <style>, or already highlighted: <span class="hightlight">
+			else if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName) && ( node.className !== 'highlight' || node.tagName !== 'SPAN' )) {
+				for (var i = 0; i < node.childNodes.length; ++i) {
+					i += highlight(node.childNodes[i]);
+				}
+			}
+			return skip;
+		};
+	
+		return $element.each(function() {
+			highlight(this);
+		});
+	};
+	
+	/**
+	 * removeHighlight fn copied from highlight v5 and
+	 * edited to remove with() and pass js strict mode
+	 */
+	$.fn.removeHighlight = function() {
+		return this.find("span.highlight").each(function() {
+			this.parentNode.firstChild.nodeName;
+			var parent = this.parentNode;
+			parent.replaceChild(this.firstChild, this);
+			parent.normalize();
+		}).end();
+	};
+	
+	
+	var MicroEvent = function() {};
+	MicroEvent.prototype = {
+		on: function(event, fct){
+			this._events = this._events || {};
+			this._events[event] = this._events[event] || [];
+			this._events[event].push(fct);
+		},
+		off: function(event, fct){
+			var n = arguments.length;
+			if (n === 0) return delete this._events;
+			if (n === 1) return delete this._events[event];
+	
+			this._events = this._events || {};
+			if (event in this._events === false) return;
+			this._events[event].splice(this._events[event].indexOf(fct), 1);
+		},
+		trigger: function(event /* , args... */){
+			this._events = this._events || {};
+			if (event in this._events === false) return;
+			for (var i = 0; i < this._events[event].length; i++){
+				this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+			}
+		}
+	};
+	
+	/**
+	 * Mixin will delegate all MicroEvent.js function in the destination object.
+	 *
+	 * - MicroEvent.mixin(Foobar) will make Foobar able to use MicroEvent
+	 *
+	 * @param {object} the object which will support MicroEvent
+	 */
+	MicroEvent.mixin = function(destObject){
+		var props = ['on', 'off', 'trigger'];
+		for (var i = 0; i < props.length; i++){
+			destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
+		}
+	};
+	
+	var IS_MAC        = /Mac/.test(navigator.userAgent);
+	
+	var KEY_A         = 65;
+	var KEY_COMMA     = 188;
+	var KEY_RETURN    = 13;
+	var KEY_ESC       = 27;
+	var KEY_LEFT      = 37;
+	var KEY_UP        = 38;
+	var KEY_P         = 80;
+	var KEY_RIGHT     = 39;
+	var KEY_DOWN      = 40;
+	var KEY_N         = 78;
+	var KEY_BACKSPACE = 8;
+	var KEY_DELETE    = 46;
+	var KEY_SHIFT     = 16;
+	var KEY_CMD       = IS_MAC ? 91 : 17;
+	var KEY_CTRL      = IS_MAC ? 18 : 17;
+	var KEY_TAB       = 9;
+	
+	var TAG_SELECT    = 1;
+	var TAG_INPUT     = 2;
+	
+	// for now, android support in general is too spotty to support validity
+	var SUPPORTS_VALIDITY_API = !/android/i.test(window.navigator.userAgent) && !!document.createElement('input').validity;
+	
+	
+	var isset = function(object) {
+		return typeof object !== 'undefined';
+	};
+	
+	/**
+	 * Converts a scalar to its best string representation
+	 * for hash keys and HTML attribute values.
+	 *
+	 * Transformations:
+	 *   'str'     -> 'str'
+	 *   null      -> ''
+	 *   undefined -> ''
+	 *   true      -> '1'
+	 *   false     -> '0'
+	 *   0         -> '0'
+	 *   1         -> '1'
+	 *
+	 * @param {string} value
+	 * @returns {string|null}
+	 */
+	var hash_key = function(value) {
+		if (typeof value === 'undefined' || value === null) return null;
+		if (typeof value === 'boolean') return value ? '1' : '0';
+		return value + '';
+	};
+	
+	/**
+	 * Escapes a string for use within HTML.
+	 *
+	 * @param {string} str
+	 * @returns {string}
+	 */
+	var escape_html = function(str) {
+		return (str + '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	};
+	
+	/**
+	 * Escapes "$" characters in replacement strings.
+	 *
+	 * @param {string} str
+	 * @returns {string}
+	 */
+	var escape_replace = function(str) {
+		return (str + '').replace(/\$/g, '$$$$');
+	};
+	
+	var hook = {};
+	
+	/**
+	 * Wraps `method` on `self` so that `fn`
+	 * is invoked before the original method.
+	 *
+	 * @param {object} self
+	 * @param {string} method
+	 * @param {function} fn
+	 */
+	hook.before = function(self, method, fn) {
+		var original = self[method];
+		self[method] = function() {
+			fn.apply(self, arguments);
+			return original.apply(self, arguments);
+		};
+	};
+	
+	/**
+	 * Wraps `method` on `self` so that `fn`
+	 * is invoked after the original method.
+	 *
+	 * @param {object} self
+	 * @param {string} method
+	 * @param {function} fn
+	 */
+	hook.after = function(self, method, fn) {
+		var original = self[method];
+		self[method] = function() {
+			var result = original.apply(self, arguments);
+			fn.apply(self, arguments);
+			return result;
+		};
+	};
+	
+	/**
+	 * Wraps `fn` so that it can only be invoked once.
+	 *
+	 * @param {function} fn
+	 * @returns {function}
+	 */
+	var once = function(fn) {
+		var called = false;
+		return function() {
+			if (called) return;
+			called = true;
+			fn.apply(this, arguments);
+		};
+	};
+	
+	/**
+	 * Wraps `fn` so that it can only be called once
+	 * every `delay` milliseconds (invoked on the falling edge).
+	 *
+	 * @param {function} fn
+	 * @param {int} delay
+	 * @returns {function}
+	 */
+	var debounce = function(fn, delay) {
+		var timeout;
+		return function() {
+			var self = this;
+			var args = arguments;
+			window.clearTimeout(timeout);
+			timeout = window.setTimeout(function() {
+				fn.apply(self, args);
+			}, delay);
+		};
+	};
+	
+	/**
+	 * Debounce all fired events types listed in `types`
+	 * while executing the provided `fn`.
+	 *
+	 * @param {object} self
+	 * @param {array} types
+	 * @param {function} fn
+	 */
+	var debounce_events = function(self, types, fn) {
+		var type;
+		var trigger = self.trigger;
+		var event_args = {};
+	
+		// override trigger method
+		self.trigger = function() {
+			var type = arguments[0];
+			if (types.indexOf(type) !== -1) {
+				event_args[type] = arguments;
+			} else {
+				return trigger.apply(self, arguments);
+			}
+		};
+	
+		// invoke provided function
+		fn.apply(self, []);
+		self.trigger = trigger;
+	
+		// trigger queued events
+		for (type in event_args) {
+			if (event_args.hasOwnProperty(type)) {
+				trigger.apply(self, event_args[type]);
+			}
+		}
+	};
+	
+	/**
+	 * A workaround for http://bugs.jquery.com/ticket/6696
+	 *
+	 * @param {object} $parent - Parent element to listen on.
+	 * @param {string} event - Event name.
+	 * @param {string} selector - Descendant selector to filter by.
+	 * @param {function} fn - Event handler.
+	 */
+	var watchChildEvent = function($parent, event, selector, fn) {
+		$parent.on(event, selector, function(e) {
+			var child = e.target;
+			while (child && child.parentNode !== $parent[0]) {
+				child = child.parentNode;
+			}
+			e.currentTarget = child;
+			return fn.apply(this, [e]);
+		});
+	};
+	
+	/**
+	 * Determines the current selection within a text input control.
+	 * Returns an object containing:
+	 *   - start
+	 *   - length
+	 *
+	 * @param {object} input
+	 * @returns {object}
+	 */
+	var getSelection = function(input) {
+		var result = {};
+		if ('selectionStart' in input) {
+			result.start = input.selectionStart;
+			result.length = input.selectionEnd - result.start;
+		} else if (document.selection) {
+			input.focus();
+			var sel = document.selection.createRange();
+			var selLen = document.selection.createRange().text.length;
+			sel.moveStart('character', -input.value.length);
+			result.start = sel.text.length - selLen;
+			result.length = selLen;
+		}
+		return result;
+	};
+	
+	/**
+	 * Copies CSS properties from one element to another.
+	 *
+	 * @param {object} $from
+	 * @param {object} $to
+	 * @param {array} properties
+	 */
+	var transferStyles = function($from, $to, properties) {
+		var i, n, styles = {};
+		if (properties) {
+			for (i = 0, n = properties.length; i < n; i++) {
+				styles[properties[i]] = $from.css(properties[i]);
+			}
+		} else {
+			styles = $from.css();
+		}
+		$to.css(styles);
+	};
+	
+	/**
+	 * Measures the width of a string within a
+	 * parent element (in pixels).
+	 *
+	 * @param {string} str
+	 * @param {object} $parent
+	 * @returns {int}
+	 */
+	var measureString = function(str, $parent) {
+		if (!str) {
+			return 0;
+		}
+	
+		if (!Selectize.$testInput) {
+			Selectize.$testInput = $('<span />').css({
+				position: 'absolute',
+				top: -99999,
+				left: -99999,
+				width: 'auto',
+				padding: 0,
+				whiteSpace: 'pre'
+			}).appendTo('body');
+		}
+	
+		Selectize.$testInput.text(str);
+	
+		transferStyles($parent, Selectize.$testInput, [
+			'letterSpacing',
+			'fontSize',
+			'fontFamily',
+			'fontWeight',
+			'textTransform'
+		]);
+	
+		return Selectize.$testInput.width();
+	};
+	
+	/**
+	 * Sets up an input to grow horizontally as the user
+	 * types. If the value is changed manually, you can
+	 * trigger the "update" handler to resize:
+	 *
+	 * $input.trigger('update');
+	 *
+	 * @param {object} $input
+	 */
+	var autoGrow = function($input) {
+		var currentWidth = null;
+	
+		var update = function(e, options) {
+			var value, keyCode, printable, placeholder, width;
+			var shift, character, selection;
+			e = e || window.event || {};
+			options = options || {};
+	
+			if (e.metaKey || e.altKey) return;
+			if (!options.force && $input.data('grow') === false) return;
+	
+			value = $input.val();
+			if (e.type && e.type.toLowerCase() === 'keydown') {
+				keyCode = e.keyCode;
+				printable = (
+					(keyCode >= 48 && keyCode <= 57)  || // 0-9
+					(keyCode >= 65 && keyCode <= 90)   || // a-z
+					(keyCode >= 96 && keyCode <= 111)  || // numpad 0-9, numeric operators
+					(keyCode >= 186 && keyCode <= 222) || // semicolon, equal, comma, dash, etc.
+					keyCode === 32 // space
+				);
+	
+				if (keyCode === KEY_DELETE || keyCode === KEY_BACKSPACE) {
+					selection = getSelection($input[0]);
+					if (selection.length) {
+						value = value.substring(0, selection.start) + value.substring(selection.start + selection.length);
+					} else if (keyCode === KEY_BACKSPACE && selection.start) {
+						value = value.substring(0, selection.start - 1) + value.substring(selection.start + 1);
+					} else if (keyCode === KEY_DELETE && typeof selection.start !== 'undefined') {
+						value = value.substring(0, selection.start) + value.substring(selection.start + 1);
+					}
+				} else if (printable) {
+					shift = e.shiftKey;
+					character = String.fromCharCode(e.keyCode);
+					if (shift) character = character.toUpperCase();
+					else character = character.toLowerCase();
+					value += character;
+				}
+			}
+	
+			placeholder = $input.attr('placeholder');
+			if (!value && placeholder) {
+				value = placeholder;
+			}
+	
+			width = measureString(value, $input) + 4;
+			if (width !== currentWidth) {
+				currentWidth = width;
+				$input.width(width);
+				$input.triggerHandler('resize');
+			}
+		};
+	
+		$input.on('keydown keyup update blur', update);
+		update();
+	};
+	
+	var domToString = function(d) {
+		var tmp = document.createElement('div');
+	
+		tmp.appendChild(d.cloneNode(true));
+	
+		return tmp.innerHTML;
+	};
+	
+	var logError = function(message, options){
+		if(!options) options = {};
+		var component = "Selectize";
+	
+		console.error(component + ": " + message)
+	
+		if(options.explanation){
+			// console.group is undefined in <IE11
+			if(console.group) console.group();
+			console.error(options.explanation);
+			if(console.group) console.groupEnd();
+		}
+	}
+	
+	
+	var Selectize = function($input, settings) {
+		var key, i, n, dir, input, self = this;
+		input = $input[0];
+		input.selectize = self;
+	
+		// detect rtl environment
+		var computedStyle = window.getComputedStyle && window.getComputedStyle(input, null);
+		dir = computedStyle ? computedStyle.getPropertyValue('direction') : input.currentStyle && input.currentStyle.direction;
+		dir = dir || $input.parents('[dir]:first').attr('dir') || '';
+	
+		// setup default state
+		$.extend(self, {
+			order            : 0,
+			settings         : settings,
+			$input           : $input,
+			tabIndex         : $input.attr('tabindex') || '',
+			tagType          : input.tagName.toLowerCase() === 'select' ? TAG_SELECT : TAG_INPUT,
+			rtl              : /rtl/i.test(dir),
+	
+			eventNS          : '.selectize' + (++Selectize.count),
+			highlightedValue : null,
+			isBlurring       : false,
+			isOpen           : false,
+			isDisabled       : false,
+			isRequired       : $input.is('[required]'),
+			isInvalid        : false,
+			isLocked         : false,
+			isFocused        : false,
+			isInputHidden    : false,
+			isSetup          : false,
+			isShiftDown      : false,
+			isCmdDown        : false,
+			isCtrlDown       : false,
+			ignoreFocus      : false,
+			ignoreBlur       : false,
+			ignoreHover      : false,
+			hasOptions       : false,
+			currentResults   : null,
+			lastValue        : '',
+			caretPos         : 0,
+			loading          : 0,
+			loadedSearches   : {},
+	
+			$activeOption    : null,
+			$activeItems     : [],
+	
+			optgroups        : {},
+			options          : {},
+			userOptions      : {},
+			items            : [],
+			renderCache      : {},
+			onSearchChange   : settings.loadThrottle === null ? self.onSearchChange : debounce(self.onSearchChange, settings.loadThrottle)
+		});
+	
+		// search system
+		self.sifter = new Sifter(this.options, {diacritics: settings.diacritics});
+	
+		// build options table
+		if (self.settings.options) {
+			for (i = 0, n = self.settings.options.length; i < n; i++) {
+				self.registerOption(self.settings.options[i]);
+			}
+			delete self.settings.options;
+		}
+	
+		// build optgroup table
+		if (self.settings.optgroups) {
+			for (i = 0, n = self.settings.optgroups.length; i < n; i++) {
+				self.registerOptionGroup(self.settings.optgroups[i]);
+			}
+			delete self.settings.optgroups;
+		}
+	
+		// option-dependent defaults
+		self.settings.mode = self.settings.mode || (self.settings.maxItems === 1 ? 'single' : 'multi');
+		if (typeof self.settings.hideSelected !== 'boolean') {
+			self.settings.hideSelected = self.settings.mode === 'multi';
+		}
+	
+		self.initializePlugins(self.settings.plugins);
+		self.setupCallbacks();
+		self.setupTemplates();
+		self.setup();
+	};
+	
+	// mixins
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	MicroEvent.mixin(Selectize);
+	
+	if(typeof MicroPlugin !== "undefined"){
+		MicroPlugin.mixin(Selectize);
+	}else{
+		logError("Dependency MicroPlugin is missing",
+			{explanation:
+				"Make sure you either: (1) are using the \"standalone\" "+
+				"version of Selectize, or (2) require MicroPlugin before you "+
+				"load Selectize."}
+		);
+	}
+	
+	
+	// methods
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	$.extend(Selectize.prototype, {
+	
+		/**
+		 * Creates all elements and sets up event bindings.
+		 */
+		setup: function() {
+			var self      = this;
+			var settings  = self.settings;
+			var eventNS   = self.eventNS;
+			var $window   = $(window);
+			var $document = $(document);
+			var $input    = self.$input;
+	
+			var $wrapper;
+			var $control;
+			var $control_input;
+			var $dropdown;
+			var $dropdown_content;
+			var $dropdown_parent;
+			var inputMode;
+			var timeout_blur;
+			var timeout_focus;
+			var classes;
+			var classes_plugins;
+			var inputId;
+	
+			inputMode         = self.settings.mode;
+			classes           = $input.attr('class') || '';
+	
+			$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes).addClass(inputMode);
+			$control          = $('<div>').addClass(settings.inputClass).addClass('items').appendTo($wrapper);
+			$control_input    = $('<input type="text" autocomplete="off" />').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
+			$dropdown_parent  = $(settings.dropdownParent || $wrapper);
+			$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(inputMode).hide().appendTo($dropdown_parent);
+			$dropdown_content = $('<div>').addClass(settings.dropdownContentClass).appendTo($dropdown);
+	
+			if(inputId = $input.attr('id')) {
+				$control_input.attr('id', inputId + '-selectized');
+				$("label[for='"+inputId+"']").attr('for', inputId + '-selectized');
+			}
+	
+			if(self.settings.copyClassesToDropdown) {
+				$dropdown.addClass(classes);
+			}
+	
+			$wrapper.css({
+				width: $input[0].style.width
+			});
+	
+			if (self.plugins.names.length) {
+				classes_plugins = 'plugin-' + self.plugins.names.join(' plugin-');
+				$wrapper.addClass(classes_plugins);
+				$dropdown.addClass(classes_plugins);
+			}
+	
+			if ((settings.maxItems === null || settings.maxItems > 1) && self.tagType === TAG_SELECT) {
+				$input.attr('multiple', 'multiple');
+			}
+	
+			if (self.settings.placeholder) {
+				$control_input.attr('placeholder', settings.placeholder);
+			}
+	
+			// if splitOn was not passed in, construct it from the delimiter to allow pasting universally
+			if (!self.settings.splitOn && self.settings.delimiter) {
+				var delimiterEscaped = self.settings.delimiter.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+				self.settings.splitOn = new RegExp('\\s*' + delimiterEscaped + '+\\s*');
+			}
+	
+			if ($input.attr('autocorrect')) {
+				$control_input.attr('autocorrect', $input.attr('autocorrect'));
+			}
+	
+			if ($input.attr('autocapitalize')) {
+				$control_input.attr('autocapitalize', $input.attr('autocapitalize'));
+			}
+			$control_input[0].type = $input[0].type;
+	
+			self.$wrapper          = $wrapper;
+			self.$control          = $control;
+			self.$control_input    = $control_input;
+			self.$dropdown         = $dropdown;
+			self.$dropdown_content = $dropdown_content;
+	
+			$dropdown.on('mouseenter mousedown click', '[data-disabled]>[data-selectable]', function(e) { e.stopImmediatePropagation(); });
+			$dropdown.on('mouseenter', '[data-selectable]', function() { return self.onOptionHover.apply(self, arguments); });
+			$dropdown.on('mousedown click', '[data-selectable]', function() { return self.onOptionSelect.apply(self, arguments); });
+			watchChildEvent($control, 'mousedown', '*:not(input)', function() { return self.onItemSelect.apply(self, arguments); });
+			autoGrow($control_input);
+	
+			$control.on({
+				mousedown : function() { return self.onMouseDown.apply(self, arguments); },
+				click     : function() { return self.onClick.apply(self, arguments); }
+			});
+	
+			$control_input.on({
+				mousedown : function(e) { e.stopPropagation(); },
+				keydown   : function() { return self.onKeyDown.apply(self, arguments); },
+				keyup     : function() { return self.onKeyUp.apply(self, arguments); },
+				keypress  : function() { return self.onKeyPress.apply(self, arguments); },
+				resize    : function() { self.positionDropdown.apply(self, []); },
+				blur      : function() { return self.onBlur.apply(self, arguments); },
+				focus     : function() { self.ignoreBlur = false; return self.onFocus.apply(self, arguments); },
+				paste     : function() { return self.onPaste.apply(self, arguments); }
+			});
+	
+			$document.on('keydown' + eventNS, function(e) {
+				self.isCmdDown = e[IS_MAC ? 'metaKey' : 'ctrlKey'];
+				self.isCtrlDown = e[IS_MAC ? 'altKey' : 'ctrlKey'];
+				self.isShiftDown = e.shiftKey;
+			});
+	
+			$document.on('keyup' + eventNS, function(e) {
+				if (e.keyCode === KEY_CTRL) self.isCtrlDown = false;
+				if (e.keyCode === KEY_SHIFT) self.isShiftDown = false;
+				if (e.keyCode === KEY_CMD) self.isCmdDown = false;
+			});
+	
+			$document.on('mousedown' + eventNS, function(e) {
+				if (self.isFocused) {
+					// prevent events on the dropdown scrollbar from causing the control to blur
+					if (e.target === self.$dropdown[0] || e.target.parentNode === self.$dropdown[0]) {
+						return false;
+					}
+					// blur on click outside
+					if (!self.$control.has(e.target).length && e.target !== self.$control[0]) {
+						self.blur(e.target);
+					}
+				}
+			});
+	
+			$window.on(['scroll' + eventNS, 'resize' + eventNS].join(' '), function() {
+				if (self.isOpen) {
+					self.positionDropdown.apply(self, arguments);
+				}
+			});
+			$window.on('mousemove' + eventNS, function() {
+				self.ignoreHover = false;
+			});
+	
+			// store original children and tab index so that they can be
+			// restored when the destroy() method is called.
+			this.revertSettings = {
+				$children : $input.children().detach(),
+				tabindex  : $input.attr('tabindex')
+			};
+	
+			$input.attr('tabindex', -1).hide().after(self.$wrapper);
+	
+			if ($.isArray(settings.items)) {
+				self.setValue(settings.items);
+				delete settings.items;
+			}
+	
+			// feature detect for the validation API
+			if (SUPPORTS_VALIDITY_API) {
+				$input.on('invalid' + eventNS, function(e) {
+					e.preventDefault();
+					self.isInvalid = true;
+					self.refreshState();
+				});
+			}
+	
+			self.updateOriginalInput();
+			self.refreshItems();
+			self.refreshState();
+			self.updatePlaceholder();
+			self.isSetup = true;
+	
+			if ($input.is(':disabled')) {
+				self.disable();
+			}
+	
+			self.on('change', this.onChange);
+	
+			$input.data('selectize', self);
+			$input.addClass('selectized');
+			self.trigger('initialize');
+	
+			// preload options
+			if (settings.preload === true) {
+				self.onSearchChange('');
+			}
+	
+		},
+	
+		/**
+		 * Sets up default rendering functions.
+		 */
+		setupTemplates: function() {
+			var self = this;
+			var field_label = self.settings.labelField;
+			var field_optgroup = self.settings.optgroupLabelField;
+	
+			var templates = {
+				'optgroup': function(data) {
+					return '<div class="optgroup">' + data.html + '</div>';
+				},
+				'optgroup_header': function(data, escape) {
+					return '<div class="optgroup-header">' + escape(data[field_optgroup]) + '</div>';
+				},
+				'option': function(data, escape) {
+					return '<div class="option">' + escape(data[field_label]) + '</div>';
+				},
+				'item': function(data, escape) {
+					return '<div class="item">' + escape(data[field_label]) + '</div>';
+				},
+				'option_create': function(data, escape) {
+					return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&hellip;</div>';
+				}
+			};
+	
+			self.settings.render = $.extend({}, templates, self.settings.render);
+		},
+	
+		/**
+		 * Maps fired events to callbacks provided
+		 * in the settings used when creating the control.
+		 */
+		setupCallbacks: function() {
+			var key, fn, callbacks = {
+				'initialize'      : 'onInitialize',
+				'change'          : 'onChange',
+				'item_add'        : 'onItemAdd',
+				'item_remove'     : 'onItemRemove',
+				'clear'           : 'onClear',
+				'option_add'      : 'onOptionAdd',
+				'option_remove'   : 'onOptionRemove',
+				'option_clear'    : 'onOptionClear',
+				'optgroup_add'    : 'onOptionGroupAdd',
+				'optgroup_remove' : 'onOptionGroupRemove',
+				'optgroup_clear'  : 'onOptionGroupClear',
+				'dropdown_open'   : 'onDropdownOpen',
+				'dropdown_close'  : 'onDropdownClose',
+				'type'            : 'onType',
+				'load'            : 'onLoad',
+				'focus'           : 'onFocus',
+				'blur'            : 'onBlur'
+			};
+	
+			for (key in callbacks) {
+				if (callbacks.hasOwnProperty(key)) {
+					fn = this.settings[callbacks[key]];
+					if (fn) this.on(key, fn);
+				}
+			}
+		},
+	
+		/**
+		 * Triggered when the main control element
+		 * has a click event.
+		 *
+		 * @param {object} e
+		 * @return {boolean}
+		 */
+		onClick: function(e) {
+			var self = this;
+	
+			// necessary for mobile webkit devices (manual focus triggering
+			// is ignored unless invoked within a click event)
+	    // also necessary to reopen a dropdown that has been closed by
+	    // closeAfterSelect
+			if (!self.isFocused || !self.isOpen) {
+				self.focus();
+				e.preventDefault();
+			}
+		},
+	
+		/**
+		 * Triggered when the main control element
+		 * has a mouse down event.
+		 *
+		 * @param {object} e
+		 * @return {boolean}
+		 */
+		onMouseDown: function(e) {
+			var self = this;
+			var defaultPrevented = e.isDefaultPrevented();
+			var $target = $(e.target);
+	
+			if (self.isFocused) {
+				// retain focus by preventing native handling. if the
+				// event target is the input it should not be modified.
+				// otherwise, text selection within the input won't work.
+				if (e.target !== self.$control_input[0]) {
+					if (self.settings.mode === 'single') {
+						// toggle dropdown
+						self.isOpen ? self.close() : self.open();
+					} else if (!defaultPrevented) {
+						self.setActiveItem(null);
+					}
+					return false;
+				}
+			} else {
+				// give control focus
+				if (!defaultPrevented) {
+					window.setTimeout(function() {
+						self.focus();
+					}, 0);
+				}
+			}
+		},
+	
+		/**
+		 * Triggered when the value of the control has been changed.
+		 * This should propagate the event to the original DOM
+		 * input / select element.
+		 */
+		onChange: function() {
+			this.$input.trigger('change');
+		},
+	
+		/**
+		 * Triggered on <input> paste.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onPaste: function(e) {
+			var self = this;
+	
+			if (self.isFull() || self.isInputHidden || self.isLocked) {
+				e.preventDefault();
+				return;
+			}
+	
+			// If a regex or string is included, this will split the pasted
+			// input and create Items for each separate value
+			if (self.settings.splitOn) {
+	
+				// Wait for pasted text to be recognized in value
+				setTimeout(function() {
+					var pastedText = self.$control_input.val();
+					if(!pastedText.match(self.settings.splitOn)){ return }
+	
+					var splitInput = $.trim(pastedText).split(self.settings.splitOn);
+					for (var i = 0, n = splitInput.length; i < n; i++) {
+						self.createItem(splitInput[i]);
+					}
+				}, 0);
+			}
+		},
+	
+		/**
+		 * Triggered on <input> keypress.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onKeyPress: function(e) {
+			if (this.isLocked) return e && e.preventDefault();
+			var character = String.fromCharCode(e.keyCode || e.which);
+			if (this.settings.create && this.settings.mode === 'multi' && character === this.settings.delimiter) {
+				this.createItem();
+				e.preventDefault();
+				return false;
+			}
+		},
+	
+		/**
+		 * Triggered on <input> keydown.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onKeyDown: function(e) {
+			var isInput = e.target === this.$control_input[0];
+			var self = this;
+	
+			if (self.isLocked) {
+				if (e.keyCode !== KEY_TAB) {
+					e.preventDefault();
+				}
+				return;
+			}
+	
+			switch (e.keyCode) {
+				case KEY_A:
+					if (self.isCmdDown) {
+						self.selectAll();
+						return;
+					}
+					break;
+				case KEY_ESC:
+					if (self.isOpen) {
+						e.preventDefault();
+						e.stopPropagation();
+						self.close();
+					}
+					return;
+				case KEY_N:
+					if (!e.ctrlKey || e.altKey) break;
+				case KEY_DOWN:
+					if (!self.isOpen && self.hasOptions) {
+						self.open();
+					} else if (self.$activeOption) {
+						self.ignoreHover = true;
+						var $next = self.getAdjacentOption(self.$activeOption, 1);
+						if ($next.length) self.setActiveOption($next, true, true);
+					}
+					e.preventDefault();
+					return;
+				case KEY_P:
+					if (!e.ctrlKey || e.altKey) break;
+				case KEY_UP:
+					if (self.$activeOption) {
+						self.ignoreHover = true;
+						var $prev = self.getAdjacentOption(self.$activeOption, -1);
+						if ($prev.length) self.setActiveOption($prev, true, true);
+					}
+					e.preventDefault();
+					return;
+				case KEY_RETURN:
+					if (self.isOpen && self.$activeOption) {
+						self.onOptionSelect({currentTarget: self.$activeOption});
+						e.preventDefault();
+					}
+					return;
+				case KEY_LEFT:
+					self.advanceSelection(-1, e);
+					return;
+				case KEY_RIGHT:
+					self.advanceSelection(1, e);
+					return;
+				case KEY_TAB:
+					if (self.settings.selectOnTab && self.isOpen && self.$activeOption) {
+						self.onOptionSelect({currentTarget: self.$activeOption});
+	
+						// Default behaviour is to jump to the next field, we only want this
+						// if the current field doesn't accept any more entries
+						if (!self.isFull()) {
+							e.preventDefault();
+						}
+					}
+					if (self.settings.create && self.createItem()) {
+						e.preventDefault();
+					}
+					return;
+				case KEY_BACKSPACE:
+				case KEY_DELETE:
+					self.deleteSelection(e);
+					return;
+			}
+	
+			if ((self.isFull() || self.isInputHidden) && !(IS_MAC ? e.metaKey : e.ctrlKey)) {
+				e.preventDefault();
+				return;
+			}
+		},
+	
+		/**
+		 * Triggered on <input> keyup.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onKeyUp: function(e) {
+			var self = this;
+	
+			if (self.isLocked) return e && e.preventDefault();
+			var value = self.$control_input.val() || '';
+			if (self.lastValue !== value) {
+				self.lastValue = value;
+				self.onSearchChange(value);
+				self.refreshOptions();
+				self.trigger('type', value);
+			}
+		},
+	
+		/**
+		 * Invokes the user-provide option provider / loader.
+		 *
+		 * Note: this function is debounced in the Selectize
+		 * constructor (by `settings.loadThrottle` milliseconds)
+		 *
+		 * @param {string} value
+		 */
+		onSearchChange: function(value) {
+			var self = this;
+			var fn = self.settings.load;
+			if (!fn) return;
+			if (self.loadedSearches.hasOwnProperty(value)) return;
+			self.loadedSearches[value] = true;
+			self.load(function(callback) {
+				fn.apply(self, [value, callback]);
+			});
+		},
+	
+		/**
+		 * Triggered on <input> focus.
+		 *
+		 * @param {object} e (optional)
+		 * @returns {boolean}
+		 */
+		onFocus: function(e) {
+			var self = this;
+			var wasFocused = self.isFocused;
+	
+			if (self.isDisabled) {
+				self.blur();
+				e && e.preventDefault();
+				return false;
+			}
+	
+			if (self.ignoreFocus) return;
+			self.isFocused = true;
+			if (self.settings.preload === 'focus') self.onSearchChange('');
+	
+			if (!wasFocused) self.trigger('focus');
+	
+			if (!self.$activeItems.length) {
+				self.showInput();
+				self.setActiveItem(null);
+				self.refreshOptions(!!self.settings.openOnFocus);
+			}
+	
+			self.refreshState();
+		},
+	
+		/**
+		 * Triggered on <input> blur.
+		 *
+		 * @param {object} e
+		 * @param {Element} dest
+		 */
+		onBlur: function(e, dest) {
+			var self = this;
+			if (!self.isFocused) return;
+			self.isFocused = false;
+	
+			if (self.ignoreFocus) {
+				return;
+			} else if (!self.ignoreBlur && document.activeElement === self.$dropdown_content[0]) {
+				// necessary to prevent IE closing the dropdown when the scrollbar is clicked
+				self.ignoreBlur = true;
+				self.onFocus(e);
+				return;
+			}
+	
+			var deactivate = function() {
+				self.close();
+				self.setTextboxValue('');
+				self.setActiveItem(null);
+				self.setActiveOption(null);
+				self.setCaret(self.items.length);
+				self.refreshState();
+	
+				// IE11 bug: element still marked as active
+				dest && dest.focus && dest.focus();
+	
+				self.isBlurring = false;
+				self.ignoreFocus = false;
+				self.trigger('blur');
+			};
+	
+			self.isBlurring = true;
+			self.ignoreFocus = true;
+			if (self.settings.create && self.settings.createOnBlur) {
+				self.createItem(null, false, deactivate);
+			} else {
+				deactivate();
+			}
+		},
+	
+		/**
+		 * Triggered when the user rolls over
+		 * an option in the autocomplete dropdown menu.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onOptionHover: function(e) {
+			if (this.ignoreHover) return;
+			this.setActiveOption(e.currentTarget, false);
+		},
+	
+		/**
+		 * Triggered when the user clicks on an option
+		 * in the autocomplete dropdown menu.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onOptionSelect: function(e) {
+			var value, $target, $option, self = this;
+	
+			if (e.preventDefault) {
+				e.preventDefault();
+				e.stopPropagation();
+			}
+	
+			$target = $(e.currentTarget);
+			if ($target.hasClass('create')) {
+				self.createItem(null, function() {
+					if (self.settings.closeAfterSelect) {
+						self.close();
+					}
+				});
+			} else {
+				value = $target.attr('data-value');
+				if (typeof value !== 'undefined') {
+					self.lastQuery = null;
+					self.setTextboxValue('');
+					self.addItem(value);
+					if (self.settings.closeAfterSelect) {
+						self.close();
+					} else if (!self.settings.hideSelected && e.type && /mouse/.test(e.type)) {
+						self.setActiveOption(self.getOption(value));
+					}
+				}
+			}
+		},
+	
+		/**
+		 * Triggered when the user clicks on an item
+		 * that has been selected.
+		 *
+		 * @param {object} e
+		 * @returns {boolean}
+		 */
+		onItemSelect: function(e) {
+			var self = this;
+	
+			if (self.isLocked) return;
+			if (self.settings.mode === 'multi') {
+				e.preventDefault();
+				self.setActiveItem(e.currentTarget, e);
+			}
+		},
+	
+		/**
+		 * Invokes the provided method that provides
+		 * results to a callback---which are then added
+		 * as options to the control.
+		 *
+		 * @param {function} fn
+		 */
+		load: function(fn) {
+			var self = this;
+			var $wrapper = self.$wrapper.addClass(self.settings.loadingClass);
+	
+			self.loading++;
+			fn.apply(self, [function(results) {
+				self.loading = Math.max(self.loading - 1, 0);
+				if (results && results.length) {
+					self.addOption(results);
+					self.refreshOptions(self.isFocused && !self.isInputHidden);
+				}
+				if (!self.loading) {
+					$wrapper.removeClass(self.settings.loadingClass);
+				}
+				self.trigger('load', results);
+			}]);
+		},
+	
+		/**
+		 * Sets the input field of the control to the specified value.
+		 *
+		 * @param {string} value
+		 */
+		setTextboxValue: function(value) {
+			var $input = this.$control_input;
+			var changed = $input.val() !== value;
+			if (changed) {
+				$input.val(value).triggerHandler('update');
+				this.lastValue = value;
+			}
+		},
+	
+		/**
+		 * Returns the value of the control. If multiple items
+		 * can be selected (e.g. <select multiple>), this returns
+		 * an array. If only one item can be selected, this
+		 * returns a string.
+		 *
+		 * @returns {mixed}
+		 */
+		getValue: function() {
+			if (this.tagType === TAG_SELECT && this.$input.attr('multiple')) {
+				return this.items;
+			} else {
+				return this.items.join(this.settings.delimiter);
+			}
+		},
+	
+		/**
+		 * Resets the selected items to the given value.
+		 *
+		 * @param {mixed} value
+		 */
+		setValue: function(value, silent) {
+			var events = silent ? [] : ['change'];
+	
+			debounce_events(this, events, function() {
+				this.clear(silent);
+				this.addItems(value, silent);
+			});
+		},
+	
+		/**
+		 * Sets the selected item.
+		 *
+		 * @param {object} $item
+		 * @param {object} e (optional)
+		 */
+		setActiveItem: function($item, e) {
+			var self = this;
+			var eventName;
+			var i, idx, begin, end, item, swap;
+			var $last;
+	
+			if (self.settings.mode === 'single') return;
+			$item = $($item);
+	
+			// clear the active selection
+			if (!$item.length) {
+				$(self.$activeItems).removeClass('active');
+				self.$activeItems = [];
+				if (self.isFocused) {
+					self.showInput();
+				}
+				return;
+			}
+	
+			// modify selection
+			eventName = e && e.type.toLowerCase();
+	
+			if (eventName === 'mousedown' && self.isShiftDown && self.$activeItems.length) {
+				$last = self.$control.children('.active:last');
+				begin = Array.prototype.indexOf.apply(self.$control[0].childNodes, [$last[0]]);
+				end   = Array.prototype.indexOf.apply(self.$control[0].childNodes, [$item[0]]);
+				if (begin > end) {
+					swap  = begin;
+					begin = end;
+					end   = swap;
+				}
+				for (i = begin; i <= end; i++) {
+					item = self.$control[0].childNodes[i];
+					if (self.$activeItems.indexOf(item) === -1) {
+						$(item).addClass('active');
+						self.$activeItems.push(item);
+					}
+				}
+				e.preventDefault();
+			} else if ((eventName === 'mousedown' && self.isCtrlDown) || (eventName === 'keydown' && this.isShiftDown)) {
+				if ($item.hasClass('active')) {
+					idx = self.$activeItems.indexOf($item[0]);
+					self.$activeItems.splice(idx, 1);
+					$item.removeClass('active');
+				} else {
+					self.$activeItems.push($item.addClass('active')[0]);
+				}
+			} else {
+				$(self.$activeItems).removeClass('active');
+				self.$activeItems = [$item.addClass('active')[0]];
+			}
+	
+			// ensure control has focus
+			self.hideInput();
+			if (!this.isFocused) {
+				self.focus();
+			}
+		},
+	
+		/**
+		 * Sets the selected item in the dropdown menu
+		 * of available options.
+		 *
+		 * @param {object} $object
+		 * @param {boolean} scroll
+		 * @param {boolean} animate
+		 */
+		setActiveOption: function($option, scroll, animate) {
+			var height_menu, height_item, y;
+			var scroll_top, scroll_bottom;
+			var self = this;
+	
+			if (self.$activeOption) self.$activeOption.removeClass('active');
+			self.$activeOption = null;
+	
+			$option = $($option);
+			if (!$option.length) return;
+	
+			self.$activeOption = $option.addClass('active');
+	
+			if (scroll || !isset(scroll)) {
+	
+				height_menu   = self.$dropdown_content.height();
+				height_item   = self.$activeOption.outerHeight(true);
+				scroll        = self.$dropdown_content.scrollTop() || 0;
+				y             = self.$activeOption.offset().top - self.$dropdown_content.offset().top + scroll;
+				scroll_top    = y;
+				scroll_bottom = y - height_menu + height_item;
+	
+				if (y + height_item > height_menu + scroll) {
+					self.$dropdown_content.stop().animate({scrollTop: scroll_bottom}, animate ? self.settings.scrollDuration : 0);
+				} else if (y < scroll) {
+					self.$dropdown_content.stop().animate({scrollTop: scroll_top}, animate ? self.settings.scrollDuration : 0);
+				}
+	
+			}
+		},
+	
+		/**
+		 * Selects all items (CTRL + A).
+		 */
+		selectAll: function() {
+			var self = this;
+			if (self.settings.mode === 'single') return;
+	
+			self.$activeItems = Array.prototype.slice.apply(self.$control.children(':not(input)').addClass('active'));
+			if (self.$activeItems.length) {
+				self.hideInput();
+				self.close();
+			}
+			self.focus();
+		},
+	
+		/**
+		 * Hides the input element out of view, while
+		 * retaining its focus.
+		 */
+		hideInput: function() {
+			var self = this;
+	
+			self.setTextboxValue('');
+			self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : -10000});
+			self.isInputHidden = true;
+		},
+	
+		/**
+		 * Restores input visibility.
+		 */
+		showInput: function() {
+			this.$control_input.css({opacity: 1, position: 'relative', left: 0});
+			this.isInputHidden = false;
+		},
+	
+		/**
+		 * Gives the control focus.
+		 */
+		focus: function() {
+			var self = this;
+			if (self.isDisabled) return;
+	
+			self.ignoreFocus = true;
+			self.$control_input[0].focus();
+			window.setTimeout(function() {
+				self.ignoreFocus = false;
+				self.onFocus();
+			}, 0);
+		},
+	
+		/**
+		 * Forces the control out of focus.
+		 *
+		 * @param {Element} dest
+		 */
+		blur: function(dest) {
+			this.$control_input[0].blur();
+			this.onBlur(null, dest);
+		},
+	
+		/**
+		 * Returns a function that scores an object
+		 * to show how good of a match it is to the
+		 * provided query.
+		 *
+		 * @param {string} query
+		 * @param {object} options
+		 * @return {function}
+		 */
+		getScoreFunction: function(query) {
+			return this.sifter.getScoreFunction(query, this.getSearchOptions());
+		},
+	
+		/**
+		 * Returns search options for sifter (the system
+		 * for scoring and sorting results).
+		 *
+		 * @see https://github.com/brianreavis/sifter.js
+		 * @return {object}
+		 */
+		getSearchOptions: function() {
+			var settings = this.settings;
+			var sort = settings.sortField;
+			if (typeof sort === 'string') {
+				sort = [{field: sort}];
+			}
+	
+			return {
+				fields      : settings.searchField,
+				conjunction : settings.searchConjunction,
+				sort        : sort,
+				nesting     : settings.nesting
+			};
+		},
+	
+		/**
+		 * Searches through available options and returns
+		 * a sorted array of matches.
+		 *
+		 * Returns an object containing:
+		 *
+		 *   - query {string}
+		 *   - tokens {array}
+		 *   - total {int}
+		 *   - items {array}
+		 *
+		 * @param {string} query
+		 * @returns {object}
+		 */
+		search: function(query) {
+			var i, value, score, result, calculateScore;
+			var self     = this;
+			var settings = self.settings;
+			var options  = this.getSearchOptions();
+	
+			// validate user-provided result scoring function
+			if (settings.score) {
+				calculateScore = self.settings.score.apply(this, [query]);
+				if (typeof calculateScore !== 'function') {
+					throw new Error('Selectize "score" setting must be a function that returns a function');
+				}
+			}
+	
+			// perform search
+			if (query !== self.lastQuery) {
+				self.lastQuery = query;
+				result = self.sifter.search(query, $.extend(options, {score: calculateScore}));
+				self.currentResults = result;
+			} else {
+				result = $.extend(true, {}, self.currentResults);
+			}
+	
+			// filter out selected items
+			if (settings.hideSelected) {
+				for (i = result.items.length - 1; i >= 0; i--) {
+					if (self.items.indexOf(hash_key(result.items[i].id)) !== -1) {
+						result.items.splice(i, 1);
+					}
+				}
+			}
+	
+			return result;
+		},
+	
+		/**
+		 * Refreshes the list of available options shown
+		 * in the autocomplete dropdown menu.
+		 *
+		 * @param {boolean} triggerDropdown
+		 */
+		refreshOptions: function(triggerDropdown) {
+			var i, j, k, n, groups, groups_order, option, option_html, optgroup, optgroups, html, html_children, has_create_option;
+			var $active, $active_before, $create;
+	
+			if (typeof triggerDropdown === 'undefined') {
+				triggerDropdown = true;
+			}
+	
+			var self              = this;
+			var query             = $.trim(self.$control_input.val());
+			var results           = self.search(query);
+			var $dropdown_content = self.$dropdown_content;
+			var active_before     = self.$activeOption && hash_key(self.$activeOption.attr('data-value'));
+	
+			// build markup
+			n = results.items.length;
+			if (typeof self.settings.maxOptions === 'number') {
+				n = Math.min(n, self.settings.maxOptions);
+			}
+	
+			// render and group available options individually
+			groups = {};
+			groups_order = [];
+	
+			for (i = 0; i < n; i++) {
+				option      = self.options[results.items[i].id];
+				option_html = self.render('option', option);
+				optgroup    = option[self.settings.optgroupField] || '';
+				optgroups   = $.isArray(optgroup) ? optgroup : [optgroup];
+	
+				for (j = 0, k = optgroups && optgroups.length; j < k; j++) {
+					optgroup = optgroups[j];
+					if (!self.optgroups.hasOwnProperty(optgroup)) {
+						optgroup = '';
+					}
+					if (!groups.hasOwnProperty(optgroup)) {
+						groups[optgroup] = document.createDocumentFragment();
+						groups_order.push(optgroup);
+					}
+					groups[optgroup].appendChild(option_html);
+				}
+			}
+	
+			// sort optgroups
+			if (this.settings.lockOptgroupOrder) {
+				groups_order.sort(function(a, b) {
+					var a_order = self.optgroups[a].$order || 0;
+					var b_order = self.optgroups[b].$order || 0;
+					return a_order - b_order;
+				});
+			}
+	
+			// render optgroup headers & join groups
+			html = document.createDocumentFragment();
+			for (i = 0, n = groups_order.length; i < n; i++) {
+				optgroup = groups_order[i];
+				if (self.optgroups.hasOwnProperty(optgroup) && groups[optgroup].childNodes.length) {
+					// render the optgroup header and options within it,
+					// then pass it to the wrapper template
+					html_children = document.createDocumentFragment();
+					html_children.appendChild(self.render('optgroup_header', self.optgroups[optgroup]));
+					html_children.appendChild(groups[optgroup]);
+	
+					html.appendChild(self.render('optgroup', $.extend({}, self.optgroups[optgroup], {
+						html: domToString(html_children),
+						dom:  html_children
+					})));
+				} else {
+					html.appendChild(groups[optgroup]);
+				}
+			}
+	
+			$dropdown_content.html(html);
+	
+			// highlight matching terms inline
+			if (self.settings.highlight) {
+				$dropdown_content.removeHighlight();
+				if (results.query.length && results.tokens.length) {
+					for (i = 0, n = results.tokens.length; i < n; i++) {
+						highlight($dropdown_content, results.tokens[i].regex);
+					}
+				}
+			}
+	
+			// add "selected" class to selected options
+			if (!self.settings.hideSelected) {
+				for (i = 0, n = self.items.length; i < n; i++) {
+					self.getOption(self.items[i]).addClass('selected');
+				}
+			}
+	
+			// add create option
+			has_create_option = self.canCreate(query);
+			if (has_create_option) {
+				$dropdown_content.prepend(self.render('option_create', {input: query}));
+				$create = $($dropdown_content[0].childNodes[0]);
+			}
+	
+			// activate
+			self.hasOptions = results.items.length > 0 || has_create_option;
+			if (self.hasOptions) {
+				if (results.items.length > 0) {
+					$active_before = active_before && self.getOption(active_before);
+					if ($active_before && $active_before.length) {
+						$active = $active_before;
+					} else if (self.settings.mode === 'single' && self.items.length) {
+						$active = self.getOption(self.items[0]);
+					}
+					if (!$active || !$active.length) {
+						if ($create && !self.settings.addPrecedence) {
+							$active = self.getAdjacentOption($create, 1);
+						} else {
+							$active = $dropdown_content.find('[data-selectable]:first');
+						}
+					}
+				} else {
+					$active = $create;
+				}
+				self.setActiveOption($active);
+				if (triggerDropdown && !self.isOpen) { self.open(); }
+			} else {
+				self.setActiveOption(null);
+				if (triggerDropdown && self.isOpen) { self.close(); }
+			}
+		},
+	
+		/**
+		 * Adds an available option. If it already exists,
+		 * nothing will happen. Note: this does not refresh
+		 * the options list dropdown (use `refreshOptions`
+		 * for that).
+		 *
+		 * Usage:
+		 *
+		 *   this.addOption(data)
+		 *
+		 * @param {object|array} data
+		 */
+		addOption: function(data) {
+			var i, n, value, self = this;
+	
+			if ($.isArray(data)) {
+				for (i = 0, n = data.length; i < n; i++) {
+					self.addOption(data[i]);
+				}
+				return;
+			}
+	
+			if (value = self.registerOption(data)) {
+				self.userOptions[value] = true;
+				self.lastQuery = null;
+				self.trigger('option_add', value, data);
+			}
+		},
+	
+		/**
+		 * Registers an option to the pool of options.
+		 *
+		 * @param {object} data
+		 * @return {boolean|string}
+		 */
+		registerOption: function(data) {
+			var key = hash_key(data[this.settings.valueField]);
+			if (typeof key === 'undefined' || key === null || this.options.hasOwnProperty(key)) return false;
+			data.$order = data.$order || ++this.order;
+			this.options[key] = data;
+			return key;
+		},
+	
+		/**
+		 * Registers an option group to the pool of option groups.
+		 *
+		 * @param {object} data
+		 * @return {boolean|string}
+		 */
+		registerOptionGroup: function(data) {
+			var key = hash_key(data[this.settings.optgroupValueField]);
+			if (!key) return false;
+	
+			data.$order = data.$order || ++this.order;
+			this.optgroups[key] = data;
+			return key;
+		},
+	
+		/**
+		 * Registers a new optgroup for options
+		 * to be bucketed into.
+		 *
+		 * @param {string} id
+		 * @param {object} data
+		 */
+		addOptionGroup: function(id, data) {
+			data[this.settings.optgroupValueField] = id;
+			if (id = this.registerOptionGroup(data)) {
+				this.trigger('optgroup_add', id, data);
+			}
+		},
+	
+		/**
+		 * Removes an existing option group.
+		 *
+		 * @param {string} id
+		 */
+		removeOptionGroup: function(id) {
+			if (this.optgroups.hasOwnProperty(id)) {
+				delete this.optgroups[id];
+				this.renderCache = {};
+				this.trigger('optgroup_remove', id);
+			}
+		},
+	
+		/**
+		 * Clears all existing option groups.
+		 */
+		clearOptionGroups: function() {
+			this.optgroups = {};
+			this.renderCache = {};
+			this.trigger('optgroup_clear');
+		},
+	
+		/**
+		 * Updates an option available for selection. If
+		 * it is visible in the selected items or options
+		 * dropdown, it will be re-rendered automatically.
+		 *
+		 * @param {string} value
+		 * @param {object} data
+		 */
+		updateOption: function(value, data) {
+			var self = this;
+			var $item, $item_new;
+			var value_new, index_item, cache_items, cache_options, order_old;
+	
+			value     = hash_key(value);
+			value_new = hash_key(data[self.settings.valueField]);
+	
+			// sanity checks
+			if (value === null) return;
+			if (!self.options.hasOwnProperty(value)) return;
+			if (typeof value_new !== 'string') throw new Error('Value must be set in option data');
+	
+			order_old = self.options[value].$order;
+	
+			// update references
+			if (value_new !== value) {
+				delete self.options[value];
+				index_item = self.items.indexOf(value);
+				if (index_item !== -1) {
+					self.items.splice(index_item, 1, value_new);
+				}
+			}
+			data.$order = data.$order || order_old;
+			self.options[value_new] = data;
+	
+			// invalidate render cache
+			cache_items = self.renderCache['item'];
+			cache_options = self.renderCache['option'];
+	
+			if (cache_items) {
+				delete cache_items[value];
+				delete cache_items[value_new];
+			}
+			if (cache_options) {
+				delete cache_options[value];
+				delete cache_options[value_new];
+			}
+	
+			// update the item if it's selected
+			if (self.items.indexOf(value_new) !== -1) {
+				$item = self.getItem(value);
+				$item_new = $(self.render('item', data));
+				if ($item.hasClass('active')) $item_new.addClass('active');
+				$item.replaceWith($item_new);
+			}
+	
+			// invalidate last query because we might have updated the sortField
+			self.lastQuery = null;
+	
+			// update dropdown contents
+			if (self.isOpen) {
+				self.refreshOptions(false);
+			}
+		},
+	
+		/**
+		 * Removes a single option.
+		 *
+		 * @param {string} value
+		 * @param {boolean} silent
+		 */
+		removeOption: function(value, silent) {
+			var self = this;
+			value = hash_key(value);
+	
+			var cache_items = self.renderCache['item'];
+			var cache_options = self.renderCache['option'];
+			if (cache_items) delete cache_items[value];
+			if (cache_options) delete cache_options[value];
+	
+			delete self.userOptions[value];
+			delete self.options[value];
+			self.lastQuery = null;
+			self.trigger('option_remove', value);
+			self.removeItem(value, silent);
+		},
+	
+		/**
+		 * Clears all options.
+		 */
+		clearOptions: function() {
+			var self = this;
+	
+			self.loadedSearches = {};
+			self.userOptions = {};
+			self.renderCache = {};
+			var options = self.options;
+			$.each(self.options, function(key, value) {
+				if(self.items.indexOf(key) == -1) {
+					delete options[key];
+				}
+			});
+			self.options = self.sifter.items = options;
+			self.lastQuery = null;
+			self.trigger('option_clear');
+		},
+	
+		/**
+		 * Returns the jQuery element of the option
+		 * matching the given value.
+		 *
+		 * @param {string} value
+		 * @returns {object}
+		 */
+		getOption: function(value) {
+			return this.getElementWithValue(value, this.$dropdown_content.find('[data-selectable]'));
+		},
+	
+		/**
+		 * Returns the jQuery element of the next or
+		 * previous selectable option.
+		 *
+		 * @param {object} $option
+		 * @param {int} direction  can be 1 for next or -1 for previous
+		 * @return {object}
+		 */
+		getAdjacentOption: function($option, direction) {
+			var $options = this.$dropdown.find('[data-selectable]');
+			var index    = $options.index($option) + direction;
+	
+			return index >= 0 && index < $options.length ? $options.eq(index) : $();
+		},
+	
+		/**
+		 * Finds the first element with a "data-value" attribute
+		 * that matches the given value.
+		 *
+		 * @param {mixed} value
+		 * @param {object} $els
+		 * @return {object}
+		 */
+		getElementWithValue: function(value, $els) {
+			value = hash_key(value);
+	
+			if (typeof value !== 'undefined' && value !== null) {
+				for (var i = 0, n = $els.length; i < n; i++) {
+					if ($els[i].getAttribute('data-value') === value) {
+						return $($els[i]);
+					}
+				}
+			}
+	
+			return $();
+		},
+	
+		/**
+		 * Returns the jQuery element of the item
+		 * matching the given value.
+		 *
+		 * @param {string} value
+		 * @returns {object}
+		 */
+		getItem: function(value) {
+			return this.getElementWithValue(value, this.$control.children());
+		},
+	
+		/**
+		 * "Selects" multiple items at once. Adds them to the list
+		 * at the current caret position.
+		 *
+		 * @param {string} value
+		 * @param {boolean} silent
+		 */
+		addItems: function(values, silent) {
+			this.buffer = document.createDocumentFragment();
+	
+			var childNodes = this.$control[0].childNodes;
+			for (var i = 0; i < childNodes.length; i++) {
+				this.buffer.appendChild(childNodes[i]);
+			}
+	
+			var items = $.isArray(values) ? values : [values];
+			for (var i = 0, n = items.length; i < n; i++) {
+				this.isPending = (i < n - 1);
+				this.addItem(items[i], silent);
+			}
+	
+			var control = this.$control[0];
+			control.insertBefore(this.buffer, control.firstChild);
+	
+			this.buffer = null;
+		},
+	
+		/**
+		 * "Selects" an item. Adds it to the list
+		 * at the current caret position.
+		 *
+		 * @param {string} value
+		 * @param {boolean} silent
+		 */
+		addItem: function(value, silent) {
+			var events = silent ? [] : ['change'];
+	
+			debounce_events(this, events, function() {
+				var $item, $option, $options;
+				var self = this;
+				var inputMode = self.settings.mode;
+				var i, active, value_next, wasFull;
+				value = hash_key(value);
+	
+				if (self.items.indexOf(value) !== -1) {
+					if (inputMode === 'single') self.close();
+					return;
+				}
+	
+				if (!self.options.hasOwnProperty(value)) return;
+				if (inputMode === 'single') self.clear(silent);
+				if (inputMode === 'multi' && self.isFull()) return;
+	
+				$item = $(self.render('item', self.options[value]));
+				wasFull = self.isFull();
+				self.items.splice(self.caretPos, 0, value);
+				self.insertAtCaret($item);
+				if (!self.isPending || (!wasFull && self.isFull())) {
+					self.refreshState();
+				}
+	
+				if (self.isSetup) {
+					$options = self.$dropdown_content.find('[data-selectable]');
+	
+					// update menu / remove the option (if this is not one item being added as part of series)
+					if (!self.isPending) {
+						$option = self.getOption(value);
+						value_next = self.getAdjacentOption($option, 1).attr('data-value');
+						self.refreshOptions(self.isFocused && inputMode !== 'single');
+						if (value_next) {
+							self.setActiveOption(self.getOption(value_next));
+						}
+					}
+	
+					// hide the menu if the maximum number of items have been selected or no options are left
+					if (!$options.length || self.isFull()) {
+						self.close();
+					} else if (!self.isPending) {
+						self.positionDropdown();
+					}
+	
+					self.updatePlaceholder();
+					self.trigger('item_add', value, $item);
+	
+					if (!self.isPending) {
+						self.updateOriginalInput({silent: silent});
+					}
+				}
+			});
+		},
+	
+		/**
+		 * Removes the selected item matching
+		 * the provided value.
+		 *
+		 * @param {string} value
+		 */
+		removeItem: function(value, silent) {
+			var self = this;
+			var $item, i, idx;
+	
+			$item = (value instanceof $) ? value : self.getItem(value);
+			value = hash_key($item.attr('data-value'));
+			i = self.items.indexOf(value);
+	
+			if (i !== -1) {
+				$item.remove();
+				if ($item.hasClass('active')) {
+					idx = self.$activeItems.indexOf($item[0]);
+					self.$activeItems.splice(idx, 1);
+				}
+	
+				self.items.splice(i, 1);
+				self.lastQuery = null;
+				if (!self.settings.persist && self.userOptions.hasOwnProperty(value)) {
+					self.removeOption(value, silent);
+				}
+	
+				if (i < self.caretPos) {
+					self.setCaret(self.caretPos - 1);
+				}
+	
+				self.refreshState();
+				self.updatePlaceholder();
+				self.updateOriginalInput({silent: silent});
+				self.positionDropdown();
+				self.trigger('item_remove', value, $item);
+			}
+		},
+	
+		/**
+		 * Invokes the `create` method provided in the
+		 * selectize options that should provide the data
+		 * for the new item, given the user input.
+		 *
+		 * Once this completes, it will be added
+		 * to the item list.
+		 *
+		 * @param {string} value
+		 * @param {boolean} [triggerDropdown]
+		 * @param {function} [callback]
+		 * @return {boolean}
+		 */
+		createItem: function(input, triggerDropdown) {
+			var self  = this;
+			var caret = self.caretPos;
+			input = input || $.trim(self.$control_input.val() || '');
+	
+			var callback = arguments[arguments.length - 1];
+			if (typeof callback !== 'function') callback = function() {};
+	
+			if (typeof triggerDropdown !== 'boolean') {
+				triggerDropdown = true;
+			}
+	
+			if (!self.canCreate(input)) {
+				callback();
+				return false;
+			}
+	
+			self.lock();
+	
+			var setup = (typeof self.settings.create === 'function') ? this.settings.create : function(input) {
+				var data = {};
+				data[self.settings.labelField] = input;
+				data[self.settings.valueField] = input;
+				return data;
+			};
+	
+			var create = once(function(data) {
+				self.unlock();
+	
+				if (!data || typeof data !== 'object') return callback();
+				var value = hash_key(data[self.settings.valueField]);
+				if (typeof value !== 'string') return callback();
+	
+				self.setTextboxValue('');
+				self.addOption(data);
+				self.setCaret(caret);
+				self.addItem(value);
+				self.refreshOptions(triggerDropdown && self.settings.mode !== 'single');
+				callback(data);
+			});
+	
+			var output = setup.apply(this, [input, create]);
+			if (typeof output !== 'undefined') {
+				create(output);
+			}
+	
+			return true;
+		},
+	
+		/**
+		 * Re-renders the selected item lists.
+		 */
+		refreshItems: function() {
+			this.lastQuery = null;
+	
+			if (this.isSetup) {
+				this.addItem(this.items);
+			}
+	
+			this.refreshState();
+			this.updateOriginalInput();
+		},
+	
+		/**
+		 * Updates all state-dependent attributes
+		 * and CSS classes.
+		 */
+		refreshState: function() {
+			this.refreshValidityState();
+			this.refreshClasses();
+		},
+	
+		/**
+		 * Update the `required` attribute of both input and control input.
+		 *
+		 * The `required` property needs to be activated on the control input
+		 * for the error to be displayed at the right place. `required` also
+		 * needs to be temporarily deactivated on the input since the input is
+		 * hidden and can't show errors.
+		 */
+		refreshValidityState: function() {
+			if (!this.isRequired) return false;
+	
+			var invalid = !this.items.length;
+	
+			this.isInvalid = invalid;
+			this.$control_input.prop('required', invalid);
+			this.$input.prop('required', !invalid);
+		},
+	
+		/**
+		 * Updates all state-dependent CSS classes.
+		 */
+		refreshClasses: function() {
+			var self     = this;
+			var isFull   = self.isFull();
+			var isLocked = self.isLocked;
+	
+			self.$wrapper
+				.toggleClass('rtl', self.rtl);
+	
+			self.$control
+				.toggleClass('focus', self.isFocused)
+				.toggleClass('disabled', self.isDisabled)
+				.toggleClass('required', self.isRequired)
+				.toggleClass('invalid', self.isInvalid)
+				.toggleClass('locked', isLocked)
+				.toggleClass('full', isFull).toggleClass('not-full', !isFull)
+				.toggleClass('input-active', self.isFocused && !self.isInputHidden)
+				.toggleClass('dropdown-active', self.isOpen)
+				.toggleClass('has-options', !$.isEmptyObject(self.options))
+				.toggleClass('has-items', self.items.length > 0);
+	
+			self.$control_input.data('grow', !isFull && !isLocked);
+		},
+	
+		/**
+		 * Determines whether or not more items can be added
+		 * to the control without exceeding the user-defined maximum.
+		 *
+		 * @returns {boolean}
+		 */
+		isFull: function() {
+			return this.settings.maxItems !== null && this.items.length >= this.settings.maxItems;
+		},
+	
+		/**
+		 * Refreshes the original <select> or <input>
+		 * element to reflect the current state.
+		 */
+		updateOriginalInput: function(opts) {
+			var i, n, options, label, self = this;
+			opts = opts || {};
+	
+			if (self.tagType === TAG_SELECT) {
+				options = [];
+				for (i = 0, n = self.items.length; i < n; i++) {
+					label = self.options[self.items[i]][self.settings.labelField] || '';
+					options.push('<option value="' + escape_html(self.items[i]) + '" selected="selected">' + escape_html(label) + '</option>');
+				}
+				if (!options.length && !this.$input.attr('multiple')) {
+					options.push('<option value="" selected="selected"></option>');
+				}
+				self.$input.html(options.join(''));
+			} else {
+				self.$input.val(self.getValue());
+				self.$input.attr('value',self.$input.val());
+			}
+	
+			if (self.isSetup) {
+				if (!opts.silent) {
+					self.trigger('change', self.$input.val());
+				}
+			}
+		},
+	
+		/**
+		 * Shows/hide the input placeholder depending
+		 * on if there items in the list already.
+		 */
+		updatePlaceholder: function() {
+			if (!this.settings.placeholder) return;
+			var $input = this.$control_input;
+	
+			if (this.items.length) {
+				$input.removeAttr('placeholder');
+			} else {
+				$input.attr('placeholder', this.settings.placeholder);
+			}
+			$input.triggerHandler('update', {force: true});
+		},
+	
+		/**
+		 * Shows the autocomplete dropdown containing
+		 * the available options.
+		 */
+		open: function() {
+			var self = this;
+	
+			if (self.isLocked || self.isOpen || (self.settings.mode === 'multi' && self.isFull())) return;
+			self.focus();
+			self.isOpen = true;
+			self.refreshState();
+			self.$dropdown.css({visibility: 'hidden', display: 'block'});
+			self.positionDropdown();
+			self.$dropdown.css({visibility: 'visible'});
+			self.trigger('dropdown_open', self.$dropdown);
+		},
+	
+		/**
+		 * Closes the autocomplete dropdown menu.
+		 */
+		close: function() {
+			var self = this;
+			var trigger = self.isOpen;
+	
+			if (self.settings.mode === 'single' && self.items.length) {
+				self.hideInput();
+	
+				// Do not trigger blur while inside a blur event,
+				// this fixes some weird tabbing behavior in FF and IE.
+				// See #1164
+				if (!self.isBlurring) {
+					self.$control_input.blur(); // close keyboard on iOS
+				}
+			}
+	
+			self.isOpen = false;
+			self.$dropdown.hide();
+			self.setActiveOption(null);
+			self.refreshState();
+	
+			if (trigger) self.trigger('dropdown_close', self.$dropdown);
+		},
+	
+		/**
+		 * Calculates and applies the appropriate
+		 * position of the dropdown.
+		 */
+		positionDropdown: function() {
+			var $control = this.$control;
+			var offset = this.settings.dropdownParent === 'body' ? $control.offset() : $control.position();
+			offset.top += $control.outerHeight(true);
+	
+			this.$dropdown.css({
+				width : $control[0].getBoundingClientRect().width,
+				top   : offset.top,
+				left  : offset.left
+			});
+		},
+	
+		/**
+		 * Resets / clears all selected items
+		 * from the control.
+		 *
+		 * @param {boolean} silent
+		 */
+		clear: function(silent) {
+			var self = this;
+	
+			if (!self.items.length) return;
+			self.$control.children(':not(input)').remove();
+			self.items = [];
+			self.lastQuery = null;
+			self.setCaret(0);
+			self.setActiveItem(null);
+			self.updatePlaceholder();
+			self.updateOriginalInput({silent: silent});
+			self.refreshState();
+			self.showInput();
+			self.trigger('clear');
+		},
+	
+		/**
+		 * A helper method for inserting an element
+		 * at the current caret position.
+		 *
+		 * @param {object} $el
+		 */
+		insertAtCaret: function($el) {
+			var caret = Math.min(this.caretPos, this.items.length);
+			var el = $el[0];
+			var target = this.buffer || this.$control[0];
+	
+			if (caret === 0) {
+				target.insertBefore(el, target.firstChild);
+			} else {
+				target.insertBefore(el, target.childNodes[caret]);
+			}
+	
+			this.setCaret(caret + 1);
+		},
+	
+		/**
+		 * Removes the current selected item(s).
+		 *
+		 * @param {object} e (optional)
+		 * @returns {boolean}
+		 */
+		deleteSelection: function(e) {
+			var i, n, direction, selection, values, caret, option_select, $option_select, $tail;
+			var self = this;
+	
+			direction = (e && e.keyCode === KEY_BACKSPACE) ? -1 : 1;
+			selection = getSelection(self.$control_input[0]);
+	
+			if (self.$activeOption && !self.settings.hideSelected) {
+				option_select = self.getAdjacentOption(self.$activeOption, -1).attr('data-value');
+			}
+	
+			// determine items that will be removed
+			values = [];
+	
+			if (self.$activeItems.length) {
+				$tail = self.$control.children('.active:' + (direction > 0 ? 'last' : 'first'));
+				caret = self.$control.children(':not(input)').index($tail);
+				if (direction > 0) { caret++; }
+	
+				for (i = 0, n = self.$activeItems.length; i < n; i++) {
+					values.push($(self.$activeItems[i]).attr('data-value'));
+				}
+				if (e) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+			} else if ((self.isFocused || self.settings.mode === 'single') && self.items.length) {
+				if (direction < 0 && selection.start === 0 && selection.length === 0) {
+					values.push(self.items[self.caretPos - 1]);
+				} else if (direction > 0 && selection.start === self.$control_input.val().length) {
+					values.push(self.items[self.caretPos]);
+				}
+			}
+	
+			// allow the callback to abort
+			if (!values.length || (typeof self.settings.onDelete === 'function' && self.settings.onDelete.apply(self, [values]) === false)) {
+				return false;
+			}
+	
+			// perform removal
+			if (typeof caret !== 'undefined') {
+				self.setCaret(caret);
+			}
+			while (values.length) {
+				self.removeItem(values.pop());
+			}
+	
+			self.showInput();
+			self.positionDropdown();
+			self.refreshOptions(true);
+	
+			// select previous option
+			if (option_select) {
+				$option_select = self.getOption(option_select);
+				if ($option_select.length) {
+					self.setActiveOption($option_select);
+				}
+			}
+	
+			return true;
+		},
+	
+		/**
+		 * Selects the previous / next item (depending
+		 * on the `direction` argument).
+		 *
+		 * > 0 - right
+		 * < 0 - left
+		 *
+		 * @param {int} direction
+		 * @param {object} e (optional)
+		 */
+		advanceSelection: function(direction, e) {
+			var tail, selection, idx, valueLength, cursorAtEdge, $tail;
+			var self = this;
+	
+			if (direction === 0) return;
+			if (self.rtl) direction *= -1;
+	
+			tail = direction > 0 ? 'last' : 'first';
+			selection = getSelection(self.$control_input[0]);
+	
+			if (self.isFocused && !self.isInputHidden) {
+				valueLength = self.$control_input.val().length;
+				cursorAtEdge = direction < 0
+					? selection.start === 0 && selection.length === 0
+					: selection.start === valueLength;
+	
+				if (cursorAtEdge && !valueLength) {
+					self.advanceCaret(direction, e);
+				}
+			} else {
+				$tail = self.$control.children('.active:' + tail);
+				if ($tail.length) {
+					idx = self.$control.children(':not(input)').index($tail);
+					self.setActiveItem(null);
+					self.setCaret(direction > 0 ? idx + 1 : idx);
+				}
+			}
+		},
+	
+		/**
+		 * Moves the caret left / right.
+		 *
+		 * @param {int} direction
+		 * @param {object} e (optional)
+		 */
+		advanceCaret: function(direction, e) {
+			var self = this, fn, $adj;
+	
+			if (direction === 0) return;
+	
+			fn = direction > 0 ? 'next' : 'prev';
+			if (self.isShiftDown) {
+				$adj = self.$control_input[fn]();
+				if ($adj.length) {
+					self.hideInput();
+					self.setActiveItem($adj);
+					e && e.preventDefault();
+				}
+			} else {
+				self.setCaret(self.caretPos + direction);
+			}
+		},
+	
+		/**
+		 * Moves the caret to the specified index.
+		 *
+		 * @param {int} i
+		 */
+		setCaret: function(i) {
+			var self = this;
+	
+			if (self.settings.mode === 'single') {
+				i = self.items.length;
+			} else {
+				i = Math.max(0, Math.min(self.items.length, i));
+			}
+	
+			if(!self.isPending) {
+				// the input must be moved by leaving it in place and moving the
+				// siblings, due to the fact that focus cannot be restored once lost
+				// on mobile webkit devices
+				var j, n, fn, $children, $child;
+				$children = self.$control.children(':not(input)');
+				for (j = 0, n = $children.length; j < n; j++) {
+					$child = $($children[j]).detach();
+					if (j <  i) {
+						self.$control_input.before($child);
+					} else {
+						self.$control.append($child);
+					}
+				}
+			}
+	
+			self.caretPos = i;
+		},
+	
+		/**
+		 * Disables user input on the control. Used while
+		 * items are being asynchronously created.
+		 */
+		lock: function() {
+			this.close();
+			this.isLocked = true;
+			this.refreshState();
+		},
+	
+		/**
+		 * Re-enables user input on the control.
+		 */
+		unlock: function() {
+			this.isLocked = false;
+			this.refreshState();
+		},
+	
+		/**
+		 * Disables user input on the control completely.
+		 * While disabled, it cannot receive focus.
+		 */
+		disable: function() {
+			var self = this;
+			self.$input.prop('disabled', true);
+			self.$control_input.prop('disabled', true).prop('tabindex', -1);
+			self.isDisabled = true;
+			self.lock();
+		},
+	
+		/**
+		 * Enables the control so that it can respond
+		 * to focus and user input.
+		 */
+		enable: function() {
+			var self = this;
+			self.$input.prop('disabled', false);
+			self.$control_input.prop('disabled', false).prop('tabindex', self.tabIndex);
+			self.isDisabled = false;
+			self.unlock();
+		},
+	
+		/**
+		 * Completely destroys the control and
+		 * unbinds all event listeners so that it can
+		 * be garbage collected.
+		 */
+		destroy: function() {
+			var self = this;
+			var eventNS = self.eventNS;
+			var revertSettings = self.revertSettings;
+	
+			self.trigger('destroy');
+			self.off();
+			self.$wrapper.remove();
+			self.$dropdown.remove();
+	
+			self.$input
+				.html('')
+				.append(revertSettings.$children)
+				.removeAttr('tabindex')
+				.removeClass('selectized')
+				.attr({tabindex: revertSettings.tabindex})
+				.show();
+	
+			self.$control_input.removeData('grow');
+			self.$input.removeData('selectize');
+	
+			if (--Selectize.count == 0 && Selectize.$testInput) {
+				Selectize.$testInput.remove();
+				Selectize.$testInput = undefined;
+			}
+	
+			$(window).off(eventNS);
+			$(document).off(eventNS);
+			$(document.body).off(eventNS);
+	
+			delete self.$input[0].selectize;
+		},
+	
+		/**
+		 * A helper method for rendering "item" and
+		 * "option" templates, given the data.
+		 *
+		 * @param {string} templateName
+		 * @param {object} data
+		 * @returns {string}
+		 */
+		render: function(templateName, data) {
+			var value, id, label;
+			var html = '';
+			var cache = false;
+			var self = this;
+			var regex_tag = /^[\t \r\n]*<([a-z][a-z0-9\-_]*(?:\:[a-z][a-z0-9\-_]*)?)/i;
+	
+			if (templateName === 'option' || templateName === 'item') {
+				value = hash_key(data[self.settings.valueField]);
+				cache = !!value;
+			}
+	
+			// pull markup from cache if it exists
+			if (cache) {
+				if (!isset(self.renderCache[templateName])) {
+					self.renderCache[templateName] = {};
+				}
+				if (self.renderCache[templateName].hasOwnProperty(value)) {
+					return self.renderCache[templateName][value];
+				}
+			}
+	
+			// render markup
+			html = $(self.settings.render[templateName].apply(this, [data, escape_html]));
+	
+			// add mandatory attributes
+			if (templateName === 'option' || templateName === 'option_create') {
+				if (!data[self.settings.disabledField]) {
+					html.attr('data-selectable', '');
+				}
+			}
+			else if (templateName === 'optgroup') {
+				id = data[self.settings.optgroupValueField] || '';
+				html.attr('data-group', id);
+				if(data[self.settings.disabledField]) {
+					html.attr('data-disabled', '');
+				}
+			}
+			if (templateName === 'option' || templateName === 'item') {
+				html.attr('data-value', value || '');
+			}
+	
+			// update cache
+			if (cache) {
+				self.renderCache[templateName][value] = html[0];
+			}
+	
+			return html[0];
+		},
+	
+		/**
+		 * Clears the render cache for a template. If
+		 * no template is given, clears all render
+		 * caches.
+		 *
+		 * @param {string} templateName
+		 */
+		clearCache: function(templateName) {
+			var self = this;
+			if (typeof templateName === 'undefined') {
+				self.renderCache = {};
+			} else {
+				delete self.renderCache[templateName];
+			}
+		},
+	
+		/**
+		 * Determines whether or not to display the
+		 * create item prompt, given a user input.
+		 *
+		 * @param {string} input
+		 * @return {boolean}
+		 */
+		canCreate: function(input) {
+			var self = this;
+			if (!self.settings.create) return false;
+			var filter = self.settings.createFilter;
+			return input.length
+				&& (typeof filter !== 'function' || filter.apply(self, [input]))
+				&& (typeof filter !== 'string' || new RegExp(filter).test(input))
+				&& (!(filter instanceof RegExp) || filter.test(input));
+		}
+	
+	});
+	
+	
+	Selectize.count = 0;
+	Selectize.defaults = {
+		options: [],
+		optgroups: [],
+	
+		plugins: [],
+		delimiter: ',',
+		splitOn: null, // regexp or string for splitting up values from a paste command
+		persist: true,
+		diacritics: true,
+		create: false,
+		createOnBlur: false,
+		createFilter: null,
+		highlight: true,
+		openOnFocus: true,
+		maxOptions: 1000,
+		maxItems: null,
+		hideSelected: null,
+		addPrecedence: false,
+		selectOnTab: false,
+		preload: false,
+		allowEmptyOption: false,
+		closeAfterSelect: false,
+	
+		scrollDuration: 60,
+		loadThrottle: 300,
+		loadingClass: 'loading',
+	
+		dataAttr: 'data-data',
+		optgroupField: 'optgroup',
+		valueField: 'value',
+		labelField: 'text',
+		disabledField: 'disabled',
+		optgroupLabelField: 'label',
+		optgroupValueField: 'value',
+		lockOptgroupOrder: false,
+	
+		sortField: '$order',
+		searchField: ['text'],
+		searchConjunction: 'and',
+	
+		mode: null,
+		wrapperClass: 'selectize-control',
+		inputClass: 'selectize-input',
+		dropdownClass: 'selectize-dropdown',
+		dropdownContentClass: 'selectize-dropdown-content',
+	
+		dropdownParent: null,
+	
+		copyClassesToDropdown: true,
+	
+		/*
+		load                 : null, // function(query, callback) { ... }
+		score                : null, // function(search) { ... }
+		onInitialize         : null, // function() { ... }
+		onChange             : null, // function(value) { ... }
+		onItemAdd            : null, // function(value, $item) { ... }
+		onItemRemove         : null, // function(value) { ... }
+		onClear              : null, // function() { ... }
+		onOptionAdd          : null, // function(value, data) { ... }
+		onOptionRemove       : null, // function(value) { ... }
+		onOptionClear        : null, // function() { ... }
+		onOptionGroupAdd     : null, // function(id, data) { ... }
+		onOptionGroupRemove  : null, // function(id) { ... }
+		onOptionGroupClear   : null, // function() { ... }
+		onDropdownOpen       : null, // function($dropdown) { ... }
+		onDropdownClose      : null, // function($dropdown) { ... }
+		onType               : null, // function(str) { ... }
+		onDelete             : null, // function(values) { ... }
+		*/
+	
+		render: {
+			/*
+			item: null,
+			optgroup: null,
+			optgroup_header: null,
+			option: null,
+			option_create: null
+			*/
+		}
+	};
+	
+	
+	$.fn.selectize = function(settings_user) {
+		var defaults             = $.fn.selectize.defaults;
+		var settings             = $.extend({}, defaults, settings_user);
+		var attr_data            = settings.dataAttr;
+		var field_label          = settings.labelField;
+		var field_value          = settings.valueField;
+		var field_disabled       = settings.disabledField;
+		var field_optgroup       = settings.optgroupField;
+		var field_optgroup_label = settings.optgroupLabelField;
+		var field_optgroup_value = settings.optgroupValueField;
+	
+		/**
+		 * Initializes selectize from a <input type="text"> element.
+		 *
+		 * @param {object} $input
+		 * @param {object} settings_element
+		 */
+		var init_textbox = function($input, settings_element) {
+			var i, n, values, option;
+	
+			var data_raw = $input.attr(attr_data);
+	
+			if (!data_raw) {
+				var value = $.trim($input.val() || '');
+				if (!settings.allowEmptyOption && !value.length) return;
+				values = value.split(settings.delimiter);
+				for (i = 0, n = values.length; i < n; i++) {
+					option = {};
+					option[field_label] = values[i];
+					option[field_value] = values[i];
+					settings_element.options.push(option);
+				}
+				settings_element.items = values;
+			} else {
+				settings_element.options = JSON.parse(data_raw);
+				for (i = 0, n = settings_element.options.length; i < n; i++) {
+					settings_element.items.push(settings_element.options[i][field_value]);
+				}
+			}
+		};
+	
+		/**
+		 * Initializes selectize from a <select> element.
+		 *
+		 * @param {object} $input
+		 * @param {object} settings_element
+		 */
+		var init_select = function($input, settings_element) {
+			var i, n, tagName, $children, order = 0;
+			var options = settings_element.options;
+			var optionsMap = {};
+	
+			var readData = function($el) {
+				var data = attr_data && $el.attr(attr_data);
+				if (typeof data === 'string' && data.length) {
+					return JSON.parse(data);
+				}
+				return null;
+			};
+	
+			var addOption = function($option, group) {
+				$option = $($option);
+	
+				var value = hash_key($option.val());
+				if (!value && !settings.allowEmptyOption) return;
+	
+				// if the option already exists, it's probably been
+				// duplicated in another optgroup. in this case, push
+				// the current group to the "optgroup" property on the
+				// existing option so that it's rendered in both places.
+				if (optionsMap.hasOwnProperty(value)) {
+					if (group) {
+						var arr = optionsMap[value][field_optgroup];
+						if (!arr) {
+							optionsMap[value][field_optgroup] = group;
+						} else if (!$.isArray(arr)) {
+							optionsMap[value][field_optgroup] = [arr, group];
+						} else {
+							arr.push(group);
+						}
+					}
+					return;
+				}
+	
+				var option             = readData($option) || {};
+				option[field_label]    = option[field_label] || $option.text();
+				option[field_value]    = option[field_value] || value;
+				option[field_disabled] = option[field_disabled] || $option.prop('disabled');
+				option[field_optgroup] = option[field_optgroup] || group;
+	
+				optionsMap[value] = option;
+				options.push(option);
+	
+				if ($option.is(':selected')) {
+					settings_element.items.push(value);
+				}
+			};
+	
+			var addGroup = function($optgroup) {
+				var i, n, id, optgroup, $options;
+	
+				$optgroup = $($optgroup);
+				id = $optgroup.attr('label');
+	
+				if (id) {
+					optgroup = readData($optgroup) || {};
+					optgroup[field_optgroup_label] = id;
+					optgroup[field_optgroup_value] = id;
+					optgroup[field_disabled] = $optgroup.prop('disabled');
+					settings_element.optgroups.push(optgroup);
+				}
+	
+				$options = $('option', $optgroup);
+				for (i = 0, n = $options.length; i < n; i++) {
+					addOption($options[i], id);
+				}
+			};
+	
+			settings_element.maxItems = $input.attr('multiple') ? null : 1;
+	
+			$children = $input.children();
+			for (i = 0, n = $children.length; i < n; i++) {
+				tagName = $children[i].tagName.toLowerCase();
+				if (tagName === 'optgroup') {
+					addGroup($children[i]);
+				} else if (tagName === 'option') {
+					addOption($children[i]);
+				}
+			}
+		};
+	
+		return this.each(function() {
+			if (this.selectize) return;
+	
+			var instance;
+			var $input = $(this);
+			var tag_name = this.tagName.toLowerCase();
+			var placeholder = $input.attr('placeholder') || $input.attr('data-placeholder');
+			if (!placeholder && !settings.allowEmptyOption) {
+				placeholder = $input.children('option[value=""]').text();
+			}
+	
+			var settings_element = {
+				'placeholder' : placeholder,
+				'options'     : [],
+				'optgroups'   : [],
+				'items'       : []
+			};
+	
+			if (tag_name === 'select') {
+				init_select($input, settings_element);
+			} else {
+				init_textbox($input, settings_element);
+			}
+	
+			instance = new Selectize($input, $.extend(true, {}, defaults, settings_element, settings_user));
+		});
+	};
+	
+	$.fn.selectize.defaults = Selectize.defaults;
+	$.fn.selectize.support = {
+		validity: SUPPORTS_VALIDITY_API
+	};
+	
+	
+	Selectize.define('drag_drop', function(options) {
+		if (!$.fn.sortable) throw new Error('The "drag_drop" plugin requires jQuery UI "sortable".');
+		if (this.settings.mode !== 'multi') return;
+		var self = this;
+	
+		self.lock = (function() {
+			var original = self.lock;
+			return function() {
+				var sortable = self.$control.data('sortable');
+				if (sortable) sortable.disable();
+				return original.apply(self, arguments);
+			};
+		})();
+	
+		self.unlock = (function() {
+			var original = self.unlock;
+			return function() {
+				var sortable = self.$control.data('sortable');
+				if (sortable) sortable.enable();
+				return original.apply(self, arguments);
+			};
+		})();
+	
+		self.setup = (function() {
+			var original = self.setup;
+			return function() {
+				original.apply(this, arguments);
+	
+				var $control = self.$control.sortable({
+					items: '[data-value]',
+					forcePlaceholderSize: true,
+					disabled: self.isLocked,
+					start: function(e, ui) {
+						ui.placeholder.css('width', ui.helper.css('width'));
+						$control.css({overflow: 'visible'});
+					},
+					stop: function() {
+						$control.css({overflow: 'hidden'});
+						var active = self.$activeItems ? self.$activeItems.slice() : null;
+						var values = [];
+						$control.children('[data-value]').each(function() {
+							values.push($(this).attr('data-value'));
+						});
+						self.setValue(values);
+						self.setActiveItem(active);
+					}
+				});
+			};
+		})();
+	
+	});
+	
+	Selectize.define('dropdown_header', function(options) {
+		var self = this;
+	
+		options = $.extend({
+			title         : 'Untitled',
+			headerClass   : 'selectize-dropdown-header',
+			titleRowClass : 'selectize-dropdown-header-title',
+			labelClass    : 'selectize-dropdown-header-label',
+			closeClass    : 'selectize-dropdown-header-close',
+	
+			html: function(data) {
+				return (
+					'<div class="' + data.headerClass + '">' +
+						'<div class="' + data.titleRowClass + '">' +
+							'<span class="' + data.labelClass + '">' + data.title + '</span>' +
+							'<a href="javascript:void(0)" class="' + data.closeClass + '">&times;</a>' +
+						'</div>' +
+					'</div>'
+				);
+			}
+		}, options);
+	
+		self.setup = (function() {
+			var original = self.setup;
+			return function() {
+				original.apply(self, arguments);
+				self.$dropdown_header = $(options.html(options));
+				self.$dropdown.prepend(self.$dropdown_header);
+			};
+		})();
+	
+	});
+	
+	Selectize.define('optgroup_columns', function(options) {
+		var self = this;
+	
+		options = $.extend({
+			equalizeWidth  : true,
+			equalizeHeight : true
+		}, options);
+	
+		this.getAdjacentOption = function($option, direction) {
+			var $options = $option.closest('[data-group]').find('[data-selectable]');
+			var index    = $options.index($option) + direction;
+	
+			return index >= 0 && index < $options.length ? $options.eq(index) : $();
+		};
+	
+		this.onKeyDown = (function() {
+			var original = self.onKeyDown;
+			return function(e) {
+				var index, $option, $options, $optgroup;
+	
+				if (this.isOpen && (e.keyCode === KEY_LEFT || e.keyCode === KEY_RIGHT)) {
+					self.ignoreHover = true;
+					$optgroup = this.$activeOption.closest('[data-group]');
+					index = $optgroup.find('[data-selectable]').index(this.$activeOption);
+	
+					if(e.keyCode === KEY_LEFT) {
+						$optgroup = $optgroup.prev('[data-group]');
+					} else {
+						$optgroup = $optgroup.next('[data-group]');
+					}
+	
+					$options = $optgroup.find('[data-selectable]');
+					$option  = $options.eq(Math.min($options.length - 1, index));
+					if ($option.length) {
+						this.setActiveOption($option);
+					}
+					return;
+				}
+	
+				return original.apply(this, arguments);
+			};
+		})();
+	
+		var getScrollbarWidth = function() {
+			var div;
+			var width = getScrollbarWidth.width;
+			var doc = document;
+	
+			if (typeof width === 'undefined') {
+				div = doc.createElement('div');
+				div.innerHTML = '<div style="width:50px;height:50px;position:absolute;left:-50px;top:-50px;overflow:auto;"><div style="width:1px;height:100px;"></div></div>';
+				div = div.firstChild;
+				doc.body.appendChild(div);
+				width = getScrollbarWidth.width = div.offsetWidth - div.clientWidth;
+				doc.body.removeChild(div);
+			}
+			return width;
+		};
+	
+		var equalizeSizes = function() {
+			var i, n, height_max, width, width_last, width_parent, $optgroups;
+	
+			$optgroups = $('[data-group]', self.$dropdown_content);
+			n = $optgroups.length;
+			if (!n || !self.$dropdown_content.width()) return;
+	
+			if (options.equalizeHeight) {
+				height_max = 0;
+				for (i = 0; i < n; i++) {
+					height_max = Math.max(height_max, $optgroups.eq(i).height());
+				}
+				$optgroups.css({height: height_max});
+			}
+	
+			if (options.equalizeWidth) {
+				width_parent = self.$dropdown_content.innerWidth() - getScrollbarWidth();
+				width = Math.round(width_parent / n);
+				$optgroups.css({width: width});
+				if (n > 1) {
+					width_last = width_parent - width * (n - 1);
+					$optgroups.eq(n - 1).css({width: width_last});
+				}
+			}
+		};
+	
+		if (options.equalizeHeight || options.equalizeWidth) {
+			hook.after(this, 'positionDropdown', equalizeSizes);
+			hook.after(this, 'refreshOptions', equalizeSizes);
+		}
+	
+	
+	});
+	
+	Selectize.define('remove_button', function(options) {
+		options = $.extend({
+				label     : '&times;',
+				title     : 'Remove',
+				className : 'remove',
+				append    : true
+			}, options);
+	
+			var singleClose = function(thisRef, options) {
+	
+				options.className = 'remove-single';
+	
+				var self = thisRef;
+				var html = '<a href="javascript:void(0)" class="' + options.className + '" tabindex="-1" title="' + escape_html(options.title) + '">' + options.label + '</a>';
+	
+				/**
+				 * Appends an element as a child (with raw HTML).
+				 *
+				 * @param {string} html_container
+				 * @param {string} html_element
+				 * @return {string}
+				 */
+				var append = function(html_container, html_element) {
+					return $('<span>').append(html_container)
+						.append(html_element);
+				};
+	
+				thisRef.setup = (function() {
+					var original = self.setup;
+					return function() {
+						// override the item rendering method to add the button to each
+						if (options.append) {
+							var id = $(self.$input.context).attr('id');
+							var selectizer = $('#'+id);
+	
+							var render_item = self.settings.render.item;
+							self.settings.render.item = function(data) {
+								return append(render_item.apply(thisRef, arguments), html);
+							};
+						}
+	
+						original.apply(thisRef, arguments);
+	
+						// add event listener
+						thisRef.$control.on('click', '.' + options.className, function(e) {
+							e.preventDefault();
+							if (self.isLocked) return;
+	
+							self.clear();
+						});
+	
+					};
+				})();
+			};
+	
+			var multiClose = function(thisRef, options) {
+	
+				var self = thisRef;
+				var html = '<a href="javascript:void(0)" class="' + options.className + '" tabindex="-1" title="' + escape_html(options.title) + '">' + options.label + '</a>';
+	
+				/**
+				 * Appends an element as a child (with raw HTML).
+				 *
+				 * @param {string} html_container
+				 * @param {string} html_element
+				 * @return {string}
+				 */
+				var append = function(html_container, html_element) {
+					var pos = html_container.search(/(<\/[^>]+>\s*)$/);
+					return html_container.substring(0, pos) + html_element + html_container.substring(pos);
+				};
+	
+				thisRef.setup = (function() {
+					var original = self.setup;
+					return function() {
+						// override the item rendering method to add the button to each
+						if (options.append) {
+							var render_item = self.settings.render.item;
+							self.settings.render.item = function(data) {
+								return append(render_item.apply(thisRef, arguments), html);
+							};
+						}
+	
+						original.apply(thisRef, arguments);
+	
+						// add event listener
+						thisRef.$control.on('click', '.' + options.className, function(e) {
+							e.preventDefault();
+							if (self.isLocked) return;
+	
+							var $item = $(e.currentTarget).parent();
+							self.setActiveItem($item);
+							if (self.deleteSelection()) {
+								self.setCaret(self.items.length);
+							}
+						});
+	
+					};
+				})();
+			};
+	
+			if (this.settings.mode === 'single') {
+				singleClose(this, options);
+				return;
+			} else {
+				multiClose(this, options);
+			}
+	});
+	
+	
+	Selectize.define('restore_on_backspace', function(options) {
+		var self = this;
+	
+		options.text = options.text || function(option) {
+			return option[this.settings.labelField];
+		};
+	
+		this.onKeyDown = (function() {
+			var original = self.onKeyDown;
+			return function(e) {
+				var index, option;
+				if (e.keyCode === KEY_BACKSPACE && this.$control_input.val() === '' && !this.$activeItems.length) {
+					index = this.caretPos - 1;
+					if (index >= 0 && index < this.items.length) {
+						option = this.options[this.items[index]];
+						if (this.deleteSelection(e)) {
+							this.setTextboxValue(options.text.apply(this, [option]));
+							this.refreshOptions(true);
+						}
+						e.preventDefault();
+						return;
+					}
+				}
+				return original.apply(this, arguments);
+			};
+		})();
+	});
+	
+
+	return Selectize;
+}));
+
+/***/ }),
+
+/***/ "./node_modules/sifter/sifter.js":
+/*!***************************************!*\
+  !*** ./node_modules/sifter/sifter.js ***!
+  \***************************************/
+/*! unknown exports (runtime-defined) */
+/*! runtime requirements: top-level-this-exports, __webpack_require__, __webpack_exports__, module */
+/*! CommonJS bailout: this is used directly at 25:2-6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
+ * sifter.js
+ * Copyright (c) 2013 Brian Reavis & contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ *
+ * @author Brian Reavis <brian@thirdroute.com>
+ */
+
+(function(root, factory) {
+	if (true) {
+		!(__WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+		__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+		(__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) :
+		__WEBPACK_AMD_DEFINE_FACTORY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	} else {}
+}(this, function() {
+
+	/**
+	 * Textually searches arrays and hashes of objects
+	 * by property (or multiple properties). Designed
+	 * specifically for autocomplete.
+	 *
+	 * @constructor
+	 * @param {array|object} items
+	 * @param {object} items
+	 */
+	var Sifter = function(items, settings) {
+		this.items = items;
+		this.settings = settings || {diacritics: true};
+	};
+
+	/**
+	 * Splits a search string into an array of individual
+	 * regexps to be used to match results.
+	 *
+	 * @param {string} query
+	 * @returns {array}
+	 */
+	Sifter.prototype.tokenize = function(query) {
+		query = trim(String(query || '').toLowerCase());
+		if (!query || !query.length) return [];
+
+		var i, n, regex, letter;
+		var tokens = [];
+		var words = query.split(/ +/);
+
+		for (i = 0, n = words.length; i < n; i++) {
+			regex = escape_regex(words[i]);
+			if (this.settings.diacritics) {
+				for (letter in DIACRITICS) {
+					if (DIACRITICS.hasOwnProperty(letter)) {
+						regex = regex.replace(new RegExp(letter, 'g'), DIACRITICS[letter]);
+					}
+				}
+			}
+			tokens.push({
+				string : words[i],
+				regex  : new RegExp(regex, 'i')
+			});
+		}
+
+		return tokens;
+	};
+
+	/**
+	 * Iterates over arrays and hashes.
+	 *
+	 * ```
+	 * this.iterator(this.items, function(item, id) {
+	 *    // invoked for each item
+	 * });
+	 * ```
+	 *
+	 * @param {array|object} object
+	 */
+	Sifter.prototype.iterator = function(object, callback) {
+		var iterator;
+		if (is_array(object)) {
+			iterator = Array.prototype.forEach || function(callback) {
+				for (var i = 0, n = this.length; i < n; i++) {
+					callback(this[i], i, this);
+				}
+			};
+		} else {
+			iterator = function(callback) {
+				for (var key in this) {
+					if (this.hasOwnProperty(key)) {
+						callback(this[key], key, this);
+					}
+				}
+			};
+		}
+
+		iterator.apply(object, [callback]);
+	};
+
+	/**
+	 * Returns a function to be used to score individual results.
+	 *
+	 * Good matches will have a higher score than poor matches.
+	 * If an item is not a match, 0 will be returned by the function.
+	 *
+	 * @param {object|string} search
+	 * @param {object} options (optional)
+	 * @returns {function}
+	 */
+	Sifter.prototype.getScoreFunction = function(search, options) {
+		var self, fields, tokens, token_count, nesting;
+
+		self        = this;
+		search      = self.prepareSearch(search, options);
+		tokens      = search.tokens;
+		fields      = search.options.fields;
+		token_count = tokens.length;
+		nesting     = search.options.nesting;
+
+		/**
+		 * Calculates how close of a match the
+		 * given value is against a search token.
+		 *
+		 * @param {mixed} value
+		 * @param {object} token
+		 * @return {number}
+		 */
+		var scoreValue = function(value, token) {
+			var score, pos;
+
+			if (!value) return 0;
+			value = String(value || '');
+			pos = value.search(token.regex);
+			if (pos === -1) return 0;
+			score = token.string.length / value.length;
+			if (pos === 0) score += 0.5;
+			return score;
+		};
+
+		/**
+		 * Calculates the score of an object
+		 * against the search query.
+		 *
+		 * @param {object} token
+		 * @param {object} data
+		 * @return {number}
+		 */
+		var scoreObject = (function() {
+			var field_count = fields.length;
+			if (!field_count) {
+				return function() { return 0; };
+			}
+			if (field_count === 1) {
+				return function(token, data) {
+					return scoreValue(getattr(data, fields[0], nesting), token);
+				};
+			}
+			return function(token, data) {
+				for (var i = 0, sum = 0; i < field_count; i++) {
+					sum += scoreValue(getattr(data, fields[i], nesting), token);
+				}
+				return sum / field_count;
+			};
+		})();
+
+		if (!token_count) {
+			return function() { return 0; };
+		}
+		if (token_count === 1) {
+			return function(data) {
+				return scoreObject(tokens[0], data);
+			};
+		}
+
+		if (search.options.conjunction === 'and') {
+			return function(data) {
+				var score;
+				for (var i = 0, sum = 0; i < token_count; i++) {
+					score = scoreObject(tokens[i], data);
+					if (score <= 0) return 0;
+					sum += score;
+				}
+				return sum / token_count;
+			};
+		} else {
+			return function(data) {
+				for (var i = 0, sum = 0; i < token_count; i++) {
+					sum += scoreObject(tokens[i], data);
+				}
+				return sum / token_count;
+			};
+		}
+	};
+
+	/**
+	 * Returns a function that can be used to compare two
+	 * results, for sorting purposes. If no sorting should
+	 * be performed, `null` will be returned.
+	 *
+	 * @param {string|object} search
+	 * @param {object} options
+	 * @return function(a,b)
+	 */
+	Sifter.prototype.getSortFunction = function(search, options) {
+		var i, n, self, field, fields, fields_count, multiplier, multipliers, get_field, implicit_score, sort;
+
+		self   = this;
+		search = self.prepareSearch(search, options);
+		sort   = (!search.query && options.sort_empty) || options.sort;
+
+		/**
+		 * Fetches the specified sort field value
+		 * from a search result item.
+		 *
+		 * @param  {string} name
+		 * @param  {object} result
+		 * @return {mixed}
+		 */
+		get_field = function(name, result) {
+			if (name === '$score') return result.score;
+			return getattr(self.items[result.id], name, options.nesting);
+		};
+
+		// parse options
+		fields = [];
+		if (sort) {
+			for (i = 0, n = sort.length; i < n; i++) {
+				if (search.query || sort[i].field !== '$score') {
+					fields.push(sort[i]);
+				}
+			}
+		}
+
+		// the "$score" field is implied to be the primary
+		// sort field, unless it's manually specified
+		if (search.query) {
+			implicit_score = true;
+			for (i = 0, n = fields.length; i < n; i++) {
+				if (fields[i].field === '$score') {
+					implicit_score = false;
+					break;
+				}
+			}
+			if (implicit_score) {
+				fields.unshift({field: '$score', direction: 'desc'});
+			}
+		} else {
+			for (i = 0, n = fields.length; i < n; i++) {
+				if (fields[i].field === '$score') {
+					fields.splice(i, 1);
+					break;
+				}
+			}
+		}
+
+		multipliers = [];
+		for (i = 0, n = fields.length; i < n; i++) {
+			multipliers.push(fields[i].direction === 'desc' ? -1 : 1);
+		}
+
+		// build function
+		fields_count = fields.length;
+		if (!fields_count) {
+			return null;
+		} else if (fields_count === 1) {
+			field = fields[0].field;
+			multiplier = multipliers[0];
+			return function(a, b) {
+				return multiplier * cmp(
+					get_field(field, a),
+					get_field(field, b)
+				);
+			};
+		} else {
+			return function(a, b) {
+				var i, result, a_value, b_value, field;
+				for (i = 0; i < fields_count; i++) {
+					field = fields[i].field;
+					result = multipliers[i] * cmp(
+						get_field(field, a),
+						get_field(field, b)
+					);
+					if (result) return result;
+				}
+				return 0;
+			};
+		}
+	};
+
+	/**
+	 * Parses a search query and returns an object
+	 * with tokens and fields ready to be populated
+	 * with results.
+	 *
+	 * @param {string} query
+	 * @param {object} options
+	 * @returns {object}
+	 */
+	Sifter.prototype.prepareSearch = function(query, options) {
+		if (typeof query === 'object') return query;
+
+		options = extend({}, options);
+
+		var option_fields     = options.fields;
+		var option_sort       = options.sort;
+		var option_sort_empty = options.sort_empty;
+
+		if (option_fields && !is_array(option_fields)) options.fields = [option_fields];
+		if (option_sort && !is_array(option_sort)) options.sort = [option_sort];
+		if (option_sort_empty && !is_array(option_sort_empty)) options.sort_empty = [option_sort_empty];
+
+		return {
+			options : options,
+			query   : String(query || '').toLowerCase(),
+			tokens  : this.tokenize(query),
+			total   : 0,
+			items   : []
+		};
+	};
+
+	/**
+	 * Searches through all items and returns a sorted array of matches.
+	 *
+	 * The `options` parameter can contain:
+	 *
+	 *   - fields {string|array}
+	 *   - sort {array}
+	 *   - score {function}
+	 *   - filter {bool}
+	 *   - limit {integer}
+	 *
+	 * Returns an object containing:
+	 *
+	 *   - options {object}
+	 *   - query {string}
+	 *   - tokens {array}
+	 *   - total {int}
+	 *   - items {array}
+	 *
+	 * @param {string} query
+	 * @param {object} options
+	 * @returns {object}
+	 */
+	Sifter.prototype.search = function(query, options) {
+		var self = this, value, score, search, calculateScore;
+		var fn_sort;
+		var fn_score;
+
+		search  = this.prepareSearch(query, options);
+		options = search.options;
+		query   = search.query;
+
+		// generate result scoring function
+		fn_score = options.score || self.getScoreFunction(search);
+
+		// perform search and sort
+		if (query.length) {
+			self.iterator(self.items, function(item, id) {
+				score = fn_score(item);
+				if (options.filter === false || score > 0) {
+					search.items.push({'score': score, 'id': id});
+				}
+			});
+		} else {
+			self.iterator(self.items, function(item, id) {
+				search.items.push({'score': 1, 'id': id});
+			});
+		}
+
+		fn_sort = self.getSortFunction(search, options);
+		if (fn_sort) search.items.sort(fn_sort);
+
+		// apply limits
+		search.total = search.items.length;
+		if (typeof options.limit === 'number') {
+			search.items = search.items.slice(0, options.limit);
+		}
+
+		return search;
+	};
+
+	// utilities
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	var cmp = function(a, b) {
+		if (typeof a === 'number' && typeof b === 'number') {
+			return a > b ? 1 : (a < b ? -1 : 0);
+		}
+		a = asciifold(String(a || ''));
+		b = asciifold(String(b || ''));
+		if (a > b) return 1;
+		if (b > a) return -1;
+		return 0;
+	};
+
+	var extend = function(a, b) {
+		var i, n, k, object;
+		for (i = 1, n = arguments.length; i < n; i++) {
+			object = arguments[i];
+			if (!object) continue;
+			for (k in object) {
+				if (object.hasOwnProperty(k)) {
+					a[k] = object[k];
+				}
+			}
+		}
+		return a;
+	};
+
+	/**
+	 * A property getter resolving dot-notation
+	 * @param  {Object}  obj     The root object to fetch property on
+	 * @param  {String}  name    The optionally dotted property name to fetch
+	 * @param  {Boolean} nesting Handle nesting or not
+	 * @return {Object}          The resolved property value
+	 */
+	var getattr = function(obj, name, nesting) {
+	    if (!obj || !name) return;
+	    if (!nesting) return obj[name];
+	    var names = name.split(".");
+	    while(names.length && (obj = obj[names.shift()]));
+	    return obj;
+	};
+
+	var trim = function(str) {
+		return (str + '').replace(/^\s+|\s+$|/g, '');
+	};
+
+	var escape_regex = function(str) {
+		return (str + '').replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
+	};
+
+	var is_array = Array.isArray || (typeof $ !== 'undefined' && $.isArray) || function(object) {
+		return Object.prototype.toString.call(object) === '[object Array]';
+	};
+
+	var DIACRITICS = {
+		'a': '[aḀḁĂăÂâǍǎȺⱥȦȧẠạÄäÀàÁáĀāÃãÅåąĄÃąĄ]',
+		'b': '[b␢βΒB฿𐌁ᛒ]',
+		'c': '[cĆćĈĉČčĊċC̄c̄ÇçḈḉȻȼƇƈɕᴄＣｃ]',
+		'd': '[dĎďḊḋḐḑḌḍḒḓḎḏĐđD̦d̦ƉɖƊɗƋƌᵭᶁᶑȡᴅＤｄð]',
+		'e': '[eÉéÈèÊêḘḙĚěĔĕẼẽḚḛẺẻĖėËëĒēȨȩĘęᶒɆɇȄȅẾếỀềỄễỂểḜḝḖḗḔḕȆȇẸẹỆệⱸᴇＥｅɘǝƏƐε]',
+		'f': '[fƑƒḞḟ]',
+		'g': '[gɢ₲ǤǥĜĝĞğĢģƓɠĠġ]',
+		'h': '[hĤĥĦħḨḩẖẖḤḥḢḣɦʰǶƕ]',
+		'i': '[iÍíÌìĬĭÎîǏǐÏïḮḯĨĩĮįĪīỈỉȈȉȊȋỊịḬḭƗɨɨ̆ᵻᶖİiIıɪＩｉ]',
+		'j': '[jȷĴĵɈɉʝɟʲ]',
+		'k': '[kƘƙꝀꝁḰḱǨǩḲḳḴḵκϰ₭]',
+		'l': '[lŁłĽľĻļĹĺḶḷḸḹḼḽḺḻĿŀȽƚⱠⱡⱢɫɬᶅɭȴʟＬｌ]',
+		'n': '[nŃńǸǹŇňÑñṄṅŅņṆṇṊṋṈṉN̈n̈ƝɲȠƞᵰᶇɳȵɴＮｎŊŋ]',
+		'o': '[oØøÖöÓóÒòÔôǑǒŐőŎŏȮȯỌọƟɵƠơỎỏŌōÕõǪǫȌȍՕօ]',
+		'p': '[pṔṕṖṗⱣᵽƤƥᵱ]',
+		'q': '[qꝖꝗʠɊɋꝘꝙq̃]',
+		'r': '[rŔŕɌɍŘřŖŗṘṙȐȑȒȓṚṛⱤɽ]',
+		's': '[sŚśṠṡṢṣꞨꞩŜŝŠšŞşȘșS̈s̈]',
+		't': '[tŤťṪṫŢţṬṭƮʈȚțṰṱṮṯƬƭ]',
+		'u': '[uŬŭɄʉỤụÜüÚúÙùÛûǓǔŰűŬŭƯưỦủŪūŨũŲųȔȕ∪]',
+		'v': '[vṼṽṾṿƲʋꝞꝟⱱʋ]',
+		'w': '[wẂẃẀẁŴŵẄẅẆẇẈẉ]',
+		'x': '[xẌẍẊẋχ]',
+		'y': '[yÝýỲỳŶŷŸÿỸỹẎẏỴỵɎɏƳƴ]',
+		'z': '[zŹźẐẑŽžŻżẒẓẔẕƵƶ]'
+	};
+
+	var asciifold = (function() {
+		var i, n, k, chunk;
+		var foreignletters = '';
+		var lookup = {};
+		for (k in DIACRITICS) {
+			if (DIACRITICS.hasOwnProperty(k)) {
+				chunk = DIACRITICS[k].substring(2, DIACRITICS[k].length - 1);
+				foreignletters += chunk;
+				for (i = 0, n = chunk.length; i < n; i++) {
+					lookup[chunk.charAt(i)] = k;
+				}
+			}
+		}
+		var regexp = new RegExp('[' +  foreignletters + ']', 'g');
+		return function(str) {
+			return str.replace(regexp, function(foreignletter) {
+				return lookup[foreignletter];
+			}).toLowerCase();
+		};
+	})();
+
+
+	// export
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	return Sifter;
+}));
+
+
+
+/***/ }),
+
 /***/ "./node_modules/datatables.net-bs4/css/dataTables.bootstrap4.css":
 /*!***********************************************************************!*\
   !*** ./node_modules/datatables.net-bs4/css/dataTables.bootstrap4.css ***!
@@ -60387,6 +66252,40 @@ var update = _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMP
 
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_css_loader_dist_cjs_js_dataTables_bootstrap4_css__WEBPACK_IMPORTED_MODULE_1__.default.locals || {});
+
+/***/ }),
+
+/***/ "./node_modules/selectize/dist/css/selectize.bootstrap3.css":
+/*!******************************************************************!*\
+  !*** ./node_modules/selectize/dist/css/selectize.bootstrap3.css ***!
+  \******************************************************************/
+/*! namespace exports */
+/*! export default [provided] [no usage info] [missing usage info prevents renaming] */
+/*! other exports [not provided] [no usage info] */
+/*! runtime requirements: __webpack_require__, __webpack_require__.n, __webpack_exports__, __webpack_require__.r, __webpack_require__.d, __webpack_require__.* */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => __WEBPACK_DEFAULT_EXPORT__
+/* harmony export */ });
+/* harmony import */ var _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! !../../../style-loader/dist/runtime/injectStylesIntoStyleTag.js */ "./node_modules/style-loader/dist/runtime/injectStylesIntoStyleTag.js");
+/* harmony import */ var _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _css_loader_dist_cjs_js_selectize_bootstrap3_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! !!../../../css-loader/dist/cjs.js!./selectize.bootstrap3.css */ "./node_modules/css-loader/dist/cjs.js!./node_modules/selectize/dist/css/selectize.bootstrap3.css");
+;
+            
+
+var options = {};
+
+options.insert = "head";
+options.singleton = false;
+
+var update = _style_loader_dist_runtime_injectStylesIntoStyleTag_js__WEBPACK_IMPORTED_MODULE_0___default()(_css_loader_dist_cjs_js_selectize_bootstrap3_css__WEBPACK_IMPORTED_MODULE_1__.default, options);
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (_css_loader_dist_cjs_js_selectize_bootstrap3_css__WEBPACK_IMPORTED_MODULE_1__.default.locals || {});
 
 /***/ }),
 
@@ -60864,4 +66763,4 @@ module.exports = function (list, options) {
 /******/ 	// This entry module used 'exports' so it can't be inlined
 /******/ })()
 ;
-//# sourceMappingURL=bundle.123ad18781e48e4b519e.js.map
+//# sourceMappingURL=bundle.2ce9703f71531ec4f5c0.js.map
