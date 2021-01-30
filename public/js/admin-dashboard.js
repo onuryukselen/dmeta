@@ -387,6 +387,7 @@ const refreshDataTables = async (TableID, projectID) => {
       .draw();
   }
 };
+
 const showTableTabs = () => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     const tableID = $(e.target).attr('tableID');
@@ -399,7 +400,6 @@ const showTableTabs = () => {
       .columns.adjust();
   });
 };
-
 const getErrorDiv = () => {
   return '<p style="background-color:#e211112b;" id="crudModalError"></p>';
 };

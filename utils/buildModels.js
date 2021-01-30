@@ -110,13 +110,11 @@ const createSchema = async (fields, col) => {
         }
       } else if (k == 'required') {
         const sett = parseSchemaEntry(field[k]);
-        console.log(sett);
         let ret = [];
         ret[1] = sett.message ? sett.message : 'This field is required';
         if (sett.boolean) ret[0] = sett.boolean;
         else if (sett.function) ret[0] = sett.function;
         else ret = false;
-        console.log(ret);
         entry[k] = ret;
       } else if (k == 'checkvalid') {
         const ret = {};
