@@ -65,6 +65,13 @@ const getErrorDiv = () => {
   return '<p style="background-color:#e211112b;" id="crudModalError"></p>';
 };
 
+const getProjectDataObj = projectID => {
+  if (!projectID) return '';
+  const projectData = $s.projects.filter(field => field._id === projectID);
+  if (projectData && projectData[0]) return projectData[0];
+  return '';
+};
+
 const bindEventHandlers = () => {
   // ================= EDIT BUTTON =================
   $(document).on('click', `button.edit-data`, async function(e) {
@@ -72,7 +79,7 @@ const bindEventHandlers = () => {
     const collLabel = $(this).attr('collLabel');
     const collName = $(this).attr('collName');
     const projectID = $(this).attr('projectID');
-    const collectionFields = await getFieldsDiv(collID);
+    const collectionFields = await getFieldsDiv(collID, getProjectDataObj(projectID));
     $('#crudModalTitle').text(`Edit ${collLabel}`);
     $('#crudModalYes').text('Save');
     $('#crudModalBody').empty();
@@ -155,7 +162,7 @@ const bindEventHandlers = () => {
     const collLabel = $(this).attr('collLabel');
     const collName = $(this).attr('collName');
     const projectID = $(this).attr('projectID');
-    const collectionFields = await getFieldsDiv(collID);
+    const collectionFields = await getFieldsDiv(collID, getProjectDataObj(projectID));
     $('#crudModalTitle').text(`Insert ${collLabel}`);
     $('#crudModalYes').text('Save');
     $('#crudModalBody').empty();

@@ -13,6 +13,7 @@ import {
 import { getCrudButtons, crudAjaxRequest } from './dashboard';
 import { getFormElement, getFormRow } from './crudData';
 
+//
 // GLOBAL SCOPE
 let $s = { data: {} };
 $s.AdminCollectionFields = [
@@ -116,7 +117,8 @@ const fieldsOfCollectionsModel = {
     name: 'projectID',
     label: 'Project',
     type: 'mongoose.Schema.ObjectId',
-    ref: 'projects'
+    ref: 'projects',
+    required: true
   },
   version: {
     name: 'version',
@@ -432,7 +434,7 @@ const bindEventHandlers = () => {
       $('#crudModalTitle').text(`Edit Project`);
       targetUrl = 'projects';
     } else {
-      collectionFields = await getFieldsOfFieldsDiv(collName);
+      collectionFields = await getFieldsOfFieldsDiv(collName, projectID);
       $('#crudModalTitle').text(`Edit Field`);
       targetUrl = 'fields';
     }
@@ -527,7 +529,7 @@ const bindEventHandlers = () => {
       $('#crudModalTitle').text(`Insert Project`);
       targetUrl = 'projects';
     } else {
-      collectionFields = await getFieldsOfFieldsDiv(collName);
+      collectionFields = await getFieldsOfFieldsDiv(collName, projectID);
       $('#crudModalTitle').text(`Insert Field`);
       targetUrl = 'fields';
     }
@@ -763,7 +765,14 @@ export const refreshAdminProjectNavbar = async () => {
   }
 };
 
-const getFieldsOfFieldsDiv = async collName => {
+const getProjectData = projectID => {
+  if (!projectID) return '';
+  const projectData = $s.projects.filter(field => field._id === projectID);
+  if (projectData && projectData[0]) return projectData[0];
+  return '';
+};
+
+const getFieldsOfFieldsDiv = async (collName, projectID) => {
   let ret = '';
   const fields = Object.keys(fieldsOfFieldsModel);
   for (var k = 0; k < fields.length; k++) {
@@ -772,7 +781,7 @@ const getFieldsOfFieldsDiv = async collName => {
       fieldsOfFieldsModel[name].default = collName;
     }
     const label = fieldsOfFieldsModel[name].label;
-    const element = await getFormElement(fieldsOfFieldsModel[name]);
+    const element = await getFormElement(fieldsOfFieldsModel[name], getProjectData(projectID));
     ret += getFormRow(element, label, fieldsOfFieldsModel[name]);
   }
   return ret;
@@ -787,7 +796,7 @@ const getFieldsOfCollectionDiv = async (collName, projectID) => {
       fieldsOfCollectionsModel[name].default = projectID;
     }
     const label = fieldsOfCollectionsModel[name].label;
-    const element = await getFormElement(fieldsOfCollectionsModel[name]);
+    const element = await getFormElement(fieldsOfCollectionsModel[name], getProjectData(projectID));
     ret += getFormRow(element, label, fieldsOfCollectionsModel[name]);
   }
   return ret;
@@ -798,11 +807,8 @@ const getFieldsOfProjectDiv = async () => {
   const fields = Object.keys(fieldsOfProjectModel);
   for (var k = 0; k < fields.length; k++) {
     const name = fields[k];
-    // if (name == 'projectID') {
-    //   fieldsOfProjectModel[name].default = projectID;
-    // }
     const label = fieldsOfProjectModel[name].label;
-    const element = await getFormElement(fieldsOfProjectModel[name]);
+    const element = await getFormElement(fieldsOfProjectModel[name], '');
     ret += getFormRow(element, label, fieldsOfProjectModel[name]);
   }
   return ret;
