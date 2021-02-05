@@ -46,12 +46,14 @@ const getDataDropdown = (id, el_class, el_name, data, def, required, fieldID) =>
 export const getFormRow = (element, label, settings) => {
   let required = '';
   let description = '';
+  let hide = '';
   if (settings && settings.required) {
     required = '<span style="color:red";>*</span>';
   }
   if (settings && settings.hidden) return '';
+  if (settings && settings.hide) hide = `style="display:none;"`;
   let ret = `
-    <div class="form-group row">
+    <div class="form-group row" ${hide}>
         <label class="col-md-3 col-form-label text-right">${label}${required}</label>
         <div class="col-md-9">
             ${element}
@@ -136,7 +138,9 @@ export const getFormElement = async (field, projectData) => {
   } else if (type == 'Date') {
     ret = `<input ${dbType} class="form-control" type="date" name="${field.name}" ${required}></input>`;
   } else if (type == 'Mixed' || type == 'Array') {
-    ret = `<input ${dbType} class="form-control" type="text" name="${field.name}" ${required} value="${def}"></input>`;
+    let className = '';
+    if (field.name == 'perms') className = 'data-perms';
+    ret = `<input ${dbType} class="form-control ${className}" type="text" name="${field.name}" ${required} value="${def}"></input>`;
   } else if (type == 'mongoose.Schema.ObjectId') {
     if (field.ref) {
       ret = await getRefFieldDropdown(field.ref, field.name, required, def, projectData);
@@ -163,7 +167,7 @@ export const getParentCollection = collectionID => {
   return { parentCollLabel, parentCollName };
 };
 
-export const prepOntologyDropdown = async (formId, data) => {
+export const prepOntologyDropdown = (formId, data) => {
   const formValues = $(formId).find('select.ontology');
   for (var k = 0; k < formValues.length; k++) {
     const fieldID = $(formValues[k]).attr('fieldID');
@@ -311,6 +315,11 @@ export const getFieldsDiv = async (collectionID, projectData) => {
     const element = await getFormElement(fields[k], projectData);
     ret += getFormRow(element, label, fields[k]);
   }
+  // 3. Additional fields: e.g. perms
+  const label = 'Permissions';
+  const permsField = { name: 'perms', label: 'Permissions', type: 'Mixed' };
+  const element = await getFormElement(permsField, projectData);
+  ret += getFormRow(element, label, permsField);
   return ret;
 };
 

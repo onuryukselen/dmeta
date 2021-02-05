@@ -11,12 +11,8 @@ import {
   prepareMultiUpdateModal,
   prepareClickToActivateModal
 } from './jsfuncs';
-import {
-  getCollectionFieldData,
-  getFieldsDiv,
-  getParentCollection,
-  prepOntologyDropdown
-} from './crudData';
+import { getFieldsDiv, prepOntologyDropdown } from './crudData';
+import { prepDataPerms } from './dataPerms';
 
 // GLOBAL SCOPE
 let $s = { data: {} };
@@ -46,6 +42,7 @@ const getTableHeaders = collID => {
       ret += `<th>${$s.fields[i].label}</th>`;
   }
   ret += `<th>ID</th>`;
+  ret += `<th>Permission</th>`;
   return ret;
 };
 
@@ -91,9 +88,10 @@ const bindEventHandlers = () => {
     const rows_selected = table.column(0).checkboxes.selected();
     const selectedData = tableData.filter(f => rows_selected.indexOf(f._id) >= 0);
 
-    $('#crudModal').on('show.coreui.modal', function(e) {
+    $('#crudModal').on('show.coreui.modal', async function(e) {
       fillFormByName('#crudModal', 'input, select', selectedData[0]);
       prepOntologyDropdown('#crudModal', selectedData[0]);
+      await prepDataPerms('#crudModal', selectedData[0]);
       if (rows_selected.length > 1) {
         prepareMultiUpdateModal('#crudModal', '#crudModalBody', 'input, select');
       } else {
@@ -170,6 +168,7 @@ const bindEventHandlers = () => {
     $('#crudModalBody').append(collectionFields);
     $('#crudModal').off();
     prepOntologyDropdown('#crudModal', {});
+    await prepDataPerms('#crudModal', {});
     prepareClickToActivateModal('#crudModal', '#crudModalBody', 'input, select', {});
 
     $('#crudModal').on('click', '#crudModalYes', async function(e) {
@@ -373,6 +372,7 @@ const refreshDataTables = async (TableID, collName, projectID) => {
       columns.push({ data: collFields[i].name });
     }
     columns.push({ data: '_id' });
+    columns.push({ data: 'perms' });
     var dataTableObj = {
       columns: columns,
       columnDefs: [
