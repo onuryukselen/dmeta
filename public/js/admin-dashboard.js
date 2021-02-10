@@ -693,7 +693,7 @@ const refreshCollectionNavbar = async (projectId, type) => {
       </li>`;
       header += headerLi;
       const colNavbar = getCollectionTable(collectionId, projectId);
-      const crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId);
+      const crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, false);
       const contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${collTabID}">
           ${crudButtons}
@@ -764,7 +764,7 @@ export const refreshAdminProjectNavbar = async () => {
     let crudButtons = '';
     if (tabs[i].id == 'all_projects') {
       colNavbar = getCollectionTable(projectId, projectId);
-      crudButtons = getCrudButtons(projectId, projectLabel, projectName, projectId);
+      crudButtons = getCrudButtons(projectId, projectLabel, projectName, projectId, false);
     } else {
       colNavbar = await refreshCollectionNavbar(projectId, 'return');
     }

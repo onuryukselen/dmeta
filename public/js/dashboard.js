@@ -1,5 +1,8 @@
 /* eslint-disable */
 import axios from 'axios';
+import XLSX from 'XLSX';
+import { saveAs } from 'file-saver';
+
 import {
   getCleanDivId,
   showInfoModal,
@@ -13,6 +16,7 @@ import {
 } from './jsfuncs';
 import { getFieldsDiv, prepOntologyDropdown } from './formModules/crudData';
 import { prepDataPerms } from './formModules/dataPerms';
+import Handsontable from 'handsontable';
 
 // GLOBAL SCOPE
 let $s = { data: {} };
@@ -35,6 +39,7 @@ const ajaxCall = async (method, url) => {
 const getTableHeaders = collID => {
   let ret = '';
   ret += `<th></th>`; // for checkboxes
+  ret += `<th>DID</th>`;
   // const { parentCollLabel } = getParentCollection(collID);
   // if (parentCollLabel) ret += `<th>${parentCollLabel}</th>`;
   for (var i = 0; i < $s.fields.length; i++) {
@@ -153,7 +158,103 @@ const bindEventHandlers = () => {
     }
   });
 
+  $(document).on('click', `button.export-excel-data`, async function(e) {
+    const collid = $(this).attr('collid');
+    const colllabel = $(this).attr('colllabel');
+    const datatable = $(`#${collid}`).DataTable();
+    const rowData = datatable
+      .rows()
+      .data()
+      .toArray();
+    const wb = XLSX.utils.book_new();
+    wb.SheetNames.push(colllabel);
+    const ws = XLSX.utils.json_to_sheet(rowData);
+    wb.Sheets[colllabel] = ws;
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+    function s2ab(s) {
+      var buf = new ArrayBuffer(s.length);
+      var view = new Uint8Array(buf);
+      for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+      return buf;
+    }
+    saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), `${colllabel}.xlsx`);
+  });
+
+  // ================= Edit-excel-data =================
+  $(document).on('click', `button.cancel-excel-data`, async function(e) {
+    const collid = $(this).attr('collid');
+    const tableID = `spreadsheet-${collid}`;
+    $(`#${tableID}`).css('display', 'none');
+    $(this)
+      .siblings('button.edit-excel-data')
+      .css('display', 'inline-block');
+    $(this)
+      .siblings('button.insert-data')
+      .css('display', 'inline-block');
+    $(this)
+      .siblings('button.edit-data')
+      .css('display', 'inline-block');
+    $(this)
+      .siblings('button.delete-data')
+      .css('display', 'inline-block');
+
+    $(this).css('display', 'none');
+    $(this)
+      .closest('.tab-pane')
+      .find('.table-responsive')
+      .css('display', 'block');
+  });
+  $(document).on('click', `button.edit-excel-data`, async function(e) {
+    const collid = $(this).attr('collid');
+    const datatable = $(`#${collid}`).DataTable();
+    const rowData = datatable
+      .rows()
+      .data()
+      .toArray();
+    // const header = datatable.columns().header();
+    console.log(rowData);
+    $(this)
+      .closest('.tab-pane')
+      .find('.table-responsive')
+      .css('display', 'none');
+
+    $(this).css('display', 'none');
+    $(this)
+      .siblings('button.insert-data')
+      .css('display', 'none');
+    $(this)
+      .siblings('button.cancel-excel-data')
+      .css('display', 'inline-block');
+    $(this)
+      .siblings('button.edit-data')
+      .css('display', 'none');
+    $(this)
+      .siblings('button.delete-data')
+      .css('display', 'none');
+
+    const tableID = `spreadsheet-${collid}`;
+    $(`#${tableID}`).css('display', 'block');
+    const isHandsonTableInit = $(`#${tableID}`).hasClass('handsontable');
+    if (!isHandsonTableInit) {
+      const container = document.getElementById(tableID);
+      const hot = new Handsontable(container, {
+        data: rowData,
+        // colHeaders: header,
+        rowHeaders: true,
+        colHeaders: true,
+        stretchH: 'all',
+        contextMenu: true,
+        columnSorting: {
+          indicator: true,
+          headerAction: true
+        }
+      });
+      hot.render();
+    }
+  });
+
   // ================= INSERT BUTTON =================
+
   $(document).on('click', `button.insert-data`, async function(e) {
     $('#crudModalError').empty();
     const collID = $(this).attr('collID');
@@ -173,6 +274,7 @@ const bindEventHandlers = () => {
 
     $('#crudModal').on('click', '#crudModalYes', async function(e) {
       e.preventDefault();
+      $('#crudModalError').empty();
       const formValues = $('#crudModal').find('input,select');
       const requiredValues = formValues.filter('[required]');
       const requiredFields = $.map(requiredValues, function(el) {
@@ -247,19 +349,42 @@ const bindEventHandlers = () => {
   });
 };
 
-export const getCrudButtons = (collID, collLabel, collName, projectID) => {
+export const getCrudButtons = (collID, collLabel, collName, projectID, tableButtons) => {
   const data = `collLabel="${collLabel}" collID="${collID}" projectID="${projectID}" collName="${collName}"`;
+  let tableBut = '';
+  if (tableButtons) {
+    tableBut = `
+    <button class="btn btn-primary edit-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit in Excel Format" ${data}>
+      <i class="cil-spreadsheet"> </i>
+    </button>
+    <button style="display:none;" class="btn btn-primary cancel-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Show Table Format" ${data}>
+      <i class="cil-reload"> </i>
+    </button>
+    <button class="btn btn-primary export-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Download as Excel File" ${data}>
+      <i class="cil-arrow-circle-bottom"> </i>
+    </button>
+    `;
+  }
   const ret = `
   <div class="row" style="margin-top: 20px;">
     <div class="col-sm-12">
       <button class="btn insert-data btn-primary" type="button" ${data}>Insert</button>
       <button class="btn edit-data btn-primary" type="button" ${data}">Edit</button>
       <button class="btn delete-data btn-primary" type="button" ${data}">Delete</button>
+      ${tableBut}
     </div>
   </div>`;
   return ret;
 };
 
+const getExcelTable = collID => {
+  const ret = `
+  <div style="height:100%; overflow:hidden; margin-top:10px;">
+    <div id="spreadsheet-${collID}">
+    </div>;
+  </div>`;
+  return ret;
+};
 const getCollectionTable = collID => {
   const headers = getTableHeaders(collID);
   const ret = `
@@ -367,7 +492,7 @@ const refreshDataTables = async (TableID, collName, projectID) => {
     // if (parentCollName) {
     //   columns.push({ data: `${parentCollName}_id` }); // for checkboxes
     // }
-
+    columns.push({ data: 'DID' });
     for (var i = 0; i < collFields.length; i++) {
       columns.push({ data: collFields[i].name });
     }
@@ -451,13 +576,21 @@ const getCollectionNavbar = async projectId => {
           <a class="nav-link ${active} collection" data-toggle="tab" collName="${collectionName}" tableID="${collectionId}" projectID="${projectId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
       </li>`;
       header += headerLi;
-      const colNavbar = getCollectionTable(collectionId);
-      const crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId);
+      const colTable = getCollectionTable(collectionId);
+      const colExcelTable = getExcelTable(collectionId);
+      const crudButtons = getCrudButtons(
+        collectionId,
+        collectionLabel,
+        collectionName,
+        projectId,
+        true
+      );
 
       const contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${collTabID}">
           ${crudButtons}
-          ${colNavbar}
+          ${colTable}
+          ${colExcelTable}
         </div>`;
       content += contentDiv;
     }

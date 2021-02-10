@@ -8,6 +8,7 @@ const Collection = require('../models/collectionsModel');
 const collectionsController = require('../controllers/collectionsController');
 const projectsController = require('../controllers/projectsController');
 const Field = require('../models/fieldsModel');
+const { autoIncrementModelDID, CounterModel } = require('../models/counterModel');
 const AppError = require('./appError');
 
 const modelObj = {};
@@ -148,6 +149,7 @@ const createSchema = async (fields, col) => {
   schema.lastUpdatedUser = { type: mongoose.Schema.ObjectId, ref: 'User' };
   schema.creationDate = { type: Date, default: Date.now() };
   schema.lastUpdateDate = { type: Date, default: Date.now() };
+  schema.DID = { type: Number, unique: true, min: 1 };
   return schema;
 };
 
@@ -179,19 +181,100 @@ exports.getModelNameByColId = async collectionId => {
   return modelName;
 };
 
+const getOldModelName = async oldColl => {
+  let oldProject = null;
+  const oldProjectID = oldColl.projectID;
+  if (oldProjectID) oldProject = await projectsController.getProjectById(oldProjectID);
+  const oldModelName = exports.getModelName(oldColl, [oldProject]);
+  return oldModelName;
+};
+
+// update _id field of counter collection
+const renameCounterCollection = async (oldModelName, newModelName) => {
+  try {
+    if (oldModelName && newModelName && oldModelName != newModelName) {
+      let oldCounter = await CounterModel.findById(oldModelName).lean();
+      let newCounter = await CounterModel.findById(newModelName).lean();
+      console.log('oldCounter', oldCounter);
+      console.log('newCounter', newCounter);
+      if (oldCounter && oldCounter._id && !newCounter) {
+        const seq = oldCounter.seq;
+        console.log('insertCounter', { _id: newModelName, seq: seq });
+        const doc = await CounterModel.create({ _id: newModelName, seq: seq });
+        if (doc) console.log('Counter model updated:', doc);
+        const delDoc = await CounterModel.findByIdAndDelete(oldModelName);
+        if (delDoc) console.log('Old Counter deleted:', delDoc);
+      }
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const renameMongoCollection = async (oldModelName, newModelName) => {
+  if (oldModelName && newModelName && oldModelName != newModelName) {
+    mongoose.Promise = Promise;
+    let db = mongoose.connection.db;
+    try {
+      const allcollections = (await db.listCollections().toArray()).map(
+        collection => collection.name
+      );
+      console.log('allcollections', allcollections);
+      if (allcollections.includes(oldModelName) && !allcollections.includes(newModelName)) {
+        db.collection(oldModelName).rename(newModelName);
+        console.log(`collection renamed in mongoDB. ${oldModelName} -> ${newModelName}`);
+      } else {
+        console.log('collection rename error in mongoDB database.');
+      }
+      return 'done';
+    } catch (err) {
+      console.log(err);
+      return 'fail';
+    }
+  }
+};
+
+const getDeletedModelName = modelName => {
+  let date_ob = new Date();
+  // adjust 0 before single digit date
+  let date = `0${date_ob.getDate()}`.slice(-2);
+  let month = `0${date_ob.getMonth() + 1}`.slice(-2);
+  let year = date_ob.getFullYear();
+  let hours = date_ob.getHours();
+  let minutes = date_ob.getMinutes();
+  let seconds = date_ob.getSeconds();
+  const timeStamp = `${year}${month}${date}${hours}${minutes}${seconds}`;
+  return `deleted_${timeStamp}_${modelName}`;
+};
+
 // Update mongoose models when collection or field changes
-exports.updateModel = async collectionId => {
+// oldColl -> old collection before query
+exports.updateModel = async (collectionId, oldColl) => {
   try {
     console.log('* Update Collection Model ID:', collectionId);
     const col = await Collection.findById(collectionId);
-    if (!col) return 'done'; // collection deleted or deactivated
+    if (!col) {
+      // collection deleted or deactivated
+      if (oldColl) {
+        const oldModelName = await getOldModelName(oldColl);
+        const newModelName = getDeletedModelName(oldModelName);
+        await renameMongoCollection(oldModelName, newModelName);
+        await renameCounterCollection(oldModelName, newModelName);
+      }
+      return 'done';
+    }
     const fields = await Field.find({ collectionID: collectionId });
     const projectID = col.projectID;
     let project = null;
     if (projectID) project = await projectsController.getProjectById(projectID);
-    console.log('project', project);
     const modelName = exports.getModelName(col, [project]);
 
+    // rename MongoDB database
+    if (oldColl) {
+      const oldModelName = await getOldModelName(oldColl);
+      await renameMongoCollection(oldModelName, modelName);
+      await renameCounterCollection(oldModelName, modelName);
+    }
     // check if model created before => delete model to prevent OverwriteModelError
     if (col && mongoose.connection.models[modelName]) {
       delete mongoose.connection.models[modelName];
@@ -200,8 +283,17 @@ exports.updateModel = async collectionId => {
     // { minimize: false } => allows saving empty objects
     const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
     Schema.plugin(uniqueValidator);
+    Schema.pre('save', function(next) {
+      if (!this.isNew) {
+        next();
+        return;
+      }
+      autoIncrementModelDID(modelName, this, next);
+    });
+
     const Model = mongoose.model(modelName, Schema, modelName);
     modelObj[modelName] = Model;
+
     console.log(modelName, schema);
     return 'done';
   } catch (err) {
@@ -232,6 +324,14 @@ exports.buildModels = async () => {
         // { minimize: false } => allows saving empty objects
         const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
         Schema.plugin(uniqueValidator);
+        // eslint-disable-next-line no-loop-func
+        Schema.pre('save', function(next) {
+          if (!this.isNew) {
+            next();
+            return;
+          }
+          autoIncrementModelDID(modelName, this, next);
+        });
         const Model = mongoose.model(modelName, Schema, modelName);
         modelObj[modelName] = Model;
       }

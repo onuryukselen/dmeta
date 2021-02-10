@@ -2,6 +2,7 @@ const { get, post } = require('request');
 const { promisify } = require('util');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+// const _ = require('lodash');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
@@ -61,11 +62,13 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
       //    group:["d3ds..","46h5.."],
       //    role:["admin, "project-admin"]
       //  }
+
       if (req.params.collectionName) {
         const userId = res.locals.user.id;
         const userRole = res.locals.user.role;
         const col = await collectionsController.getCollectionByName(req.params.collectionName);
         // if parentCollectionID is found, check parentCollectionID for permissions
+
         if (col.parentCollectionID) {
           // fieldName: reference field name in the collection
           // parentModelName: parent collection model name
@@ -100,12 +103,12 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
           // role: defines allowed roles for creating item in the collection
           // returns (Boolean) true when access is permitted
 
+          console.log('col.restrictTo', col.restrictTo);
           // inherit restrictTo permissions by updating req.body.perms
           if (!req.body.perms) req.body.perms = { write: col.restrictTo };
           const user = col.restrictTo.user;
           const group = col.restrictTo.group;
           const role = col.restrictTo.role;
-          if (['admin'].includes(userRole)) return true;
           if (user && user.constructor === Array && user.includes(userId)) return true;
           if (role && role.constructor === Array && role.includes(userRole)) return true;
           if (group && group.constructor === Array) {
@@ -115,6 +118,8 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
             if (group.some(r => userGroups.includes(r))) return true;
           }
         }
+        if (['admin'].includes(userRole)) return true;
+        if (col.owner == userId) return true;
       } else {
         // collection and field routes restrictedTo admin
         // everybody can create his group/usergroup \

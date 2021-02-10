@@ -17,6 +17,7 @@ require('datatables.net-colreorder-bs4');
 require('jquery-datatables-checkboxes');
 require('selectize/dist/js/selectize.js');
 require('selectize/dist/css/selectize.bootstrap3.css');
+import 'handsontable/dist/handsontable.full.css';
 
 // require('datatables.net-buttons');
 // require('datatables.net-buttons-bs4');
@@ -104,6 +105,7 @@ if (loginForm)
     $('#allProjectNav').append(projectNavbar);
     // load all tab content
     $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
+    $('[data-toggle="tooltip"]').tooltip();
   }
   if (adminAllProjectNav) {
     const adminProjectNavbar = await refreshAdminProjectNavbar();

@@ -27,6 +27,7 @@ exports.deleteOne = Model =>
         return next(new AppError(`No document found with ${req.params.id}!`, 404));
       }
     }
+    if (res.locals.Before) res.locals.Before();
     const delDoc = await Model.findByIdAndDelete(req.params.id);
     if (!delDoc || (Array.isArray(delDoc) && delDoc.length === 0)) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
@@ -73,14 +74,14 @@ exports.updateOne = Model =>
         return next(new AppError(`No document found with ${req.params.id}!`, 404));
       }
     }
-
+    if (res.locals.Before) res.locals.Before();
     const doc = await Model.findByIdAndUpdate(
       req.params.id,
       { $set: setObj, $unset: unsetObj },
       {
         new: true,
         runValidators: true,
-        context: 'query' //  lets you set `this` as a query object in model validators
+        context: 'query' //lets you set `this` as a query object in model validators
       }
     );
     if (!doc) {

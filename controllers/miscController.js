@@ -14,9 +14,6 @@ exports.getChangeLog = catchAsync(async (req, res, next) => {
 });
 
 exports.getRemoteData = catchAsync(async (req, res, next) => {
-  console.log(req.body);
-  console.log(req.body.url);
-  console.log(req.body.authorization);
   let headers = {};
   if (req.body.authorization) {
     headers = {
