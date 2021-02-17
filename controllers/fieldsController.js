@@ -37,6 +37,9 @@ exports.setAfter = async (req, res, next) => {
   }
 };
 
+exports.getFieldsByCollectionId = async collectionID => {
+  return await Fields.find({ collectionID: collectionID }).lean();
+};
 exports.getAllFields = factory.getAll(Fields);
 exports.getField = factory.getOne(Fields);
 exports.createField = factory.createOne(Fields);

@@ -103,7 +103,7 @@ const getRefFieldDropdown = async (ref, name, required, def, projectData) => {
     console.log('refData', refData);
     const collDropdown = getDataDropdown(
       `ref-${ref}`,
-      'ref-control',
+      'ref-control select-text-opt',
       name,
       refData,
       def,
@@ -187,11 +187,19 @@ export const prepOntologyDropdown = (formId, data) => {
     // { "url":"http://data.bioontology.org/search/?q=",
     //  "filter":"&ontologies=EFO&suggest=true"
     //  "authorization":"apikey token=39a74770-b709-4c1c-a69d-45d8e117e87a",
-    //  "include":["Test1-Seq","Test2-Seq"],
-    //  "exclude":["RNA-Seq"],
+    //  "include":["extra-keyword1","extra-keyword2"],
+    //  "exclude":["keyword-to-exclude"],
     //  "field":"collection.prefLabel",
     //  "create":true
     // }
+    // url-> url for selected APIs
+    // filter (optional)-> filtration parameters for results
+    // authorization (optional) -> if API requires token to access, you can set it here.
+    // include(optional)-> extra keywords to include in results
+    // exclude(optional)-> some keywords to exclude in results
+    // field-> location of the selected field in returned json data
+    // create(optional)-> allow addition of new keywords by the user. By default, it is false.
+
     //
     // ontologies: https://bioportal.bioontology.org/ontologies
     // EFO:Experimental Factor Ontology

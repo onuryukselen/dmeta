@@ -1,5 +1,8 @@
 const _ = require('lodash');
+const mongoose = require('mongoose');
 const factory = require('./handlerFactory');
+const collectionsController = require('./collectionsController');
+const fieldsController = require('./fieldsController');
 const { modelObj } = require('./../utils/buildModels');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
@@ -174,7 +177,7 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
   return null;
 };
 
-const parseSummarySchema = (collectionName, projectName, type) => {
+const parseSummarySchema = async (collectionName, projectName, type) => {
   // e.g. const schema = {
   //    collection: 'sample',
   //    select:'dir experiments_id.exp experiments_id.projects_id.name experiments_id.test_id.name',
@@ -190,7 +193,24 @@ const parseSummarySchema = (collectionName, projectName, type) => {
   if (!schema) {
     let modelName = collectionName;
     if (projectName) modelName = `${projectName}_${collectionName}`;
-    return { targetCollection: modelName, popObj: '', select: '-__v', rename: null };
+    let col = await collectionsController.getCollectionByName(collectionName);
+    let popObj = '';
+    if (col.parentCollectionID) {
+      const { fieldName, parentModelName } = await collectionsController.getParentRefField(
+        col.parentCollectionID
+      );
+      if (fieldName && mongoose.connection.models[parentModelName]) popObj = fieldName;
+    }
+    const fields = await fieldsController.getFieldsByCollectionId(col._id);
+    let refFields = [];
+    for (let i = 0; i < fields.length; i++) {
+      if (fields[i].ref && mongoose.connection.models[fields[i].ref]) {
+        refFields.push(fields[i].name);
+      }
+    }
+    refFields.push(popObj);
+    popObj = refFields.join(' ');
+    return { targetCollection: modelName, popObj: popObj, select: '-__v', rename: null };
   }
   const targetCollection = schema.collection;
   let select = schema.select;
@@ -249,7 +269,7 @@ const parseSummarySchema = (collectionName, projectName, type) => {
 
 exports.getDataSummaryDoc = async (type, req, res, next) => {
   try {
-    const { targetCollection, popObj, select, rename } = parseSummarySchema(
+    const { targetCollection, popObj, select, rename } = await parseSummarySchema(
       req.params.collectionName,
       req.params.projectName,
       type

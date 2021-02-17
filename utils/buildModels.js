@@ -149,7 +149,7 @@ const createSchema = async (fields, col) => {
   schema.lastUpdatedUser = { type: mongoose.Schema.ObjectId, ref: 'User' };
   schema.creationDate = { type: Date, default: Date.now() };
   schema.lastUpdateDate = { type: Date, default: Date.now() };
-  schema.DID = { type: Number, unique: true, min: 1 };
+  schema.DID = { type: Number, unique: true, min: 1, immutable: true };
   return schema;
 };
 
