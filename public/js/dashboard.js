@@ -321,11 +321,11 @@ const addStatusColumns = data => {
 };
 const createDropzone = (id, buttonID, destroy) => {
   console.log('createDropzone');
+  if (destroy) {
+    $(`#${id}`)[0].dropzone.destroy();
+    $(`#${id}`).off();
+  }
   if (!$(`#${id}`)[0].dropzone) {
-    if (destroy) {
-      $(`#${id}`)[0].dropzone.destroy();
-      $(`#${id}`).off();
-    }
     $(`#${id}`).dropzone({
       paramName: 'file', // The name that will be used to transfer the file
       maxFilesize: 30, // MB
@@ -604,6 +604,16 @@ const bindEventHandlers = () => {
   });
 
   // ================= Edit-excel-data =================
+  $(document).on('click', `button.reset-import-excel-data`, async function(e) {
+    const collid = $(this).attr('collid');
+    const importTableID = `import-spreadsheet-div-${collid}`;
+    const importTableButID = `load-excel-table-${collid}`;
+    $(`#${importTableID}`).empty();
+    $(`#${importTableButID}`).css('display', 'inline-block');
+    const dropzoneId = `excelUpload-${collid}`;
+    $(`#${dropzoneId}`).css('display', 'block');
+    createDropzone(dropzoneId, importTableButID, true);
+  });
   $(document).on('click', `button.cancel-excel-data`, async function(e) {
     const collid = $(this).attr('collid');
     const tableID = `spreadsheet-${collid}`;
@@ -624,6 +634,9 @@ const bindEventHandlers = () => {
       .css('display', 'none');
     $(this)
       .siblings('button.save-import-excel-data')
+      .css('display', 'none');
+    $(this)
+      .siblings('button.reset-import-excel-data')
       .css('display', 'none');
     $(this)
       .siblings('button.export-excel-data')
@@ -731,6 +744,9 @@ const bindEventHandlers = () => {
       .siblings('button.save-import-excel-data')
       .css('display', 'inline-block');
     $(this)
+      .siblings('button.reset-import-excel-data')
+      .css('display', 'inline-block');
+    $(this)
       .siblings('button.edit-data')
       .css('display', 'none');
     $(this)
@@ -744,6 +760,8 @@ const bindEventHandlers = () => {
       createDropzone(dropzoneId, buttonID, false);
     } else if (isTableLoaded) {
       $(`#${dropzoneId}`).css('display', 'none');
+    } else {
+      $(`#${buttonID}`).css('display', 'inline-block');
     }
   });
 
@@ -822,6 +840,9 @@ const bindEventHandlers = () => {
       .css('display', 'inline-block');
     $(this)
       .siblings('button.save-import-excel-data')
+      .css('display', 'none');
+    $(this)
+      .siblings('button.reset-import-excel-data')
       .css('display', 'none');
     $(this)
       .siblings('button.edit-data')
@@ -953,6 +974,9 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, tableButt
     <button style="display:none;" class="btn btn-primary save-import-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Save Imported Excel Data" ${data}>
       <i class="cil-save"> </i>
     </button>
+    <button style="display:none;" class="btn btn-primary reset-import-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="New Import (Reset)" ${data}>
+      <i class="cil-x-circle"> </i>
+    </button>
     `;
   }
   const ret = `
@@ -1079,7 +1103,7 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
   }
   const { parentCollName } = getParentCollection(collectionID);
   const { projectPart, projectName } = getProjectData(projectID);
-  const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}/summary`);
+  const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}/populated`);
   if (data) {
     $s.data[collectionID] = data;
     const dataCopy = data.slice();

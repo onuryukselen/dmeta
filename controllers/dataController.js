@@ -45,7 +45,8 @@ exports.getDataSummarySchema = (collectionName, projectName, type) => {
   //    populate: 'experiments_id experiments_id.projects_id experiments_id.test_id'
   //   }
   // IMPORTANT NOTE: `_id` field is required for schemas (for events->insertRun function)
-  let schemas = { summary: {}, detailed: {} };
+  // IMPORTANT NOTE: schemas.detailed.run expects populated server_id
+  let schemas = { summary: {}, detailed: {}, populated: {} };
   schemas.summary.file = {
     collection: `${projectName}_file`,
     select: `_id 
@@ -321,6 +322,22 @@ exports.getDataDetailed = catchAsync(async (req, res, next) => {
     let [docIds] = await replaceAllDataIds(false, doc, req, res, next);
     if (docIds) doc = docIds;
   }
+  res.status(200).json({
+    status: 'success',
+    duration: duration,
+    results: doc.length,
+    data: {
+      data: doc
+    }
+  });
+});
+
+exports.getDataPopulated = catchAsync(async (req, res, next) => {
+  const start = Date.now();
+  const type = 'populated';
+  let doc = await exports.getDataSummaryDoc(type, req, res, next);
+  const duration = Date.now() - start;
+  if (doc === null) return next(new AppError(`No collection found!`, 404));
   res.status(200).json({
     status: 'success',
     duration: duration,
