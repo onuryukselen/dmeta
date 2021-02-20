@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const factory = require('./handlerFactory');
 const collectionsController = require('./collectionsController');
 const fieldsController = require('./fieldsController');
+const Fields = require('./../models/fieldsModel');
 const { modelObj } = require('./../utils/buildModels');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
@@ -23,6 +24,32 @@ exports.setModel = (req, res, next) => {
     return next();
   }
   return next(new AppError(`collectionName is not defined!`, 404));
+};
+
+// set fields of collection that are not available for user (has no read permissions)
+// {{URL}}/api/v1/projects/:projectName/data/:collectionName/:id
+exports.setExcludeFields = async (req, res, next) => {
+  const col = await collectionsController.getCollectionByName(
+    req.params.collectionName,
+    req.params.projectName
+  );
+  if (!col || !col._id) return next();
+  const allFields = await Fields.find({ collectionID: col._id }).exec();
+  const query = Fields.find({ collectionID: col._id });
+  if (res.locals.Perms) {
+    const permFilter = await res.locals.Perms('read');
+    query.find(permFilter);
+  } else {
+    console.log('*** res.locals.Perms has not been set for setSelectFields.');
+  }
+  const validFields = await query.exec();
+  const allFieldNames = allFields.map(f => f.name);
+  const validFieldNames = validFields.map(f => f.name);
+  let exclude = allFieldNames.filter(x => !validFieldNames.includes(x));
+  exclude = exclude.map(i => `-${i}`);
+  console.log('exclude', exclude);
+  res.locals.ExcludeFields = exclude.join(' ');
+  next();
 };
 
 exports.getAllData = factory.getAll();
@@ -194,7 +221,7 @@ const parseSummarySchema = async (collectionName, projectName, type) => {
   if (!schema) {
     let modelName = collectionName;
     if (projectName) modelName = `${projectName}_${collectionName}`;
-    let col = await collectionsController.getCollectionByName(collectionName);
+    let col = await collectionsController.getCollectionByName(collectionName, projectName);
     let popObj = '';
     if (col.parentCollectionID) {
       const { fieldName, parentModelName } = await collectionsController.getParentRefField(

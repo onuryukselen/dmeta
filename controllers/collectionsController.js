@@ -1,10 +1,19 @@
+const projectsController = require('../controllers/projectsController');
 const Collection = require('../models/collectionsModel');
 const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
 const buildModels = require('./../utils/buildModels');
 
-exports.getCollectionByName = async name => {
-  return await Collection.findOne({ name }).lean();
+// projectName or projectId is required.
+exports.getCollectionByName = async (collectionName, projectName, projectId) => {
+  let query = { name: collectionName };
+  if (projectId) {
+    query.projectID = projectId;
+  } else if (projectName) {
+    const project = await projectsController.getProjectByName(projectName);
+    if (project && project._id) query.projectID = project._id;
+  }
+  return await Collection.findOne(query).lean();
 };
 exports.getCollectionById = async id => {
   return await Collection.findById(id).lean();
@@ -45,8 +54,10 @@ exports.setAfter = async (req, res, next) => {
   if (!req.params.id && req.body.name) {
     res.locals.After = async function() {
       try {
+        let projectID = '';
+        if (req.body.projectID) projectID = req.body.projectID;
         const colName = req.body.name.replace(/\s+/g, '_').toLowerCase();
-        const col = await exports.getCollectionByName(colName);
+        const col = await exports.getCollectionByName(colName, '', projectID);
         buildModels.updateModel(col._id, null);
       } catch {
         return next(new AppError(`Collection Model couldn't be updated.`, 404));

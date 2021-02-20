@@ -668,6 +668,7 @@ const bindEventHandlers = () => {
 
   $(document).on('click', `button.save-import-excel-data`, async function(e) {
     const collid = $(this).attr('collid');
+    const projectID = $(this).attr('projectID');
     const importedDiv = `#import-spreadsheet-div-${collid}`;
     // find active tab
     const activeTab = $(`${importedDiv} ul.nav-tabs li a.active.excel-tabs`);
@@ -687,7 +688,7 @@ const bindEventHandlers = () => {
           );
         } else {
           const collName = splitted[0];
-          const coll = getCollectionByName(collName);
+          const coll = getCollectionByName(collName, projectID);
           console.log(coll);
           if (!coll || !coll[0] || !coll[0]._id) {
             showInfoModal(`Collection (${collectionName}) not found.`);
@@ -1038,8 +1039,12 @@ const getFieldsOfCollection = collectionID => {
   return $s.fields.filter(field => field.collectionID === collectionID && field.hidden !== true);
 };
 
-const getCollectionByName = collectionName => {
-  return $s.collections.filter(col => col.name === collectionName);
+const getCollectionByName = (collectionName, projectID) => {
+  if (projectID) {
+    return $s.collections.filter(col => col.name === collectionName && col.projectID === projectID);
+  } else {
+    return $s.collections.filter(col => col.name === collectionName && !col.projectID);
+  }
 };
 
 const getProjectData = projectID => {

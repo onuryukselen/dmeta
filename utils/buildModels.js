@@ -1,7 +1,9 @@
+/* eslint-disable no-loop-func */
 /* eslint-disable no-eval */
 // eslint-disable-next-line no-unused-vars
 const validator = require('validator');
 const mongoose = require('mongoose');
+const axios = require('axios');
 const uniqueValidator = require('mongoose-unique-validator');
 const Project = require('../models/projectsModel');
 const Collection = require('../models/collectionsModel');
@@ -247,6 +249,113 @@ const getDeletedModelName = modelName => {
   return `deleted_${timeStamp}_${modelName}`;
 };
 
+const buildSchema = (schema, modelName, fields) => {
+  // { minimize: false } => allows saving empty objects
+  const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
+  Schema.plugin(uniqueValidator);
+  // eslint-disable-next-line no-loop-func
+  Schema.pre('save', function(next) {
+    if (!this.isNew) {
+      next();
+      return;
+    }
+    autoIncrementModelDID(modelName, this, next);
+  });
+  // check if schema has ontology field -> before save check if item is valid
+  const ontologyFields = fields.filter(f => f.ontology);
+  if (ontologyFields.length > 0) {
+    Schema.pre(/^(save|findOneAndUpdate)/, async function(next) {
+      let query = this;
+      if (this.getUpdate) {
+        const update = this.getUpdate();
+        query = update['$set'];
+      }
+      for (let i = 0; i < ontologyFields.length; i++) {
+        const name = ontologyFields[i].name;
+        const value = query[name];
+        if (value) {
+          const settings = ontologyFields[i].ontology;
+          if (!settings) return next();
+          let url;
+          let authorization = '';
+          let filter = '';
+          let create;
+          let include = [];
+          let exclude = [];
+          // e.g. for collection.prefLabel => valueField:prefLabel, treeField:collection
+          let valueField = '';
+          let treeField = '';
+          url = settings.url ? settings.url : '';
+          authorization = settings.authorization ? settings.authorization : '';
+          create = settings.create ? settings.create : false;
+          filter = settings.filter ? settings.filter : '';
+          exclude = settings.exclude ? settings.exclude : [];
+          include = settings.include ? settings.include : [];
+          if (settings.field) {
+            if (settings.field.match(/\./)) {
+              valueField = settings.field.substr(settings.field.lastIndexOf('.') + 1);
+              treeField = settings.field.substr(0, settings.field.lastIndexOf('.'));
+            } else {
+              valueField = settings.field;
+              treeField = '';
+            }
+          }
+          if (exclude.includes(value)) {
+            return next(new Error(`Validation failed. ${value} excluded from possible options.`));
+          }
+          if (include.includes(value)) return next();
+          if (create) {
+            // update includeList !!!!
+            const ontologyFieldId = ontologyFields[i]._id;
+            include.push(value);
+            let ontologySett = ontologyFields[i].ontology;
+            ontologySett.include = include;
+            // eslint-disable-next-line no-await-in-loop
+            await Field.findByIdAndUpdate(
+              ontologyFieldId,
+              {
+                ontology: ontologySett
+              },
+              {},
+              function(err) {
+                if (err) console.log(err);
+              }
+            );
+            return next();
+          }
+          // check value with API
+          console.log('**** stooop');
+          if (!url) return next();
+          if (!value.length) return next();
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const res = await axios.post(`${process.env.BASE_URL}/api/v1/misc/remoteData`, {
+              url: url + encodeURIComponent(value) + filter,
+              authorization: authorization
+            });
+            let selData = [];
+            if (treeField && res.data.data[treeField]) {
+              selData = res.data.data[treeField];
+            } else {
+              selData = res.data.data;
+            }
+            for (let k = 0; k < selData.length; k++) {
+              if (selData[k][valueField] == value) {
+                return next();
+              }
+            }
+            return next(new Error(`Value (${value}) could not found in ontology server (${url}).`));
+          } catch (err) {
+            console.log(err);
+            return next(new Error(`API call to (${url}) failed.`));
+          }
+        }
+      }
+    });
+  }
+  return Schema;
+};
+
 // Update mongoose models when collection or field changes
 // oldColl -> old collection before query
 exports.updateModel = async (collectionId, oldColl) => {
@@ -280,17 +389,7 @@ exports.updateModel = async (collectionId, oldColl) => {
       delete mongoose.connection.models[modelName];
     }
     const schema = await createSchema(fields, col);
-    // { minimize: false } => allows saving empty objects
-    const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
-    Schema.plugin(uniqueValidator);
-    Schema.pre('save', function(next) {
-      if (!this.isNew) {
-        next();
-        return;
-      }
-      autoIncrementModelDID(modelName, this, next);
-    });
-
+    const Schema = buildSchema(schema, modelName, fields);
     const Model = mongoose.model(modelName, Schema, modelName);
     modelObj[modelName] = Model;
 
@@ -321,17 +420,7 @@ exports.buildModels = async () => {
       const schema = await createSchema(fields, allCollections[n]);
       console.log(modelName, schema);
       if (!modelObj[modelName]) {
-        // { minimize: false } => allows saving empty objects
-        const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
-        Schema.plugin(uniqueValidator);
-        // eslint-disable-next-line no-loop-func
-        Schema.pre('save', function(next) {
-          if (!this.isNew) {
-            next();
-            return;
-          }
-          autoIncrementModelDID(modelName, this, next);
-        });
+        const Schema = buildSchema(schema, modelName, fields);
         const Model = mongoose.model(modelName, Schema, modelName);
         modelObj[modelName] = Model;
       }

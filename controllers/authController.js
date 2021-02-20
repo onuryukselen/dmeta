@@ -68,7 +68,10 @@ exports.setDefPerms = catchAsync(async (req, res, next) => {
 
       // ** For insertion of Data routes:
       if (req.params.collectionName) {
-        const col = await collectionsController.getCollectionByName(req.params.collectionName);
+        const col = await collectionsController.getCollectionByName(
+          req.params.collectionName,
+          req.params.projectName
+        );
         // if parentCollectionID is found, check parentCollectionID for permissions
         if (col.parentCollectionID) {
           // fieldName: reference field name in the collection
