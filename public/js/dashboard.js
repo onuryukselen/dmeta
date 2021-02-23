@@ -15,7 +15,7 @@ import {
   prepareMultiUpdateModal,
   prepareClickToActivateModal
 } from './jsfuncs';
-import { getFieldsDiv, prepOntologyDropdown } from './formModules/crudData';
+import { getFieldsDiv, prepOntologyDropdown, prepReferenceDropdown } from './formModules/crudData';
 import { prepDataPerms } from './formModules/dataPerms';
 import Handsontable from 'handsontable';
 
@@ -443,6 +443,7 @@ const bindEventHandlers = () => {
 
     $('#crudModal').on('show.coreui.modal', async function(e) {
       fillFormByName('#crudModal', 'input, select', selectedData[0]);
+      prepReferenceDropdown('#crudModal', selectedData[0]);
       prepOntologyDropdown('#crudModal', selectedData[0]);
       await prepDataPerms('#crudModal', selectedData[0]);
       if (rows_selected.length > 1) {
@@ -957,7 +958,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, tableButt
   let tableBut = '';
   if (tableButtons) {
     tableBut = `
-    <button class="btn btn-primary edit-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit in Excel Format" ${data}>
+    <button class="btn btn-primary edit-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit in Spreadsheet Format" ${data}>
       <i class="cil-view-module"> </i>
     </button>
     <button style="display:none;" class="btn btn-primary cancel-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Show Table Format" ${data}>
