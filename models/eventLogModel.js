@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const eventSchema = new mongoose.Schema({
+const eventLogSchema = new mongoose.Schema({
   type: {
     type: String,
     required: [true, 'Please provide event type.'],
@@ -46,6 +46,6 @@ const eventSchema = new mongoose.Schema({
   }
 });
 
-const Event = mongoose.model('Event', eventSchema, 'event');
+const EventLog = mongoose.model('eventlog', eventLogSchema, 'eventlog');
 
-module.exports = Event;
+module.exports = EventLog;

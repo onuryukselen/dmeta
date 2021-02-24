@@ -1,12 +1,12 @@
 const axios = require('axios');
-const Event = require('../models/eventModel');
+const EventLog = require('../models/eventLogModel');
 const serverController = require('../controllers/serverController');
 const factory = require('./handlerFactory');
 
 // create event tracker for data routes -> create/update/delete
-exports.setEvent = async (req, res, next) => {
+exports.setEventLog = async (req, res, next) => {
   // event type: "insert", "update", "delete"
-  res.locals.Event = async function(type, collection, doc) {
+  res.locals.EventLog = async function(type, collection, doc) {
     let update = {};
     let docId;
     let docReq;
@@ -33,9 +33,9 @@ exports.setEvent = async (req, res, next) => {
       perms
     };
     try {
-      await Event.create(eventDetails);
+      await EventLog.create(eventDetails);
     } catch {
-      return { status: 'error', message: 'Event could not be created', error: eventDetails };
+      return { status: 'error', message: 'Event log could not be created', error: eventDetails };
     }
 
     if (
@@ -389,5 +389,5 @@ exports.insertRun = async (docSaved, req, res, next) => {
   }
 };
 
-exports.getAllEvents = factory.getAll(Event);
-exports.getEvent = factory.getOne(Event);
+exports.getAllEventLogs = factory.getAll(EventLog);
+exports.getEventLog = factory.getOne(EventLog);
