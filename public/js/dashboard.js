@@ -964,7 +964,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, tableButt
     <button style="display:none;" class="btn btn-primary cancel-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Show Table Format" ${data}>
       <i class="cil-reload"> </i>
     </button>
-    <button style="display:none;" class="btn btn-primary save-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Save Changes in Excel Format" ${data}>
+    <button style="display:none;" class="btn btn-primary save-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Save Changes in Spreadsheet Format" ${data}>
       <i class="cil-save"> </i>
     </button>
     <button class="btn btn-primary export-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Download as Excel File" ${data}>

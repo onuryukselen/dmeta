@@ -10,6 +10,7 @@ import {
   prepareMultiUpdateModal,
   prepareClickToActivateModal
 } from './jsfuncs';
+import Sortable from 'sortablejs';
 import { getCrudButtons, crudAjaxRequest } from './dashboard';
 import { getFormElement, getFormRow } from './formModules/crudData';
 import { prepDataPerms } from './formModules/dataPerms';
@@ -335,7 +336,6 @@ const prepareDataForSingleColumn = async (tableID, projectID) => {
   if (tableID == `all_collections_${projectID}`) {
     // Use "$s.collections" prepare all_collections table
     data = getCollectionsOfProject(projectID);
-    console.log('all collections', data);
   } else if (tableID == 'all_projects') {
     // Use "$s.projects" prepare all_projects table
     data = $s.projects;
@@ -453,7 +453,358 @@ const updateNavbarTables = async (collID, projectID) => {
   }
 };
 
+const getEventWorkflow = (projectID, type) => {
+  let disabled = '';
+  let hide = '';
+  if (type == 'disabled') {
+    disabled = 'disabled';
+    hide = `style="display:none;"`;
+  }
+  const ret = `
+  <div class="col-sm-10">
+    <div class="form-group row">
+      <label class="col-md-2 col-form-label text-right">Event Name</label>
+      <div class="col-md-10">
+        <input ${disabled} id="event-name-${projectID}" class="form-control" type="text" value=""></input>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-2"></div>
+  <div class="col-sm-10">
+    <label class="col-md-2 col-form-label" >Event Form</label>
+  </div>
+  <div class="col-sm-2"></div>
+  <div class="col-sm-10" id="event-schema-${projectID}"></div>
+  <div class="col-sm-2">
+    <button ${hide} class="btn btn-primary insert-event-row" type="button" projectid="${projectID}"> Insert Row </button>
+  </div>
+  `;
+  return ret;
+};
+
+// insert empty event workflow
+// if eventID is set, then fill the row
+const refreshEventWorkflow = (projectID, eventID, type) => {
+  const workflow = getEventWorkflow(projectID, type);
+  $(`#event-workflow-${projectID}`).empty();
+  $(`#event-workflow-${projectID}`).append(workflow);
+  if (eventID && $s.events) {
+    const events = $s.events.filter(e => e._id == eventID);
+    if (events[0].name) $(`#event-name-${projectID}`).val(events[0].name);
+    if (events[0].fields) {
+      const data = events[0].fields;
+      for (let i = 0; i < data.length; i++) {
+        console.log(data[i]);
+        const collID = data[i].collectionID;
+        const field = data[i].field;
+        const row = insertNewEventRow(projectID, type);
+        if (collID) {
+          row.find('.select-collection').val(collID);
+          row.find('.select-collection').trigger('change');
+        }
+        if (field) {
+          row.find('.select-field').val(field);
+        }
+      }
+    }
+  } else {
+    insertNewEventRow(projectID, type);
+  }
+};
+
+const createSortable = (el, projectID, type) => {
+  let disabled = false;
+  if (type == 'disabled') disabled = true;
+  new Sortable(el, {
+    animation: 150,
+    disabled: disabled,
+    // handle: '.handle',
+    filter: '.js-remove',
+    group: `group-${projectID}`,
+    onFilter: function(evt) {
+      var item = evt.item;
+      var ctrl = evt.target;
+      if (Sortable.utils.is(ctrl, '.js-remove')) {
+        // Click on remove button
+        item.parentNode.removeChild(item);
+      }
+    }
+  });
+};
+
+const getCollDropdown = (projectID, type) => {
+  let projectCollections;
+  if ($s.collections) {
+    projectCollections = $s.collections.filter(c => c.projectID == projectID);
+  }
+  let disabled = '';
+  if (type == 'disabled') disabled = 'disabled';
+  let dropdown = `<select ${disabled} class="form-control select-collection">`;
+  dropdown += `<option value="" >--- Select Collection ---</option>`;
+  if (projectCollections) {
+    projectCollections.forEach(i => {
+      dropdown += `<option  value="${i._id}">${i.label}</option>`;
+    });
+  }
+  dropdown += `</select>`;
+  return dropdown;
+};
+
+const insertNewEventRow = (projectID, type) => {
+  const collectionDropdown = getCollDropdown(projectID, type);
+  let hide = '';
+  let disabled = '';
+  if (type == 'disabled') {
+    hide = `style="display:none;"`;
+    disabled = `disabled"`;
+  }
+  const fieldDropdown = `<select ${disabled} class="form-control select-field"></select>`;
+  const newRow = $(`
+    <div class="list-group col"  style="padding-right:0px;">
+      <div class="list-group-item" style="display:flex;">
+        <div class="col-sm-1" style="padding-top:7px;">
+          <i class="cil-apps handle"></i>
+        </div>
+        <div class="col-sm-5">
+          ${collectionDropdown}
+        </div>
+        <div class="col-sm-5">
+          ${fieldDropdown}
+        </div>
+        <div class="col-sm-1" style="padding-top:7px;">
+        <a ${hide} href="#"><i class="cil-trash js-remove float-right"></i></a>
+        </div>  
+      </div>  
+    </div>`);
+  $(`#event-schema-${projectID}`).append(newRow);
+  createSortable(newRow[0], projectID, type);
+  return newRow;
+};
+
+const fillCollectionFields = (dropdown, collID) => {
+  const fields = $s.fields.filter(f => f.collectionID == collID);
+  dropdown.empty();
+  dropdown.append(
+    $('<option>', {
+      value: '',
+      text: '-- Select Field --'
+    })
+  );
+  $.each(fields, function(i, item) {
+    dropdown.append(
+      $('<option>', {
+        value: item._id,
+        text: item.label
+      })
+    );
+  });
+};
+
+const showHideButtons = (el, hideClasses, showClasses) => {
+  $(el).css('display', 'none');
+  for (let i = 0; i < hideClasses.length; i++) {
+    $(el)
+      .siblings(`button.${hideClasses[i]}`)
+      .css('display', 'none');
+  }
+  for (let i = 0; i < showClasses.length; i++) {
+    $(el)
+      .siblings(`button.${showClasses[i]}`)
+      .css('display', 'inline-block');
+  }
+};
+
+const getEventSchema = projectID => {
+  let ret = [];
+  const formValues = $(`#event-schema-${projectID}`).find('.list-group-item');
+  for (var k = 0; k < formValues.length; k++) {
+    let obj = {};
+    const field = $(formValues[k])
+      .find('.select-field')
+      .val();
+    const collID = $(formValues[k])
+      .find('.select-collection')
+      .val();
+    if (field && collID) {
+      obj.collectionID = collID;
+      obj.field = field;
+      ret.push(obj);
+    }
+  }
+  return ret;
+};
+
 const bindEventHandlers = () => {
+  // ================= EVENTS  =================
+  $(document).on('change', `select.select-event`, function(e) {
+    const projectID = $(this).attr('projectID');
+    const eventID = $(this).val();
+    if (eventID) {
+      refreshEventWorkflow(projectID, eventID, 'disabled');
+    } else {
+      $(`#event-workflow-${projectID}`).empty();
+    }
+  });
+  $(document).on('change', `select.select-collection`, function(e) {
+    const selectedCollID = $(this).val();
+    const selectField = $(this)
+      .closest('.list-group-item')
+      .find('.select-field');
+    fillCollectionFields(selectField, selectedCollID);
+  });
+  $(document).on('click', `button.insert-event-row`, function(e) {
+    const projectID = $(this).attr('projectID');
+    insertNewEventRow(projectID, 'new');
+  });
+  $(document).on('click', `button.save-event`, async function(e) {
+    const projectID = $(this).attr('projectID');
+    const name = $(`#event-name-${projectID}`).val();
+    if (!name) {
+      showInfoModal('Please enter event name before saving.');
+    } else {
+      const eventSchema = getEventSchema(projectID);
+      let data = {};
+      data.name = name;
+      data.fields = eventSchema;
+      data.projectID = projectID;
+      try {
+        const res = await axios({
+          method: 'POST',
+          url: 'api/v1/events',
+          data
+        });
+        if (res.data.status == 'success') {
+          showHideButtons(
+            this,
+            ['cancel-event', 'save-event', 'update-event'],
+            ['insert-event', 'edit-event', 'delete-event']
+          );
+          await getAjaxData('events');
+          console.log(res.data);
+          const newEventId =
+            res.data.data && res.data.data.data && res.data.data.data._id
+              ? res.data.data.data._id
+              : '';
+          refreshEventDropdown(projectID, newEventId);
+        }
+      } catch (err) {
+        if (err.response && err.response.data && err.response.data.message) {
+          showInfoModal(JSON.stringify(err.response.data.message));
+        } else {
+          showInfoModal(err);
+        }
+      }
+    }
+  });
+  $(document).on('click', `button.cancel-event`, function(e) {
+    const projectID = $(this).attr('projectID');
+    $(`#select-event-${projectID}`).trigger('change');
+    showHideButtons(
+      this,
+      ['cancel-event', 'save-event', 'update-event'],
+      ['insert-event', 'edit-event', 'delete-event']
+    );
+  });
+  $(document).on('click', `button.insert-event`, function(e) {
+    const projectID = $(this).attr('projectID');
+    showHideButtons(
+      this,
+      ['insert-event', 'edit-event', 'delete-event', 'update-event'],
+      ['cancel-event', 'save-event']
+    );
+    refreshEventWorkflow(projectID, '', 'new');
+  });
+  $(document).on('click', `button.edit-event`, async function(e) {
+    showHideButtons(
+      this,
+      ['insert-event', 'edit-event', 'delete-event', 'save-event'],
+      ['cancel-event', 'update-event']
+    );
+    const projectID = $(this).attr('projectID');
+    const eventID = $(`#select-event-${projectID}`).val();
+    refreshEventWorkflow(projectID, eventID, 'new');
+  });
+  $(document).on('click', `button.update-event`, async function(e) {
+    const projectID = $(this).attr('projectID');
+    const eventID = $(`#select-event-${projectID}`).val();
+    const name = $(`#event-name-${projectID}`).val();
+    if (!name) {
+      showInfoModal('Please enter event name before saving.');
+    } else if (!eventID) {
+      showInfoModal('Please choose event before editing.');
+    } else {
+      const eventSchema = getEventSchema(projectID);
+      let data = {};
+      data.name = name;
+      data.fields = eventSchema;
+      data.projectID = projectID;
+      try {
+        const res = await axios({
+          method: 'PATCH',
+          url: `api/v1/events/${eventID}`,
+          data
+        });
+        if (res.data.status == 'success') {
+          showHideButtons(
+            this,
+            ['cancel-event', 'save-event', 'update-event'],
+            ['insert-event', 'edit-event', 'delete-event']
+          );
+          await getAjaxData('events');
+          refreshEventDropdown(projectID, eventID);
+        }
+      } catch (err) {
+        console.log(err);
+        if (err.response && err.response.data && err.response.data.message) {
+          showInfoModal(JSON.stringify(err.response.data.message));
+        } else {
+          showInfoModal(err);
+        }
+      }
+    }
+  });
+  $(document).on('click', `button.delete-event`, function(e) {
+    const projectID = $(this).attr('projectID');
+    const eventID = $(`#select-event-${projectID}`).val();
+    $('#crudModalError').empty();
+    $('#crudModalTitle').text(`Remove Event`);
+    $('#crudModalYes').text('Remove');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(`<p>Are you sure you want to delete event?</p>`);
+    $('#crudModal').off();
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      try {
+        const res = await axios({
+          method: 'DELETE',
+          url: `api/v1/events/${eventID}`
+        });
+        if (res.data.status == 'success') {
+          showHideButtons(
+            this,
+            ['cancel-event', 'save-event', 'update-event'],
+            ['insert-event', 'edit-event', 'delete-event']
+          );
+          await getAjaxData('events');
+          refreshEventDropdown(projectID, '');
+        }
+      } catch (err) {
+        if (err.response && err.response.data && err.response.data.message) {
+          showInfoModal(JSON.stringify(err.response.data.message));
+        } else {
+          showInfoModal(err);
+        }
+      }
+      $('#crudModal').modal('hide');
+    });
+    if (!eventID) {
+      showInfoModal('Please select event to delete.');
+    } else {
+      $('#crudModal').modal('show');
+    }
+  });
+
   // ================= EDIT BUTTON =================
   $(document).on('click', `button.edit-data`, async function(e) {
     const collID = $(this).attr('collID');
@@ -666,22 +1017,102 @@ const bindEventHandlers = () => {
   });
 };
 
+const refreshEventDropdown = (projectID, selectId) => {
+  const dropdown = $(`#select-event-${projectID}`);
+  const events = $s.events.filter(f => f.projectID == projectID);
+  dropdown.empty();
+  dropdown.append(
+    $('<option>', {
+      value: '',
+      text: '-- Select Event --'
+    })
+  );
+  $.each(events, function(i, item) {
+    dropdown.append(
+      $('<option>', {
+        value: item._id,
+        text: item.name
+      })
+    );
+  });
+  if (selectId) {
+    dropdown.val(selectId);
+  }
+  dropdown.trigger('change');
+};
+
+const getEventDropdown = projectID => {
+  const idText = projectID ? `id="select-event-${projectID}"` : '';
+  let dropdown = `<select class="form-control select-event" projectID="${projectID}" ${idText}>`;
+  dropdown += `<option value="" >--- Select Event ---</option>`;
+  if ($s.events) {
+    const projectEvents = $s.events.filter(e => e.projectID == projectID);
+    projectEvents.forEach(i => {
+      dropdown += `<option  value="${i._id}">${i.name}</option>`;
+    });
+  }
+  dropdown += `</select>`;
+  return dropdown;
+};
+
+const getEventTab = projectID => {
+  const dropdown = getEventDropdown(projectID);
+  const ret = `
+  <div class="row" style="margin-top: 20px;">
+    <div class="col-sm-10">
+      ${dropdown}
+    </div>
+    <div class="col-sm-2">
+      <button class="btn btn-primary insert-event" type="button" data-toggle="tooltip" data-placement="bottom" title="Insert" projectID="${projectID}">
+        <i class="cil-plus"> </i>
+      </button>
+      <button class="btn btn-primary edit-event" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit" projectID="${projectID}">
+        <i class="cil-pencil"> </i>
+      </button>
+      <button class="btn btn-primary delete-event" type="button" data-toggle="tooltip" data-placement="bottom" title="Delete" projectID="${projectID}">
+        <i class="cil-trash"> </i>
+      </button>
+      <button style="display:none;" class="btn btn-primary cancel-event" type="button" data-toggle="tooltip" data-placement="bottom" title="Cancel" projectID="${projectID}">
+        <i class="cil-reload"> </i>
+      </button>
+      <button style="display:none;" class="btn btn-primary save-event" type="button" data-toggle="tooltip" data-placement="bottom" title="Save Event" projectID="${projectID}">
+        <i class="cil-save"> </i>
+      </button>
+      <button style="display:none;" class="btn btn-primary update-event" type="button" data-toggle="tooltip" data-placement="bottom" title="Update Event" projectID="${projectID}">
+        <i class="cil-save"> </i>
+      </button>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 20px;" id="event-workflow-${projectID}">
+  </div>
+  `;
+  return ret;
+};
+
 const refreshCollectionNavbar = async (projectId, type) => {
   console.log('refreshCollectionNavbar');
   const projectTabID = 'projectTab_' + getCleanDivId(projectId);
   const isNavbarExist = $(`#${projectTabID}`).html();
   if (isNavbarExist) {
     await getAjaxData();
+    await getAjaxData('events');
   }
 
   let header = '<ul class="nav nav-tabs" role="tablist" style="margin-top: 10px;">';
   let content = '<div class="tab-content">';
   let tabs = [];
-  tabs.push({
-    name: 'all_collections',
-    label: 'All Collections',
-    id: `all_collections_${projectId}`
-  });
+  tabs.push(
+    {
+      name: 'all_collections',
+      label: 'All Collections',
+      id: `all_collections_${projectId}`
+    },
+    {
+      name: 'all_events',
+      label: 'All Events',
+      id: `all_events_${projectId}`
+    }
+  );
   tabs = tabs.concat($s.collections);
   let k = 0;
   for (var i = 0; i < tabs.length; i++) {
@@ -689,7 +1120,8 @@ const refreshCollectionNavbar = async (projectId, type) => {
     if (
       (projectId && collectionProjectID == projectId) ||
       (!projectId && !collectionProjectID) ||
-      tabs[i].id == `all_collections_${projectId}`
+      tabs[i].id == `all_collections_${projectId}` ||
+      tabs[i].id == `all_events_${projectId}`
     ) {
       k++;
       const collectionName = tabs[i].name;
@@ -703,14 +1135,21 @@ const refreshCollectionNavbar = async (projectId, type) => {
           <a class="nav-link ${active} collection" data-toggle="tab" tableID="${collectionId}" collectionId="${collectionId}" projectID="${projectId}" href="#${collTabID}" aria-expanded="true">${collectionLabel}</a>
       </li>`;
       header += headerLi;
-      const colNavbar = getCollectionTable(collectionId, projectId);
-      const crudButtons = getCrudButtons(
-        collectionId,
-        collectionLabel,
-        collectionName,
-        projectId,
-        false
-      );
+      let colNavbar = '';
+      let crudButtons = '';
+      if (tabs[i].id == `all_events_${projectId}`) {
+        colNavbar = getEventTab(projectId);
+      } else {
+        colNavbar = getCollectionTable(collectionId, projectId);
+        crudButtons = getCrudButtons(
+          collectionId,
+          collectionLabel,
+          collectionName,
+          projectId,
+          false
+        );
+      }
+
       const contentDiv = `
       <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${collTabID}">
           ${crudButtons}
@@ -737,15 +1176,20 @@ const refreshCollectionNavbar = async (projectId, type) => {
   }
 };
 
-const getAjaxData = async () => {
-  let [collections, fields, projects] = await Promise.all([
-    ajaxCall('GET', '/api/v1/collections'),
-    ajaxCall('GET', '/api/v1/fields'),
-    ajaxCall('GET', '/api/v1/projects')
-  ]);
-  $s.collections = collections;
-  $s.fields = fields;
-  $s.projects = projects;
+const getAjaxData = async type => {
+  if (type == 'events') {
+    let [events] = await Promise.all([ajaxCall('GET', '/api/v1/events')]);
+    $s.events = events;
+  } else {
+    let [collections, fields, projects] = await Promise.all([
+      ajaxCall('GET', '/api/v1/collections'),
+      ajaxCall('GET', '/api/v1/fields'),
+      ajaxCall('GET', '/api/v1/projects')
+    ]);
+    $s.collections = collections;
+    $s.fields = fields;
+    $s.projects = projects;
+  }
 };
 
 export const refreshAdminProjectNavbar = async () => {
@@ -756,6 +1200,7 @@ export const refreshAdminProjectNavbar = async () => {
     bindEventHandlers();
   }
   await getAjaxData();
+  await getAjaxData('events');
 
   let tabs = [];
   tabs.push({ name: 'all_projects', label: 'All Projects', id: 'all_projects' });
