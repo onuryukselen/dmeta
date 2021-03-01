@@ -177,12 +177,12 @@ export const prepReferenceDropdown = (formId, data) => {
     console.log('nameAttr', nameAttr);
   }
 };
-export const prepOntologyDropdown = (formId, data) => {
+export const prepOntologyDropdown = (formId, data, $scope) => {
   const formValues = $(formId).find('select.ontology');
   for (var k = 0; k < formValues.length; k++) {
     const fieldID = $(formValues[k]).attr('fieldID');
     const nameAttr = $(formValues[k]).attr('name');
-    const ontologyField = $s.fields.filter(field => field._id === fieldID);
+    const ontologyField = $scope.fields.filter(field => field._id === fieldID);
     const settings = ontologyField[0] && ontologyField[0].ontology ? ontologyField[0].ontology : '';
     console.log('settings', settings);
     if (!settings) continue;

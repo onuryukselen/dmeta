@@ -2,6 +2,7 @@
 Event route renamed as eventlogs.
 Event route upgraded to support event forms.
 All events tab added to Admin page.
+Event groups added which supports insert/update/multiple checkboxes.
 
 23.02.2021 Version 0.0.29
 Excel Import feature added into dashboard.

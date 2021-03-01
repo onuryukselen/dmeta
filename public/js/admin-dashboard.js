@@ -17,7 +17,7 @@ import { prepDataPerms } from './formModules/dataPerms';
 import { prepDataRestrictTo } from './formModules/dataRestrictTo';
 
 // GLOBAL SCOPE
-let $s = { data: {} };
+let $s = { data: {}, collectionCounter: 0 };
 $s.AdminCollectionFields = [
   'name',
   'label',
@@ -476,7 +476,7 @@ const getEventWorkflow = (projectID, type) => {
   <div class="col-sm-2"></div>
   <div class="col-sm-10" id="event-schema-${projectID}"></div>
   <div class="col-sm-2">
-    <button ${hide} class="btn btn-primary insert-event-row" type="button" projectid="${projectID}"> Insert Row </button>
+    <button ${hide} class="btn btn-primary insert-event-row" type="button" projectid="${projectID}"> Insert Group </button>
   </div>
   `;
   return ret;
@@ -493,18 +493,37 @@ const refreshEventWorkflow = (projectID, eventID, type) => {
     if (events[0].name) $(`#event-name-${projectID}`).val(events[0].name);
     if (events[0].fields) {
       const data = events[0].fields;
+      let prevCollID = '';
+      let lastRow = '';
       for (let i = 0; i < data.length; i++) {
-        console.log(data[i]);
         const collID = data[i].collectionID;
         const field = data[i].field;
-        const row = insertNewEventRow(projectID, type);
-        if (collID) {
-          row.find('.select-collection').val(collID);
-          row.find('.select-collection').trigger('change');
+        const insert = data[i].insert;
+        const update = data[i].update;
+        const multiple = data[i].multiple;
+        if (!prevCollID || (prevCollID && prevCollID != collID)) {
+          lastRow = insertNewEventRow(projectID, type);
+          if (collID) {
+            lastRow
+              .find('.select-collection')
+              .val(collID)
+              .trigger('change');
+          }
+          if (insert) lastRow.find('.insert-check').attr('checked', true);
+          if (!insert) lastRow.find('.insert-check').attr('checked', false);
+          if (update) lastRow.find('.update-check').attr('checked', true);
+          if (!update) lastRow.find('.update-check').attr('checked', false);
+          if (multiple) lastRow.find('.multiple-check').attr('checked', true);
+          if (!multiple) lastRow.find('.multiple-check').attr('checked', false);
+        } else {
+          //insert new field
+          lastRow.find('.insert-event-field').trigger('click');
         }
         if (field) {
-          row.find('.select-field').val(field);
+          const allFieldSelects = lastRow.find('.select-field');
+          $(allFieldSelects[allFieldSelects.length - 1]).val(field);
         }
+        prevCollID = collID;
       }
     }
   } else {
@@ -512,7 +531,7 @@ const refreshEventWorkflow = (projectID, eventID, type) => {
   }
 };
 
-const createSortable = (el, projectID, type) => {
+const createSortable = (el, projectID, type, group) => {
   let disabled = false;
   if (type == 'disabled') disabled = true;
   new Sortable(el, {
@@ -520,7 +539,7 @@ const createSortable = (el, projectID, type) => {
     disabled: disabled,
     // handle: '.handle',
     filter: '.js-remove',
-    group: `group-${projectID}`,
+    group: `${group}-${projectID}`,
     onFilter: function(evt) {
       var item = evt.item;
       var ctrl = evt.target;
@@ -532,14 +551,14 @@ const createSortable = (el, projectID, type) => {
   });
 };
 
-const getCollDropdown = (projectID, type) => {
+const getCollDropdown = (projectID, type, counter) => {
   let projectCollections;
   if ($s.collections) {
     projectCollections = $s.collections.filter(c => c.projectID == projectID);
   }
   let disabled = '';
   if (type == 'disabled') disabled = 'disabled';
-  let dropdown = `<select ${disabled} class="form-control select-collection">`;
+  let dropdown = `<select ${disabled} counter="${counter}" class="form-control select-collection">`;
   dropdown += `<option value="" >--- Select Collection ---</option>`;
   if (projectCollections) {
     projectCollections.forEach(i => {
@@ -550,38 +569,102 @@ const getCollDropdown = (projectID, type) => {
   return dropdown;
 };
 
-const insertNewEventRow = (projectID, type) => {
-  const collectionDropdown = getCollDropdown(projectID, type);
+const insertNewField = (projectID, divToAppend, type, counter) => {
   let hide = '';
   let disabled = '';
   if (type == 'disabled') {
     hide = `style="display:none;"`;
-    disabled = `disabled"`;
+    disabled = `disabled`;
   }
   const fieldDropdown = `<select ${disabled} class="form-control select-field"></select>`;
+  const newFieldRow = $(`<div class="list-group"  style="padding-right:0px;">
+  <div class="list-group-item" style="display:flex;">
+    <div class="col-sm-1" style="padding-top:7px;">
+      <i class="cil-apps handle-field"></i>
+    </div>
+    <div class="col-sm-10" style="display:flex;">
+       <span style="padding-top:7px; padding-right:10px;">Field</span>
+      ${fieldDropdown}
+    </div>
+    <div class="col-sm-1" style="padding-top:7px;">
+    <a ${hide} href="#"><i class="cil-trash js-remove float-right" data-toggle="tooltip" data-placement="bottom" title="Remove Field"></i></a>
+    </div>  
+  </div>  
+</div>`);
+  divToAppend.append(newFieldRow);
+  createSortable(newFieldRow[0], projectID, type, `field-${counter}`);
+
+  // fill fields dropdown based on selected collection
+  const selectedCollID = divToAppend
+    .closest('.list-group-item')
+    .find('.select-collection')
+    .val();
+  const selectField = newFieldRow.find('.select-field');
+  fillCollectionFields(selectField, selectedCollID);
+  $('[data-toggle="tooltip"]').tooltip();
+};
+
+const insertNewEventRow = (projectID, type) => {
+  let hide = '';
+  let disabled = '';
+  if (type == 'disabled') {
+    hide = `style="display:none;"`;
+    disabled = `disabled`;
+  }
+  const counter = $s.collectionCounter;
+  $s.collectionCounter++;
+  const collectionDropdown = getCollDropdown(projectID, type, counter);
+
   const newRow = $(`
-    <div class="list-group col"  style="padding-right:0px;">
-      <div class="list-group-item" style="display:flex;">
-        <div class="col-sm-1" style="padding-top:7px;">
-          <i class="cil-apps handle"></i>
+    <div class="list-group collection"  style="padding-right:0px;">
+      <div class="list-group-item" style="padding-right:7px; padding-left:7px; padding-bottom:25px; padding-top:25px;">
+        <div class="container" style="margin-bottom:15px; margin-right:5px; margin-left:5px; max-width:7000px;">
+          <div class="row">
+            <div class="col-auto" style="padding-top:7px;">
+              <i class="cil-apps handle"></i>
+            </div>
+            <div class="col" style="display:flex;">
+            <span style="padding-top:7px; padding-right:10px;">Collection</span> 
+            ${collectionDropdown} </div>
+            <div class="col-auto" style="font-size: 0.7rem;">
+              <label class="text-center">I<span class="d-none d-lg-inline">nsert</span>
+                <input ${disabled} class="insert-check" type="checkbox" style="width:100%;">
+              </label>
+            </div>
+            <div class="col-auto" style="font-size: 0.7rem;">
+              <label class="text-center">U<span class="d-none d-lg-inline">pdate</span>
+                <input ${disabled} class="update-check" type="checkbox" style="width:100%;">
+              </label>
+            </div>
+            <div class="col-auto" style="font-size: 0.7rem;">
+              <label class="text-center">M<span class="d-none d-lg-inline">ultiple</span>
+                <input ${disabled} class="multiple-check" type="checkbox" style="width:100%;">
+              </label>
+            </div>
+            <div class="col-auto align-self-center">
+              <a ${hide} href="#" class="insert-event-field"><i class="cil-plus  float-right" data-toggle="tooltip" data-placement="bottom" title="Insert Field" style="margin-left:7px;"></i></a>
+            </div>
+            <div class="col-auto align-self-center">
+              <a ${hide} href="#"><i class="cil-trash js-remove float-right" data-toggle="tooltip" data-placement="bottom" title="Remove Collection Group"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="col-sm-5">
-          ${collectionDropdown}
-        </div>
-        <div class="col-sm-5">
-          ${fieldDropdown}
-        </div>
-        <div class="col-sm-1" style="padding-top:7px;">
-        <a ${hide} href="#"><i class="cil-trash js-remove float-right"></i></a>
+        <div class="container field-container" style="margin-right:0px; margin-left:0px; max-width:7000px;"> 
         </div>  
       </div>  
     </div>`);
   $(`#event-schema-${projectID}`).append(newRow);
-  createSortable(newRow[0], projectID, type);
+  createSortable(newRow[0], projectID, type, 'collection');
+  //insertNewField
+  newRow.find('.insert-event-field').trigger('click');
+  $('[data-toggle="tooltip"]').tooltip();
+
   return newRow;
 };
 
 const fillCollectionFields = (dropdown, collID) => {
+  if (!$s.collections) return;
+  const col = $s.collections.filter(c => c._id == collID);
   const fields = $s.fields.filter(f => f.collectionID == collID);
   dropdown.empty();
   dropdown.append(
@@ -590,18 +673,37 @@ const fillCollectionFields = (dropdown, collID) => {
       text: '-- Select Field --'
     })
   );
+
+  if (col[0] && col[0].parentCollectionID) {
+    const parentCollID = col[0].parentCollectionID;
+    const parentColl = $s.collections.filter(col => col.id === parentCollID);
+    if (parentColl[0] && parentColl[0].name) {
+      dropdown.append(
+        $('<option>', {
+          value: 'parentCollectionID',
+          text: `${parentColl[0].label} (required ref.)`
+        })
+      );
+    }
+  }
+
   $.each(fields, function(i, item) {
+    const required = item.required ? 'required' : '';
+    const ref = item.ref ? 'ref.' : '';
+    let extra = '';
+    if (required || ref) extra = `${required}${ref}`;
+    if (extra) extra = `(${extra.trim()})`;
     dropdown.append(
       $('<option>', {
         value: item._id,
-        text: item.label
+        text: `${item.label} ${extra}`
       })
     );
   });
 };
 
 const showHideButtons = (el, hideClasses, showClasses) => {
-  $(el).css('display', 'none');
+  if (el) $(el).css('display', 'none');
   for (let i = 0; i < hideClasses.length; i++) {
     $(el)
       .siblings(`button.${hideClasses[i]}`)
@@ -616,21 +718,37 @@ const showHideButtons = (el, hideClasses, showClasses) => {
 
 const getEventSchema = projectID => {
   let ret = [];
-  const formValues = $(`#event-schema-${projectID}`).find('.list-group-item');
-  for (var k = 0; k < formValues.length; k++) {
-    let obj = {};
-    const field = $(formValues[k])
-      .find('.select-field')
-      .val();
-    const collID = $(formValues[k])
+  const collectionGroups = $(`#event-schema-${projectID}`).find('.list-group.collection');
+  for (var k = 0; k < collectionGroups.length; k++) {
+    const collID = $(collectionGroups[k])
       .find('.select-collection')
       .val();
-    if (field && collID) {
-      obj.collectionID = collID;
-      obj.field = field;
-      ret.push(obj);
+    const insert = $(collectionGroups[k])
+      .find('.insert-check')
+      .is(':checked');
+    const update = $(collectionGroups[k])
+      .find('.update-check')
+      .is(':checked');
+    const multiple = $(collectionGroups[k])
+      .find('.multiple-check')
+      .is(':checked');
+
+    let obj = {};
+    const fields = $(collectionGroups[k]).find('.select-field');
+    for (var f = 0; f < fields.length; f++) {
+      const field = $(fields[f]).val();
+      if (field && collID) {
+        obj.collectionID = collID;
+        obj.field = field;
+        obj.insert = insert;
+        obj.update = update;
+        obj.multiple = multiple;
+        console.log(obj);
+        ret.push(obj);
+      }
     }
   }
+  console.log(ret);
   return ret;
 };
 
@@ -652,7 +770,21 @@ const bindEventHandlers = () => {
       .find('.select-field');
     fillCollectionFields(selectField, selectedCollID);
   });
+
+  $(document).on('click', `a.insert-event-field`, function(e) {
+    e.preventDefault();
+    const divToAppend = $(this)
+      .closest('.list-group-item')
+      .find('.field-container');
+    const projectID = $(this).attr('projectID');
+    const counter = $(this)
+      .closest('.list-group-item')
+      .find('.select-collection')
+      .attr('counter');
+    insertNewField(projectID, divToAppend, 'new', counter);
+  });
   $(document).on('click', `button.insert-event-row`, function(e) {
+    e.preventDefault();
     const projectID = $(this).attr('projectID');
     insertNewEventRow(projectID, 'new');
   });
@@ -782,7 +914,7 @@ const bindEventHandlers = () => {
         });
         if (res.data.status == 'success') {
           showHideButtons(
-            this,
+            '',
             ['cancel-event', 'save-event', 'update-event'],
             ['insert-event', 'edit-event', 'delete-event']
           );
@@ -880,7 +1012,8 @@ const bindEventHandlers = () => {
             projectID,
             collName,
             formObj,
-            formValues
+            formValues,
+            '#crudModalError'
           );
           if (!success) {
             updateNavbarTables(collID, projectID);
@@ -948,7 +1081,8 @@ const bindEventHandlers = () => {
           projectID,
           collName,
           formObj,
-          formValues
+          formValues,
+          '#crudModalError'
         );
         if (success) {
           await updateNavbarTables(collID, projectID);
@@ -997,7 +1131,8 @@ const bindEventHandlers = () => {
           projectID,
           collName,
           {},
-          {}
+          {},
+          '#crudModalError'
         );
         if (!success) {
           updateNavbarTables(collID, projectID);
