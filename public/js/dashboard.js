@@ -28,7 +28,7 @@ import { prepDataPerms } from './formModules/dataPerms';
 import Handsontable from 'handsontable';
 
 // GLOBAL SCOPE
-let $s = { data: {}, tableData: {}, handsontables: {}, compare: {}, dropzone: '' };
+let $s = { data: {}, tableData: {}, handsontables: {}, compare: {}, dropzone: '', formNum: 0 };
 
 const ajaxCall = async (method, url) => {
   console.log(method, url);
@@ -428,8 +428,20 @@ const getCollDropdown = (projectID, projectName, collectionID, collectionName) =
   return { collDropdown, collRef };
 };
 
-const getEventFormGroupDiv = (formID, collLabel, collDropdown, showCollectionDropdown) => {
+const getEventFormGroupDiv = (
+  formID,
+  collLabel,
+  collDropdown,
+  showCollectionDropdown,
+  multiple
+) => {
   let ret = '';
+  let multipleButton = '';
+  if (multiple) {
+    multipleButton = `<button style="margin-left:5px;" class="btn btn-sm btn-pill btn-primary multiple-event-form" type="button">
+    <i class="cil-plus"> </i>
+    </button>`;
+  }
   if (showCollectionDropdown) {
     ret = `
       <form class="form-horizontal" id="${formID}">
@@ -452,6 +464,7 @@ const getEventFormGroupDiv = (formID, collLabel, collDropdown, showCollectionDro
             <div style="display:none;" class="col-md-8">
               ${collDropdown}
             </div>
+            ${multipleButton}
           </div>
         </legend>`;
   }
@@ -483,7 +496,7 @@ const refreshEventForm = async (projectID, eventID) => {
         collectionID,
         collectionName
       );
-      const formID = `form-event-${projectID}-${collectionID}`;
+      const formID = `form-event-${projectID}-${collectionID}-${k}`;
       const errorDiv = `<p style="background-color:#e211112b;" class="crudError" id="crudModalError-${projectID}-${collectionID}"></p>`;
 
       let insert = false;
@@ -497,7 +510,13 @@ const refreshEventForm = async (projectID, eventID) => {
       allDataRefs.push(collRef);
       console.log(allDataRefs);
 
-      div += getEventFormGroupDiv(formID, collLabel, collDropdown, showCollectionDropdown);
+      div += getEventFormGroupDiv(
+        formID,
+        collLabel,
+        collDropdown,
+        showCollectionDropdown,
+        multiple
+      );
 
       for (let i = 0; i < group.length; i++) {
         let field = {};
@@ -583,6 +602,19 @@ const saveDataEventForm = async (type, formID, collID, collName, projectID, oldD
 
 const bindEventHandlers = () => {
   // ================= EVENTS  =================
+  $(document).on('click', 'button.multiple-event-form', function(e) {
+    const form = $(this).closest('form');
+    const formID = form.attr('id');
+    $s.formNum++;
+    const newFormNum = $s.formNum;
+    const restForm = formID.substring(0, formID.lastIndexOf('-') + 1);
+    const newFormId = `${restForm}${newFormNum}`;
+    form
+      .clone()
+      .prop('id', newFormId)
+      .insertAfter(form);
+  });
+
   // sync .data-reference dropdowns on change for event forms
   $(document).on('change', 'select.data-reference', function(e) {
     const ref = $(this).attr('ref');
@@ -597,12 +629,13 @@ const bindEventHandlers = () => {
   $(document).on('change', `select.form-event-collection`, async function(e) {
     const collectionID = $(this).attr('collectionID');
     const projectID = $(this).attr('projectID');
-    const formID = `#form-event-${projectID}-${collectionID}`;
+    const formID = `#${$(this)
+      .closest('form')
+      .attr('id')}`;
     const selItem = $(this).val();
     if (selItem) {
       const data = $s.tableData[collectionID].filter(i => i._id == selItem);
       if (data && data[0]) {
-        console.log(data[0]);
         fillFormByName(formID, 'input, select', data[0]);
         prepReferenceDropdown(formID, data[0]);
         // prepOntologyDropdown(formID, data[0], $s);
@@ -610,7 +643,6 @@ const bindEventHandlers = () => {
         const allDataRefs = $(formID).find('select.data-reference');
         for (let i = 0; i < allDataRefs.length; i++) {
           const nameAttr = $(allDataRefs[i]).attr('name');
-          console.log(nameAttr);
           if (nameAttr && data[0][nameAttr]) $(allDataRefs[i]).trigger('change');
         }
       }

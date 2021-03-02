@@ -175,8 +175,6 @@ export const prepReferenceDropdown = (formId, data) => {
   for (var k = 0; k < formValues.length; k++) {
     const fieldID = $(formValues[k]).attr('fieldID');
     const nameAttr = $(formValues[k]).attr('name');
-    console.log('fieldID', fieldID);
-    console.log('nameAttr', nameAttr);
   }
 };
 export const prepOntologyDropdown = (formId, data, $scope) => {
