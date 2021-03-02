@@ -414,23 +414,54 @@ const excelCrudCall = async (method, url, data, tableID, rowIdx) => {
   }
 };
 
-const getCollDropdown = (projectID, collectionID, collectionName) => {
+const getCollDropdown = (projectID, projectName, collectionID, collectionName) => {
+  const collRef = projectName ? `${projectName}_${collectionName}` : collectionName;
   const data = $s.data[collectionID];
-  let dropdown = `<select class="form-control form-event-collection" projectID="${projectID}" collectionID="${collectionID}" collectionName="${collectionName}">`;
-  dropdown += `<option value="" >  --- Choose to Update Item ---  </option>`;
+  let collDropdown = `<select class="form-control form-event-collection data-reference" projectID="${projectID}" collectionID="${collectionID}" collectionName="${collectionName}" ref="${collRef}">`;
+  collDropdown += `<option value="" >  --- Choose to Update Item ---  </option>`;
   if (data) {
     data.forEach(i => {
-      dropdown += `<option  value="${i._id}">${i.name}</option>`;
+      collDropdown += `<option  value="${i._id}">${i.name}</option>`;
     });
   }
-  dropdown += `</select>`;
-  return dropdown;
+  collDropdown += `</select>`;
+  return { collDropdown, collRef };
+};
+
+const getEventFormGroupDiv = (formID, collLabel, collDropdown, showCollectionDropdown) => {
+  let ret = '';
+  if (showCollectionDropdown) {
+    ret = `
+      <form class="form-horizontal" id="${formID}">
+        <fieldset class="scheduler-border">
+          <legend class="scheduler-border" style="width:70%; margin-bottom:30px;">  
+          <div class="row">
+            <label class="col-md-4 col-form-label">${collLabel}</label>
+            <div class="col-md-8">
+              ${collDropdown}
+            </div>
+          </div>
+        </legend>`;
+  } else {
+    ret = `
+      <form class="form-horizontal" id="${formID}">
+        <fieldset class="scheduler-border">
+          <legend class="scheduler-border" style="width:auto; margin-bottom:30px;">  
+          <div>
+            ${collLabel}
+            <div style="display:none;" class="col-md-8">
+              ${collDropdown}
+            </div>
+          </div>
+        </legend>`;
+  }
+  return ret;
 };
 
 const refreshEventForm = async (projectID, eventID) => {
   $(`#event-form-div-${projectID}`).css('display', 'block');
   $(`#event-form-${projectID}`).empty();
-
+  let allDataRefs = [];
   const projectData = $s.projects.filter(p => p._id === projectID);
   const eventData = $s.events.filter(e => e._id === eventID);
   if (projectData[0] && eventData[0] && eventData[0].fields) {
@@ -445,21 +476,29 @@ const refreshEventForm = async (projectID, eventID) => {
       const col = $s.collections.filter(p => p._id === collectionID);
       const collLabel = col[0].label;
       const collectionName = col[0].name;
-      const collDropdown = getCollDropdown(projectID, collectionID, collectionName);
+      const projectName = projectData[0].name ? projectData[0].name : '';
+      const { collDropdown, collRef } = getCollDropdown(
+        projectID,
+        projectName,
+        collectionID,
+        collectionName
+      );
       const formID = `form-event-${projectID}-${collectionID}`;
       const errorDiv = `<p style="background-color:#e211112b;" class="crudError" id="crudModalError-${projectID}-${collectionID}"></p>`;
 
-      div += `
-      <form class="form-horizontal" id="${formID}">
-        <fieldset class="scheduler-border">
-          <legend class="scheduler-border" style="width:70%; margin-bottom:30px;">  
-          <div class="row">
-            <label class="col-md-4 col-form-label">${collLabel}</label>
-            <div class="col-md-8">
-              ${collDropdown}
-            </div>
-          </div>
-        </legend>`;
+      let insert = false;
+      let update = false;
+      let multiple = false;
+      if (group[0].insert) insert = true;
+      if (group[0].update) update = true;
+      if (group[0].multiple) multiple = true;
+      let showCollectionDropdown = update || (!insert && !update);
+      if (allDataRefs.includes(collRef)) showCollectionDropdown = false;
+      allDataRefs.push(collRef);
+      console.log(allDataRefs);
+
+      div += getEventFormGroupDiv(formID, collLabel, collDropdown, showCollectionDropdown);
+
       for (let i = 0; i < group.length; i++) {
         let field = {};
         let label = '';
@@ -477,6 +516,9 @@ const refreshEventForm = async (projectID, eventID) => {
               type: 'mongoose.Schema.ObjectId',
               required: true
             };
+            if (allDataRefs.includes(ref)) field.hide = true;
+            allDataRefs.push(ref);
+
             label = parentCollLabel;
           }
         } else {
@@ -485,7 +527,11 @@ const refreshEventForm = async (projectID, eventID) => {
           label = field.label;
         }
         const element = await getFormElement(field, projectData[0]);
-        div += getFormRow(element, label, field);
+        const refField = $(element).attr('ref');
+        let copiedField = $.extend(true, {}, field);
+        if (allDataRefs.includes(refField)) copiedField.hide = true;
+        if (refField) allDataRefs.push(refField);
+        div += getFormRow(element, label, copiedField);
       }
       div += `</fieldset></form>`;
       $(`#event-form-${projectID}`).append(errorDiv);
@@ -537,6 +583,17 @@ const saveDataEventForm = async (type, formID, collID, collName, projectID, oldD
 
 const bindEventHandlers = () => {
   // ================= EVENTS  =================
+  // sync .data-reference dropdowns on change for event forms
+  $(document).on('change', 'select.data-reference', function(e) {
+    const ref = $(this).attr('ref');
+    console.log(`changed to ${this.value}`, this);
+    const allDataRefs = $(`select.data-reference[ref="${ref}"]`)
+      .not(this)
+      .val(this.value);
+    for (let i = 0; i < allDataRefs.length; i++) {
+      if ($(allDataRefs[i]).hasClass('form-event-collection')) $(allDataRefs[i]).trigger('change');
+    }
+  });
   $(document).on('change', `select.form-event-collection`, async function(e) {
     const collectionID = $(this).attr('collectionID');
     const projectID = $(this).attr('projectID');
@@ -549,6 +606,13 @@ const bindEventHandlers = () => {
         fillFormByName(formID, 'input, select', data[0]);
         prepReferenceDropdown(formID, data[0]);
         // prepOntologyDropdown(formID, data[0], $s);
+        // trigger change of filled .data-reference dropdowns
+        const allDataRefs = $(formID).find('select.data-reference');
+        for (let i = 0; i < allDataRefs.length; i++) {
+          const nameAttr = $(allDataRefs[i]).attr('name');
+          console.log(nameAttr);
+          if (nameAttr && data[0][nameAttr]) $(allDataRefs[i]).trigger('change');
+        }
       }
     }
   });

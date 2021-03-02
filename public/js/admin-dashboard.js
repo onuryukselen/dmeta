@@ -495,6 +495,7 @@ const refreshEventWorkflow = (projectID, eventID, type) => {
       const data = events[0].fields;
       let prevCollID = '';
       let lastRow = '';
+      console.log('data', data);
       for (let i = 0; i < data.length; i++) {
         const collID = data[i].collectionID;
         const field = data[i].field;
@@ -521,6 +522,9 @@ const refreshEventWorkflow = (projectID, eventID, type) => {
         }
         if (field) {
           const allFieldSelects = lastRow.find('.select-field');
+          console.log(allFieldSelects);
+          console.log($(allFieldSelects[allFieldSelects.length - 1]));
+          console.log(field);
           $(allFieldSelects[allFieldSelects.length - 1]).val(field);
         }
         prevCollID = collID;
@@ -601,7 +605,7 @@ const insertNewField = (projectID, divToAppend, type, counter) => {
     .val();
   const selectField = newFieldRow.find('.select-field');
   fillCollectionFields(selectField, selectedCollID);
-  $('[data-toggle="tooltip"]').tooltip();
+  // $('[data-toggle="tooltip"]').tooltip();
 };
 
 const insertNewEventRow = (projectID, type) => {
@@ -657,7 +661,7 @@ const insertNewEventRow = (projectID, type) => {
   createSortable(newRow[0], projectID, type, 'collection');
   //insertNewField
   newRow.find('.insert-event-field').trigger('click');
-  $('[data-toggle="tooltip"]').tooltip();
+  // $('[data-toggle="tooltip"]').tooltip();
 
   return newRow;
 };
@@ -719,7 +723,7 @@ const showHideButtons = (el, hideClasses, showClasses) => {
 const getEventSchema = projectID => {
   let ret = [];
   const collectionGroups = $(`#event-schema-${projectID}`).find('.list-group.collection');
-  for (var k = 0; k < collectionGroups.length; k++) {
+  for (let k = 0; k < collectionGroups.length; k++) {
     const collID = $(collectionGroups[k])
       .find('.select-collection')
       .val();
@@ -733,22 +737,20 @@ const getEventSchema = projectID => {
       .find('.multiple-check')
       .is(':checked');
 
-    let obj = {};
     const fields = $(collectionGroups[k]).find('.select-field');
-    for (var f = 0; f < fields.length; f++) {
-      const field = $(fields[f]).val();
+    for (let f = 0; f < fields.length; f++) {
+      let obj = {};
+      let field = $(fields[f]).val();
       if (field && collID) {
         obj.collectionID = collID;
         obj.field = field;
         obj.insert = insert;
         obj.update = update;
         obj.multiple = multiple;
-        console.log(obj);
         ret.push(obj);
       }
     }
   }
-  console.log(ret);
   return ret;
 };
 
@@ -781,7 +783,12 @@ const bindEventHandlers = () => {
       .closest('.list-group-item')
       .find('.select-collection')
       .attr('counter');
-    insertNewField(projectID, divToAppend, 'new', counter);
+    const isInsertFieldVisible = $(this).css('display') !== 'none';
+    if (isInsertFieldVisible) {
+      insertNewField(projectID, divToAppend, 'new', counter);
+    } else {
+      insertNewField(projectID, divToAppend, 'disabled', counter);
+    }
   });
   $(document).on('click', `button.insert-event-row`, function(e) {
     e.preventDefault();
