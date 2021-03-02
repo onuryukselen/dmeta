@@ -322,7 +322,25 @@ export const prepOntologyDropdown = (formId, data, $scope) => {
       };
     }
 
-    $(formValues[k]).selectize(options);
+    // selectize already initialized then add option to select
+    if ($(formValues[k])[0].selectize) {
+      if (!url) {
+        if (data[nameAttr]) {
+          let opt = { value: data[nameAttr], text: data[nameAttr] };
+          $(formValues[k])[0].selectize.addOption([opt]);
+          $(formValues[k])[0].selectize.setValue([data[nameAttr]]);
+        }
+      } else {
+        if (data[nameAttr]) {
+          let opt = {};
+          opt[valueField] = data[nameAttr];
+          $(formValues[k])[0].selectize.addOption([opt]);
+          $(formValues[k])[0].selectize.setValue([data[nameAttr]]);
+        }
+      }
+    } else {
+      $(formValues[k]).selectize(options);
+    }
   }
 };
 

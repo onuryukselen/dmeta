@@ -428,6 +428,17 @@ const getCollDropdown = (projectID, projectName, collectionID, collectionName) =
   return { collDropdown, collRef };
 };
 
+const activateAllForm = (formId, find) => {
+  const formValues = $(formId).find(find);
+  for (var i = 0; i < formValues.length; i++) {
+    if ($(formValues[i]).siblings('.multi-value').length) {
+      $(formValues[i])
+        .siblings('.multi-value')
+        .trigger('click');
+    }
+  }
+};
+
 const getEventFormGroupDiv = (
   formID,
   collLabel,
@@ -508,7 +519,6 @@ const refreshEventForm = async (projectID, eventID) => {
       let showCollectionDropdown = update || (!insert && !update);
       if (allDataRefs.includes(collRef)) showCollectionDropdown = false;
       allDataRefs.push(collRef);
-      console.log(allDataRefs);
 
       div += getEventFormGroupDiv(
         formID,
@@ -556,7 +566,8 @@ const refreshEventForm = async (projectID, eventID) => {
       $(`#event-form-${projectID}`).append(errorDiv);
       $(`#event-form-${projectID}`).append(div);
       prepOntologyDropdown(`#${formID}`, {}, $s);
-      // prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
+      prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
+      activateAllForm(`#${formID}`, 'input, select');
     }
   }
 };
@@ -638,7 +649,7 @@ const bindEventHandlers = () => {
       if (data && data[0]) {
         fillFormByName(formID, 'input, select', data[0]);
         prepReferenceDropdown(formID, data[0]);
-        // prepOntologyDropdown(formID, data[0], $s);
+        prepOntologyDropdown(formID, data[0], $s);
         // trigger change of filled .data-reference dropdowns
         const allDataRefs = $(formID).find('select.data-reference');
         for (let i = 0; i < allDataRefs.length; i++) {
@@ -1525,12 +1536,21 @@ const refreshDataTables = async (TableID, collName, projectID) => {
       .draw();
   }
 };
+
+const createSelectize = id => {
+  if (!$(id)[0].selectize) $(id).selectize({});
+};
+
 const showTableTabs = () => {
   $(document).on('show.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     const collName = $(e.target).attr('collName');
     const tableID = $(e.target).attr('tableID');
     const projectID = $(e.target).attr('projectID');
-    if (collName != 'all_events') refreshDataTables(tableID, collName, projectID);
+    if (collName == 'all_events') {
+      createSelectize(`#select-event-${projectID}`);
+    } else {
+      refreshDataTables(tableID, collName, projectID);
+    }
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     $($.fn.dataTable.tables(true))
