@@ -36,6 +36,7 @@ $s.AdminCollectionFields = [
   'minlength',
   'maxlength',
   'trim',
+  'header',
   'ref',
   'perms',
   'collectionID',
@@ -254,6 +255,11 @@ const fieldsOfFieldsModel = {
   trim: {
     name: 'trim',
     label: 'Trim',
+    type: 'boolean'
+  },
+  header: {
+    name: 'header',
+    label: 'Header',
     type: 'boolean'
   },
   minlength: {
@@ -992,7 +998,7 @@ const bindEventHandlers = () => {
     const selectedData = tableData.filter(f => rows_selected.indexOf(f._id) >= 0);
 
     $('#crudModal').on('show.coreui.modal', async function(e) {
-      fillFormByName('#crudModal', 'input, select', selectedData[0]);
+      fillFormByName('#crudModal', 'input, select', selectedData[0], true);
       await prepDataPerms('#crudModal', selectedData[0]);
       await prepDataRestrictTo('#crudModal', selectedData[0]);
       if (rows_selected.length > 1) {
@@ -1430,7 +1436,7 @@ const getFieldsOfFieldsDiv = async (collName, projectID) => {
       fieldsOfFieldsModel[name].default = collName;
     }
     const label = fieldsOfFieldsModel[name].label;
-    const element = await getFormElement(fieldsOfFieldsModel[name], getProjectData(projectID));
+    const element = await getFormElement(fieldsOfFieldsModel[name], getProjectData(projectID), $s);
     ret += getFormRow(element, label, fieldsOfFieldsModel[name]);
   }
   return ret;
@@ -1445,7 +1451,11 @@ const getFieldsOfCollectionDiv = async (collName, projectID) => {
       fieldsOfCollectionsModel[name].default = projectID;
     }
     const label = fieldsOfCollectionsModel[name].label;
-    const element = await getFormElement(fieldsOfCollectionsModel[name], getProjectData(projectID));
+    const element = await getFormElement(
+      fieldsOfCollectionsModel[name],
+      getProjectData(projectID),
+      $s
+    );
     ret += getFormRow(element, label, fieldsOfCollectionsModel[name]);
   }
   return ret;
@@ -1457,7 +1467,7 @@ const getFieldsOfProjectDiv = async () => {
   for (var k = 0; k < fields.length; k++) {
     const name = fields[k];
     const label = fieldsOfProjectModel[name].label;
-    const element = await getFormElement(fieldsOfProjectModel[name], '');
+    const element = await getFormElement(fieldsOfProjectModel[name], '', $s);
     ret += getFormRow(element, label, fieldsOfProjectModel[name]);
   }
   return ret;
