@@ -1349,10 +1349,17 @@ const bindEventHandlers = () => {
   });
 };
 
-export const getCrudButtons = (collID, collLabel, collName, projectID, tableButtons) => {
+export const getCrudButtons = (collID, collLabel, collName, projectID, settings) => {
   const data = `collLabel="${collLabel}" collID="${collID}" projectID="${projectID}" collName="${collName}"`;
   let tableBut = '';
-  if (tableButtons) {
+  let dbEditorBut = '';
+  if (settings.dbEditor) {
+    dbEditorBut = `
+    <button class="btn btn-primary edit-field-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Transfer Fields Data" ${data}>
+      <i class="cil-cut"> </i>
+    </button>`;
+  }
+  if (settings.excel) {
     tableBut = `
     <button class="btn btn-primary edit-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit in Spreadsheet Format" ${data}>
       <i class="cil-view-module"> </i>
@@ -1390,6 +1397,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, tableButt
         <i class="cil-trash"> </i>
       </button>
       ${tableBut}
+      ${dbEditorBut}
     </div>
   </div>`;
   return ret;
@@ -1534,7 +1542,7 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
           if (el[k] && showFields[0]) {
             newObj[k] = el[k][showFields[0]];
           } else {
-            newObj[k] = JSON.stringify(el[k]);
+            newObj[k] = el[k]._id;
           }
         } else if (
           (typeof el[k] === 'object' && el[k] !== null) ||
@@ -1727,13 +1735,9 @@ const getCollectionNavbar = async projectId => {
         colTable = getCollectionTable(collectionId);
         colExcelTable = getExcelTable(`spreadsheet-${collectionId}`);
         colDropzone = getDropzoneTable(collectionId);
-        crudButtons = getCrudButtons(
-          collectionId,
-          collectionLabel,
-          collectionName,
-          projectId,
-          true
-        );
+        crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
+          excel: true
+        });
       }
       const contentDiv = `
           <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${collTabID}">

@@ -121,7 +121,7 @@ export const createFormObj = (formValues, requiredFields, warn, visible) => {
       val = $(formValues[i]).val();
     }
     if (requiredFields.includes(name)) {
-      if (val != '') {
+      if (val != '' && val !== null) {
         $(formValues[i]).removeClass('is-invalid');
         if (warn && $(formValues[i]).next('div.invalid-feedback').length == 1) {
           $(formValues[i])
