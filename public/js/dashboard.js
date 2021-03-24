@@ -20,11 +20,13 @@ import {
 } from './jsfuncs';
 import {
   getFieldsDiv,
+  prepRunForm,
   prepOntologyDropdown,
   prepReferenceDropdown,
   getFormElement,
   getFormRow,
-  createSelectizeMultiField
+  createSelectizeMultiField,
+  getParentCollection
 } from './formModules/crudData';
 import { prepDataPerms } from './formModules/dataPerms';
 import Handsontable from 'handsontable';
@@ -50,7 +52,7 @@ const getTableHeaders = collID => {
   let ret = '';
   ret += `<th></th>`; // for checkboxes
   ret += `<th>DID</th>`;
-  const { parentCollLabel } = getParentCollection(collID);
+  const { parentCollLabel } = getParentCollection(collID, $s);
   if (parentCollLabel) ret += `<th>${parentCollLabel}</th>`;
   for (var i = 0; i < $s.fields.length; i++) {
     if ($s.fields[i].collectionID == collID && $s.fields[i].label && $s.fields[i].hidden !== true)
@@ -554,7 +556,8 @@ const refreshEventForm = async (projectID, eventID) => {
             const collectionID = group[i].collectionID;
             if (collectionID) {
               const { parentCollName, parentCollLabel, parentCollectionID } = getParentCollection(
-                collectionID
+                collectionID,
+                $s
               );
               const ref = projectData[0].name
                 ? `${projectData[0].name}_${parentCollName}`
@@ -590,6 +593,7 @@ const refreshEventForm = async (projectID, eventID) => {
       const fieldsOfCollection = $s.fields.filter(f => f.collectionID === collectionID);
       createSelectizeMultiField(dropdownElement, $s.data[collectionID], fieldsOfCollection);
       prepOntologyDropdown(`#${formID}`, {}, $s);
+      prepRunForm(`#${formID}`, {}, $s, projectID);
       prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
       activateAllForm(`#${formID}`, 'input, select');
     }
@@ -629,7 +633,7 @@ const saveDataEventForm = async (type, formID, collID, collName, projectID, oldD
       `#crudModalError-${projectID}-${collID}`
     );
     if (success) {
-      refreshDataTables(collID, collName, projectID);
+      refreshDataTables(collID, collID, collName, projectID);
     }
   }
   return success;
@@ -720,6 +724,7 @@ const bindEventHandlers = () => {
       if (data && data[0]) {
         fillFormByName(formID, 'input, select', data[0], true);
         prepReferenceDropdown(formID, $s);
+        prepRunForm(formID, data[0], $s, projectID);
         prepOntologyDropdown(formID, data[0], $s);
         // trigger change of filled .data-reference dropdowns
         const allDataRefs = $(formID).find('select.data-reference');
@@ -859,6 +864,7 @@ const bindEventHandlers = () => {
     $('#crudModal').on('show.coreui.modal', async function(e) {
       fillFormByName('#crudModal', 'input, select', selectedData[0], true);
       prepReferenceDropdown('#crudModal', $s);
+      prepRunForm('#crudModal', selectedData[0], $s, projectID);
       prepOntologyDropdown('#crudModal', selectedData[0], $s);
       await prepDataPerms('#crudModal', selectedData[0]);
       if (rows_selected.length > 1) {
@@ -905,11 +911,11 @@ const bindEventHandlers = () => {
             '#crudModalError'
           );
           if (!success) {
-            refreshDataTables(collID, collName, projectID);
+            refreshDataTables(collID, collID, collName, projectID);
             break;
           }
           if (success && selectedData.length - 1 === i) {
-            refreshDataTables(collID, collName, projectID);
+            refreshDataTables(collID, collID, collName, projectID);
             $('#crudModal').modal('hide');
           }
         }
@@ -927,7 +933,7 @@ const bindEventHandlers = () => {
     const selColumns = [];
     let reOrderedData = [];
     const data = $s.data[collid];
-    const { parentCollName } = getParentCollection(collid);
+    const { parentCollName } = getParentCollection(collid, $s);
     const collFields = getFieldsOfCollection(collid);
     let refFields = [];
     for (var i = 0; i < collFields.length; i++) {
@@ -1112,7 +1118,7 @@ const bindEventHandlers = () => {
             const collectionID = coll[0]._id;
             const projectid = coll[0].projectID;
             await syncTableData(tableID, collectionID, collName, projectid);
-            refreshDataTables(collid, collName, projectid);
+            refreshDataTables(collid, collid, collName, projectid);
           }
         }
       }
@@ -1126,7 +1132,7 @@ const bindEventHandlers = () => {
     // format checker -> only one collection should be defined.
     // _id or DID field should be found
     await syncTableData(tableID, collid, collName, projectid);
-    refreshDataTables(collid, collName, projectid);
+    refreshDataTables(collid, collid, collName, projectid);
   });
 
   $(document).on('click', `button.import-excel-data`, async function(e) {
@@ -1287,6 +1293,7 @@ const bindEventHandlers = () => {
     $('#crudModalBody').append(getErrorDiv());
     $('#crudModalBody').append(collectionFields);
     $('#crudModal').off();
+    prepRunForm('#crudModal', {}, $s, projectID);
     prepReferenceDropdown('#crudModal', $s);
     prepOntologyDropdown('#crudModal', {}, $s);
     await prepDataPerms('#crudModal', {});
@@ -1314,7 +1321,7 @@ const bindEventHandlers = () => {
           '#crudModalError'
         );
         if (success) {
-          refreshDataTables(collID, collName, projectID);
+          refreshDataTables(collID, collID, collName, projectID);
           $('#crudModal').modal('hide');
         }
       }
@@ -1354,11 +1361,11 @@ const bindEventHandlers = () => {
           '#crudModalError'
         );
         if (!success) {
-          refreshDataTables(collID, collName, projectID);
+          refreshDataTables(collID, collID, collName, projectID);
           break;
         }
         if (success && selectedData.length - 1 === i) {
-          refreshDataTables(collID, collName, projectID);
+          refreshDataTables(collID, collID, collName, projectID);
           $('#crudModal').modal('hide');
         }
       }
@@ -1445,11 +1452,14 @@ const getExcelTable = id => {
   </div>`;
   return ret;
 };
-const getCollectionTable = collID => {
+
+export const getCollectionTable = (collID, type) => {
   const headers = getTableHeaders(collID);
+  let tableID = collID;
+  if (type == 'modal') tableID = `modal-${collID}`;
   const ret = `
   <div class="table-responsive" style="overflow-x:auto; width:100%; ">
-    <table id="${collID}" class="table table-striped" style='white-space: nowrap; width:100%;' cellspacing="0" >
+    <table id="${tableID}" class="table table-striped" style='white-space: nowrap; width:100%;' cellspacing="0" >
         <thead>
             <tr>
             ${headers}
@@ -1466,7 +1476,7 @@ const getFieldsOfCollection = collectionID => {
   return $s.fields.filter(field => field.collectionID === collectionID && field.hidden !== true);
 };
 
-const getCollectionByName = (collectionName, projectID) => {
+export const getCollectionByName = (collectionName, projectID) => {
   if (projectID) {
     return $s.collections.filter(col => col.name === collectionName && col.projectID === projectID);
   } else {
@@ -1538,7 +1548,7 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
   for (var i = 0; i < collFields.length; i++) {
     if (collFields[i].ref) refFields.push(collFields[i].name);
   }
-  const { parentCollName, parentCollectionID } = getParentCollection(collectionID);
+  const { parentCollName, parentCollectionID } = getParentCollection(collectionID, $s);
   const { projectPart, projectName } = getProjectData(projectID);
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}/populated`);
   if (data) {
@@ -1583,23 +1593,8 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
   return ret;
 };
 
-const getParentCollection = collectionID => {
-  let parentCollectionID = '';
-  let parentCollLabel = '';
-  let parentCollName = '';
-  const col = $s.collections.filter(col => col.id === collectionID);
-  if (col[0] && col[0].parentCollectionID) {
-    parentCollectionID = col[0].parentCollectionID;
-    const parentColl = $s.collections.filter(col => col.id === parentCollectionID);
-    if (parentColl[0] && parentColl[0].name) parentCollName = parentColl[0].name;
-    parentCollLabel = parentColl[0] && parentColl[0].label ? parentColl[0].label : parentCollName;
-  }
-  return { parentCollLabel, parentCollName, parentCollectionID };
-};
-
-const refreshDataTables = async (TableID, collName, projectID) => {
-  const collectionID = TableID;
-  const collFields = getFieldsOfCollection(TableID);
+export const refreshDataTables = async (TableID, collectionID, collName, projectID) => {
+  const collFields = getFieldsOfCollection(collectionID);
   const data = await prepareDataForSingleColumn(collName, projectID, collectionID, collFields);
 
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
@@ -1607,7 +1602,7 @@ const refreshDataTables = async (TableID, collName, projectID) => {
     columns.push({ data: '_id' }); // for checkboxes
     columns.push({ data: 'DID' }); // dolphin id
     // 1. if parent collection id is defined, insert as a new field
-    const { parentCollName } = getParentCollection(collectionID);
+    const { parentCollName } = getParentCollection(collectionID, $s);
     if (parentCollName) {
       columns.push({ data: `${parentCollName}_id` });
     }
@@ -1668,7 +1663,7 @@ const showTableTabs = () => {
     if (collName == 'all_events') {
       createSelectize(`#select-event-${projectID}`);
     } else {
-      refreshDataTables(tableID, collName, projectID);
+      refreshDataTables(tableID, tableID, collName, projectID);
     }
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
@@ -1769,7 +1764,7 @@ const getCollectionNavbar = async projectId => {
       if (collectionId == `all_events_${projectId}`) {
         colTable = getEventTab(projectId);
       } else {
-        colTable = getCollectionTable(collectionId);
+        colTable = getCollectionTable(collectionId, 'default');
         colExcelTable = getExcelTable(`spreadsheet-${collectionId}`);
         colDropzone = getDropzoneTable(collectionId);
         crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
