@@ -238,6 +238,7 @@ const selectizeRunTemplate = (el, data, dynamicInputEl, dynamicOutputEl) => {
       console.log('input', input);
       return { _id: input, name: input };
     },
+    placeholder: 'Type or Choose Run ID',
     valueField: '_id',
     searchField: ['_id', 'name'],
     options: data,
@@ -344,7 +345,6 @@ const updateDropdownOptions = (dropdown, data) => {
 
 export const prepRunForm = (formId, data, $scope, projectID) => {
   console.log('prepRunForm');
-  // 1. get all run environments of user from dnext on change of serverid
   const serverIDField = $(formId).find(`[name*='server_id']`);
   const runEnvField = $(formId).find(`[name*='run_env']`);
   const templateRunField = $(formId).find(`[name*='tmplt_id']`);
@@ -361,8 +361,7 @@ export const prepRunForm = (formId, data, $scope, projectID) => {
         // remove actual runEnvField
         const runEnvDropdown = getSimpleDropdown([], {
           name: 'run_env',
-          class: 'customize',
-          placeholder: '-- Please choose Server ID first --'
+          class: 'customize'
         });
         runEnvDropdownEl = $(runEnvDropdown);
         $(runEnvField[0]).after(runEnvDropdownEl);
@@ -400,11 +399,12 @@ export const prepRunForm = (formId, data, $scope, projectID) => {
         });
         templateRunDropdownEl = $(templateRunDropdown);
         $(templateRunField[0]).after(templateRunDropdownEl);
+        // 3. make template run_id selectize and on change update inputs/outputs dropdown
         selectizeRunTemplate(templateRunDropdownEl, [], dynamicInputEl, dynamicOutputEl);
         $(templateRunField[0]).remove();
       }
     }
-    // Bind event binder
+    // 1. get all run environments of user from dnext on change of serverid
     $(serverIDField[0]).on('change', async function(e) {
       const serverId = $(this).val();
       console.log(serverId);
@@ -463,11 +463,14 @@ export const prepRunForm = (formId, data, $scope, projectID) => {
         updateDropdownOptions(runEnvDropdownEl, []);
       }
     });
+    if (!data || !data.server_id) {
+      $(serverIDField[0])
+        .prop('selectedIndex', 1)
+        .trigger('change');
+    }
   }
-  // 2. add extra dropdown for mode: [single,batch]
+  // 3. add extra dropdown for mode: [single,batch]
   // if batch mode is selected: use name and work directory as prefix
-  // 3. make template run_id selectize and on change update inputs/outputs dropdown
-  // 4.
 };
 
 export const prepReferenceDropdown = (formId, $scope) => {

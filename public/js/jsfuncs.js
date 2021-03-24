@@ -1,6 +1,7 @@
 /* eslint-disable */
 import axios from 'axios';
 const JSON5 = require('json5');
+import { getDynamicFieldsData } from './formModules/dynamicFields';
 
 export const ajaxCall = async (method, url) => {
   try {
@@ -145,6 +146,16 @@ export const createFormObj = (formValues, requiredFields, warn, visible) => {
         stop = true;
       }
     }
+
+    if (
+      isCustomized &&
+      $(formValues[i])
+        .next()
+        .hasClass('dynamicFields')
+    ) {
+      val = getDynamicFieldsData($(formValues[i]).next());
+    }
+
     if (isDataPerms || isDataRestrictTo) {
       const table = $(formValues[i])
         .next()

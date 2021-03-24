@@ -1,6 +1,5 @@
 /* eslint-disable */
 import { showInfoModal } from './../jsfuncs';
-import { getParentCollection } from './crudData';
 import { getCollectionTable, getCollectionByName, refreshDataTables } from './../dashboard';
 
 // GLOBAL SCOPE
@@ -52,32 +51,32 @@ export const insertDynamicFields = (el, settings) => {
 
     if (data[k].keyEdit) {
       if (keyType == 'input') {
-        keyField = `<a href="#" class="dynamicFields editable-click-input">${data[k].key}</a>
+        keyField = `<a href="#" class="dynamicFields editable-click-val editable-click-input">${data[k].key}</a>
       ${keyFieldEdit}`;
       }
     } else {
-      keyField = `${data[k].key}`;
+      keyField = `<span class="editable-click-val">${data[k].key}</span>`;
     }
     if (data[k].valueEdit) {
       if (valueType == 'checkbox') {
-        valueField = `<input class="dynamicFields" style="margin-left:0rem; margin-top:0.70rem;" type="checkbox" >`;
+        valueField = `<input class="dynamicFields editable-click-val" style="margin-left:0rem; margin-top:0.70rem;" type="checkbox" >`;
       } else if (valueType == 'input') {
-        valueField = `<a href="#" class="dynamicFields editable-click-input">${data[k].value}</a>
+        valueField = `<a href="#" class="dynamicFields editable-click-val editable-click-input">${data[k].value}</a>
       ${valueFieldEdit}
       `;
       } else if (valueType == 'collection') {
-        valueField = `<a href="#" class="dynamicFields editable-click-collection">Select File</a>
+        valueField = `<a href="#" class="dynamicFields editable-click-val editable-click-collection">Select File</a>
       `;
       }
     } else {
       if (valueType == 'checkbox') {
-        valueField = `<input class="dynamicFields" style="margin-left:0rem; margin-top:0.70rem;" type="checkbox" >`;
+        valueField = `<input class="dynamicFields editable-click-val" style="margin-left:0rem; margin-top:0.70rem;" type="checkbox" >`;
       } else if (valueType == 'collection') {
-        valueField = `<a href="#" class="dynamicFields editable-click-collection">Select File</a>
+        valueField = `<a href="#" class="dynamicFields editable-click-val editable-click-collection">Select File</a>
         
       `;
       } else {
-        valueField = `${data[k].value}`;
+        valueField = `<span class="editable-click-val">${data[k].value}</span>`;
       }
     }
 
@@ -203,14 +202,14 @@ const bindEventHandlers = () => {
     }
     const collTable = getCollectionTable(fileCollID, 'modal');
     const tableID = `modal-${fileCollID}`;
-    $('#crudModalTitle').text(`Select Files`);
-    $('#crudModalYes').text('Select');
-    $('#crudModalBody').empty();
-    $('#crudModalBody').append(collTable);
-    $('#crudModal').off();
+    $('#crudModalTitle2').text(`Select Files`);
+    $('#crudModalYes2').text('Select');
+    $('#crudModalBody2').empty();
+    $('#crudModalBody2').append(collTable);
+    $('#crudModal2').off();
     await refreshDataTables(tableID, fileCollID, 'file', projectID);
 
-    $('#crudModal').on('show.coreui.modal', function(e) {
+    $('#crudModal2').on('show.coreui.modal', function(e) {
       const table = $(`#${tableID}`).DataTable();
       table.column(0).checkboxes.deselect();
       if (oldSelectedFiles && oldSelectedFiles.length) {
@@ -223,7 +222,7 @@ const bindEventHandlers = () => {
       }
     });
 
-    $('#crudModal').on('click', '#crudModalYes', function(e) {
+    $('#crudModal2').on('click', '#crudModalYes2', function(e) {
       e.preventDefault();
       const table = $(`#${tableID}`).DataTable();
       const tableData = table.rows().data();
@@ -244,10 +243,10 @@ const bindEventHandlers = () => {
           $(selectBtn).text(`${rows_selected.length} files selected`);
         }
         $(selectBtn).data('selected', selectedFileIDs);
-        $('#crudModal').modal('hide');
+        $('#crudModal2').modal('hide');
       }
     });
-    $('#crudModal').modal('show');
+    $('#crudModal2').modal('show');
   });
 };
 
@@ -264,4 +263,44 @@ export const createDynamicFields = (el, settings) => {
   $(el).css('display', 'none');
   $(el).addClass('customized');
   return dynamicDivEl;
+};
+
+export const getDynamicFieldsData = el => {
+  const allRows = $(el).find('tr');
+  let data = [];
+
+  for (let k = 0; k < allRows.length; k++) {
+    const inputEl = $(allRows[k]).find('.editable-click-val');
+    let obj = {};
+    for (let i = 0; i < inputEl.length; i++) {
+      let val = '';
+      if ($(inputEl[i]).is('a') || $(inputEl[i]).is('span')) {
+        val = $(inputEl[i]).text();
+        if ($(inputEl[i]).hasClass('editable-click-collection')) {
+          const selectedFiles = $(inputEl[i]).data('selected');
+          val = {};
+          val['!file_id'] = selectedFiles;
+        }
+      } else if ($(inputEl[i]).is('input')) {
+        const type = $(inputEl[i]).attr('type');
+        if (type == 'input') val = $(inputEl[i]).val();
+        if (type == 'checkbox') {
+          if ($(inputEl[i]).is(':checked')) {
+            val = true;
+          } else {
+            val = false;
+          }
+        }
+      }
+      if (i === 0) obj['key'] = val;
+      if (i === 1) obj['value'] = val;
+    }
+    data.push(obj);
+  }
+  let res = {};
+  for (let i = 0; i < data.length; i++) {
+    res[data[i]['key']] = data[i]['value'];
+  }
+  console.log(res);
+  return res;
 };

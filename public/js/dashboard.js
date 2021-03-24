@@ -593,11 +593,26 @@ const refreshEventForm = async (projectID, eventID) => {
       const fieldsOfCollection = $s.fields.filter(f => f.collectionID === collectionID);
       createSelectizeMultiField(dropdownElement, $s.data[collectionID], fieldsOfCollection);
       prepOntologyDropdown(`#${formID}`, {}, $s);
-      prepRunForm(`#${formID}`, {}, $s, projectID);
+      if (collectionName == 'run') prepRunForm(`#${formID}`, {}, $s, projectID);
       prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
       activateAllForm(`#${formID}`, 'input, select');
     }
   }
+};
+
+const convertRunFormObj = formObj => {
+  if (formObj.out) {
+    const outputs = formObj.out;
+    Object.keys(outputs).forEach((k, i) => {
+      console.log(k);
+      if (outputs[k]) {
+        outputs[k] = {};
+      } else {
+        delete outputs[k];
+      }
+    });
+  }
+  return formObj;
 };
 
 const saveDataEventForm = async (type, formID, collID, collName, projectID, oldData) => {
@@ -619,6 +634,7 @@ const saveDataEventForm = async (type, formID, collID, collName, projectID, oldD
     id = '';
     [formObj, stop] = createFormObj(formValues, requiredFields, true, false);
     formObj = convertFormObj(formObj);
+    if (collName == 'run') formObj = convertRunFormObj(formObj);
   }
 
   if (stop === false && collName) {
@@ -724,7 +740,7 @@ const bindEventHandlers = () => {
       if (data && data[0]) {
         fillFormByName(formID, 'input, select', data[0], true);
         prepReferenceDropdown(formID, $s);
-        prepRunForm(formID, data[0], $s, projectID);
+        // prepRunForm(formID, data[0], $s, projectID);
         prepOntologyDropdown(formID, data[0], $s);
         // trigger change of filled .data-reference dropdowns
         const allDataRefs = $(formID).find('select.data-reference');
@@ -864,7 +880,7 @@ const bindEventHandlers = () => {
     $('#crudModal').on('show.coreui.modal', async function(e) {
       fillFormByName('#crudModal', 'input, select', selectedData[0], true);
       prepReferenceDropdown('#crudModal', $s);
-      prepRunForm('#crudModal', selectedData[0], $s, projectID);
+      // if (collName == 'run') prepRunForm('#crudModal', selectedData[0], $s, projectID);
       prepOntologyDropdown('#crudModal', selectedData[0], $s);
       await prepDataPerms('#crudModal', selectedData[0]);
       if (rows_selected.length > 1) {
@@ -1293,7 +1309,7 @@ const bindEventHandlers = () => {
     $('#crudModalBody').append(getErrorDiv());
     $('#crudModalBody').append(collectionFields);
     $('#crudModal').off();
-    prepRunForm('#crudModal', {}, $s, projectID);
+    if (collName == 'run') prepRunForm('#crudModal', {}, $s, projectID);
     prepReferenceDropdown('#crudModal', $s);
     prepOntologyDropdown('#crudModal', {}, $s);
     await prepDataPerms('#crudModal', {});
@@ -1309,6 +1325,8 @@ const bindEventHandlers = () => {
       });
       let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
       formObj = convertFormObj(formObj);
+      if (collName == 'run') formObj = convertRunFormObj(formObj);
+
       if (stop === false && collName) {
         const success = await crudAjaxRequest(
           'data',
