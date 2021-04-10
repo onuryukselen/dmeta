@@ -4,6 +4,7 @@ import axios from 'axios';
 import { loadLoginDiv, login, logout } from './login';
 import { getProjectNavbar, loadAllTabContent } from './dashboard.js';
 import { refreshAdminProjectNavbar } from './admin-dashboard.js';
+import { getProfileNavbar, loadProfileTabContent } from './profile.js';
 import { getImportPageNavBar } from './importpage.js';
 import { globalEventBinders } from './jsfuncs.js';
 
@@ -42,6 +43,7 @@ const logInBtn = document.querySelector('.nav__el--login');
 const afterSsoClose = document.querySelector('.after-sso-close');
 const loginForm = document.querySelector('#loginOuterDiv');
 const allProjectNav = document.querySelector('#allProjectNav');
+const allProfileNav = document.querySelector('#allProfileNav');
 const adminAllProjectNav = document.querySelector('#admin-allProjectNav');
 const dmetaVersionBut = document.querySelector('#dmetaVersionBut');
 
@@ -156,6 +158,12 @@ if (loginForm) {
     $('a.collection[data-toggle="tab"]').trigger('show.coreui.tab');
     $('[data-toggle="tooltip"]').tooltip();
   }
+  if (allProfileNav) {
+    const profileNavbar = await getProfileNavbar();
+    $('#allProfileNav').append(profileNavbar);
+    loadProfileTabContent();
+  }
+
   if (adminAllProjectNav) {
     const adminProjectNavbar = await refreshAdminProjectNavbar();
     $('#admin-allProjectNav').append(adminProjectNavbar);

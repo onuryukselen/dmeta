@@ -1,5 +1,6 @@
 const factory = require('./handlerFactory');
 const Group = require('../models/groupModel');
+const User = require('../models/userModel');
 const UserGroup = require('../models/userGroupModel');
 const AppError = require('./../utils/appError');
 const APIFeatures = require('./../utils/apiFeatures');
@@ -82,6 +83,11 @@ exports.getUserGroups = async (req, res, next) => {
       const groupData = await Group.find({ _id: doc[k].group_id }).exec();
       if (groupData && groupData[0] && groupData[0].name) {
         doc[k]['group_name'] = groupData[0].name;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      const userData = await User.find({ _id: doc[k].owner }).exec();
+      if (userData && userData[0] && userData[0].username) {
+        doc[k]['owner_username'] = userData[0].username;
       }
     } catch {
       console.log(`group name not found`);
