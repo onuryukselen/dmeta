@@ -93,19 +93,22 @@ exports.getRelatedGroups = async (req, res, next) => {
   for (let k = 0; k < doc.length; k++) {
     doc[k]['user_id'] = userId;
     try {
-      if (doc[k]['owner'] == userId) {
-        newDoc.push(doc[k]);
-      } else {
-        // eslint-disable-next-line no-await-in-loop
-        const userGroupData = await UserGroup.find({ user_id: userId }).exec();
-        if (userGroupData && userGroupData[0] && userGroupData[0]._id) {
-          newDoc.push(doc[k]);
-        }
-      }
       // eslint-disable-next-line no-await-in-loop
       const userData = await User.find({ _id: doc[k].owner }).exec();
       if (userData && userData[0] && userData[0].username) {
         doc[k]['owner_username'] = userData[0].username;
+      }
+      if (doc[k]['owner'] == userId) {
+        newDoc.push(doc[k]);
+      } else {
+        // eslint-disable-next-line no-await-in-loop
+        const userGroupData = await UserGroup.find({
+          user_id: userId,
+          group_id: doc[k]['_id']
+        }).exec();
+        if (userGroupData && userGroupData[0] && userGroupData[0]._id) {
+          newDoc.push(doc[k]);
+        }
       }
     } catch {
       console.log(`group not found`);

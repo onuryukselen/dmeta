@@ -396,7 +396,11 @@ const bindEventHandlers = () => {
               showInfoModal('Error occured. Please try again.');
             }
           } catch (err) {
-            showInfoModal(JSON.stringify(err));
+            if (err.response && err.response.data && err.response.data.message) {
+              showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+            } else {
+              showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+            }
           }
         }
       } else {
