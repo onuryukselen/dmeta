@@ -36,7 +36,6 @@ globalEventBinders();
 const envConf = document.querySelector('#session-env-config');
 const ssologin =
   envConf && envConf.getAttribute('sso_login') && envConf.getAttribute('sso_login') == 'true';
-
 // DOM ELEMENTS
 const logOutBtn = document.querySelector('.nav__el--logout');
 const logInBtn = document.querySelector('.nav__el--login');
@@ -49,6 +48,7 @@ const dmetaVersionBut = document.querySelector('#dmetaVersionBut');
 
 const importpageNav = document.querySelector('#import-page');
 const googleSheetId = envConf && envConf.getAttribute('google_sheet_id');
+const userRole = envConf && envConf.getAttribute('role');
 
 if (logOutBtn) logOutBtn.addEventListener('click', logout);
 
@@ -159,7 +159,7 @@ if (loginForm) {
     $('[data-toggle="tooltip"]').tooltip();
   }
   if (allProfileNav) {
-    const profileNavbar = await getProfileNavbar();
+    const profileNavbar = await getProfileNavbar(userRole);
     $('#allProfileNav').append(profileNavbar);
     loadProfileTabContent();
   }

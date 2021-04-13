@@ -38,6 +38,16 @@ const getGroupMemberTableOptions = (owner_id, u_id) => {
   return button;
 };
 
+const getAdminTableOptions = (active, role) => {
+  var button = `<div class="btn-group">
+      <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="true">Options <span class="fa fa-caret-down"></span></button>
+      <ul class="dropdown-menu dropdown-menu-right" role="menu">
+        <li><a class="dropdown-item editUser">Edit User</a></li>
+        <li><a class="dropdown-item deleteUser">Delete User</a></li>
+      </ul>
+    </div>`;
+  return button;
+};
 const getGroupTableOptions = (owner_id, u_id) => {
   if (owner_id === u_id) {
     //if user is the owner of the group
@@ -158,6 +168,65 @@ const refreshGroupTable = async () => {
   }
 };
 
+const refreshAdminTable = async () => {
+  const TableID = 'table-admin';
+  try {
+    let [users] = await Promise.all([ajaxCall('GET', '/api/v1/users')]);
+    $s.users = users;
+  } catch {
+    $s.users = [];
+  }
+  console.log($s.users);
+  if (!$s.users) $s.users = [];
+  const data = $s.users;
+  let fomatted_data = [];
+  if (data.length) {
+    fomatted_data = data.map(i => {
+      i.creationDate = moment(i.creationDate).format('YYYY-MM-DD');
+      return i;
+    });
+  }
+  if ($.fn.DataTable.isDataTable(`#${TableID}`)) {
+    $(`#${TableID}`)
+      .DataTable()
+      .destroy();
+  }
+
+  if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
+    let columns = [];
+    columns.push({ data: '_id' });
+    columns.push({ data: 'name' });
+    columns.push({ data: 'username' });
+    columns.push({ data: 'email' });
+    columns.push({ data: 'role' });
+    columns.push({ data: 'active' });
+    columns.push({ data: 'creationDate' });
+    columns.push({
+      data: null,
+      fnCreatedCell: function(nTd, sData, oData, iRow, iCol) {
+        $(nTd).html(getAdminTableOptions(oData.active, oData.role));
+      }
+    });
+    var dataTableObj = {
+      columns: columns,
+      columnDefs: [
+        { defaultContent: '', targets: '_all' } //hides undefined error,
+      ]
+    };
+    dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
+    dataTableObj.destroy = true;
+    dataTableObj.pageLength = 10;
+    dataTableObj.data = fomatted_data;
+    dataTableObj.hover = true;
+    // speed up the table loading
+    dataTableObj.deferRender = true;
+    dataTableObj.scroller = true;
+    dataTableObj.scrollCollapse = true;
+    // dataTableObj.sScrollX = true; // dropdown remains under the datatable div
+    $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
+  }
+};
+
 const getTableHeaders = labels => {
   let ret = '';
   for (var i = 0; i < labels.length; i++) {
@@ -176,9 +245,9 @@ const getGroupsTab = id => {
             <tr>
             ${headers}
             </tr>
+        </thead>
         <tbody>
         </tbody>
-    </thead>
     </table>
   </div>`;
   const button = `<button class="btn btn-primary create-group" type="button">Create a Group</button>`;
@@ -187,7 +256,49 @@ const getGroupsTab = id => {
     <div class="col-sm-12">
       <div class="card">
         <div class="card-header"> 
-        <span style="font-size:large; font-weight:600;"><i class="cil-people"> </i> Groups</span>
+          <span style="font-size:large; font-weight:600;"><i class="cil-people"> </i> Groups</span>
+          <div style="float:right;" class="card-header-actions">${button}</div>
+        </div>
+        <div class="card-body">
+          ${table}
+        </div>
+      </div>
+    </div>
+  </div>`;
+  return groups;
+};
+
+const getAdminTab = id => {
+  const headers = getTableHeaders([
+    'ID',
+    'Name',
+    'Username',
+    'E-mail',
+    'Role',
+    'Active',
+    'Member Date',
+    'Options'
+  ]);
+  const tableID = `table-${id}`;
+  const table = `
+  <div class="table-responsive" style="overflow-x:auto; width:100%; ">
+    <table id="${tableID}" class="table table-striped" style='white-space: nowrap; width:100%;' cellspacing="0" >
+        <thead>
+            <tr>
+            ${headers}
+            </tr>
+        <tbody>
+        </tbody>
+    </thead>
+    </table>
+  </div>`;
+  const button = `<button class="btn btn-primary admin-add-user" type="button">Add an User</button>`;
+  const groups = `
+  <div style="margin-top:10px;" class="row">
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header"> 
+        <span style="font-size:large; font-weight:600;"><i class="cil-people"> </i> User Panel</span>
           <div style="float:right;" class="card-header-actions">
             ${button}
           </div>
@@ -196,12 +307,14 @@ const getGroupsTab = id => {
         ${table}
       </div>
     </div>
+    </div>
   </div>`;
   return groups;
 };
 
 export const loadProfileTabContent = () => {
   refreshGroupTable();
+  refreshAdminTable();
 };
 
 const getGroupForm = () => {
@@ -212,7 +325,162 @@ const getGroupForm = () => {
   return ret;
 };
 
+const getInputElement = (name, attr) => {
+  return `<input class="form-control" type="text" name="${name}" ${attr} value=""></input>`;
+};
+
+const getDropdown = (name, data) => {
+  let dropdown = `<select class="form-control" name="${name}">`;
+  if (data) {
+    data.forEach(i => {
+      dropdown += `<option  value="${i}">${i}</option>`;
+    });
+  }
+  dropdown += `</select>`;
+  return dropdown;
+};
+
+const getAdminUserForm = () => {
+  let ret = `<form id="userForm">`;
+  ret += getFormRow(getInputElement('name', 'required'), 'Name', {});
+  ret += getFormRow(getInputElement('username', 'required'), 'Username', {});
+  ret += getFormRow(getInputElement('email', 'required'), 'E-mail', {});
+  ret += getFormRow(getDropdown('role', ['user', 'project-admin', 'admin']), 'Role', {});
+  ret += '</form>';
+  return ret;
+};
+
 const bindEventHandlers = () => {
+  // -------- USERS -----------
+  $(document).on('click', `button.admin-add-user`, async function(e) {
+    $('#crudModalError').empty();
+    const form = getAdminUserForm();
+    $('#crudModalTitle').text(`Insert User`);
+    $('#crudModalYes').text('Save');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(form);
+    $('#crudModal').off();
+
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      $('#crudModalError').empty();
+      const formValues = $('#crudModal').find('input,select');
+      const requiredValues = formValues.filter('[required]');
+      const requiredFields = $.map(requiredValues, function(el) {
+        return $(el).attr('name');
+      });
+      let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
+      if (stop === false) {
+        try {
+          const res = await axios({
+            method: 'POST',
+            url: '/api/v1/users',
+            data: formObj
+          });
+          if (res.data.status == 'success') {
+            await refreshAdminTable();
+            $('#crudModal').modal('hide');
+          } else {
+            showInfoModal('Error occured.');
+          }
+        } catch (err) {
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+          } else {
+            showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+          }
+        }
+      }
+    });
+    $('#crudModal').modal('show');
+  });
+  $(document).on('click', `a.deleteUser`, async function(e) {
+    const clickedRow = $(this).closest('tr');
+    const table = $('#table-admin').DataTable();
+    const data = table.row(clickedRow).data();
+    const user_id = data._id;
+
+    $('#crudModalTitle').text(`Remove User`);
+    $('#crudModalYes').text('Remove');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(`<p>Are you sure you want to delete user (${data.name})?</p>`);
+    $('#crudModal').off();
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      if (user_id) {
+        try {
+          const res = await axios({
+            method: 'DELETE',
+            url: `/api/v1/users/${user_id}`
+          });
+          await refreshAdminTable();
+          $('#crudModal').modal('hide');
+        } catch (err) {
+          console.log(err);
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+          } else {
+            showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+          }
+        }
+      }
+    });
+    $('#crudModal').modal('show');
+  });
+
+  $(document).on('click', `a.editUser`, async function(e) {
+    const clickedRow = $(this).closest('tr');
+    const table = $('#table-admin').DataTable();
+    const userData = table.row(clickedRow).data();
+    const user_id = userData._id;
+
+    $('#crudModalError').empty();
+    const form = getAdminUserForm();
+    $('#crudModalTitle').text(`Edit User`);
+    $('#crudModalYes').text('Save');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(form);
+    $('#crudModal').off();
+    fillFormByName('#userForm', 'input, select', userData, true);
+
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      $('#crudModalError').empty();
+      const formValues = $('#crudModal').find('input,select');
+      const requiredValues = formValues.filter('[required]');
+      const requiredFields = $.map(requiredValues, function(el) {
+        return $(el).attr('name');
+      });
+      let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
+      console.log(formObj);
+      if (stop === false) {
+        try {
+          const res = await axios({
+            method: 'PATCH',
+            url: `/api/v1/users/${user_id}`,
+            data: formObj
+          });
+          console.log(res);
+          if (res.data.status == 'success') {
+            await refreshAdminTable();
+            $('#crudModal').modal('hide');
+          } else {
+            showInfoModal('Error occured.');
+          }
+        } catch (err) {
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+          } else {
+            showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+          }
+        }
+      }
+    });
+    $('#crudModal').modal('show');
+  });
+
+  // -------- GROUPS -----------
   $(document).on('click', `a.deleteGroup`, async function(e) {
     const clickedRow = $(this).closest('tr');
     const grouptable = $('#table-groups').DataTable();
@@ -366,7 +634,6 @@ const bindEventHandlers = () => {
 
     $('#groupModal').on('click', `#groupModal_adduser`, async function(e) {
       const email = $('#groupModal_email').val();
-      console.log(email);
       let user_id = '';
       if (email && group_id) {
         try {
@@ -444,11 +711,14 @@ const bindEventHandlers = () => {
   });
 };
 
-export const getProfileNavbar = async () => {
+export const getProfileNavbar = async userRole => {
   bindEventHandlers();
 
   let tabs = [];
   tabs.push({ label: 'Groups', id: 'groups' });
+  if (userRole == 'admin') {
+    tabs.push({ label: 'Admin', id: 'admin' });
+  }
   let header = '<ul class="nav nav-tabs" role="tablist">';
   let content = '<div class="tab-content">';
 
@@ -465,8 +735,9 @@ export const getProfileNavbar = async () => {
     let tabContent = '';
     if (id == 'groups') {
       tabContent = getGroupsTab(id);
+    } else if (id == 'admin') {
+      tabContent = getAdminTab(id);
     }
-
     const contentDiv = `
     <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${tabID}">
         ${tabContent}
