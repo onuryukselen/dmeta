@@ -312,9 +312,9 @@ const getAdminTab = id => {
   return groups;
 };
 
-export const loadProfileTabContent = () => {
+export const loadProfileTabContent = userRole => {
   refreshGroupTable();
-  refreshAdminTable();
+  if (userRole == 'admin') refreshAdminTable();
 };
 
 const getGroupForm = () => {

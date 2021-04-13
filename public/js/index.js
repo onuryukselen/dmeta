@@ -161,7 +161,7 @@ if (loginForm) {
   if (allProfileNav) {
     const profileNavbar = await getProfileNavbar(userRole);
     $('#allProfileNav').append(profileNavbar);
-    loadProfileTabContent();
+    loadProfileTabContent(userRole);
   }
 
   if (adminAllProjectNav) {
