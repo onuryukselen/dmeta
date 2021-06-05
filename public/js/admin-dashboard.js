@@ -51,7 +51,6 @@ $s.AdminAllCollectionFields = [
   'label',
   'slug',
   'version',
-  'parentCollectionID',
   'projectID',
   'id',
   'restrictTo',
@@ -120,12 +119,6 @@ const fieldsOfCollectionsModel = {
     label: 'Label',
     type: 'String',
     required: true
-  },
-  parentCollectionID: {
-    name: 'parentCollectionID',
-    label: 'Parent Collection',
-    type: 'mongoose.Schema.ObjectId',
-    ref: 'collections'
   },
   projectID: {
     name: 'projectID',
@@ -351,15 +344,8 @@ const prepareDataForSingleColumn = async (tableID, projectID) => {
     ret = dataCopy.map(el => {
       let newObj = {};
       $.each(el, function(k) {
-        // custom view for all_collections tab -> parentCollectionID field (show name of the collection)
-        if (tableID == `all_collections_${projectID}` && k === `parentCollectionID` && el[k]) {
-          const parentColl = $s.collections.filter(col => col._id == el[k]);
-          if (parentColl[0] && parentColl[0].name) {
-            newObj[k] = parentColl[0].name;
-          } else {
-            newObj[k] = el[k];
-          }
-        } else if (tableID == `all_collections_${projectID}` && k === `projectID` && el[k]) {
+        // custom view for all_collections tab -> projectID field (show name of the project)
+        if (tableID == `all_collections_${projectID}` && k === `projectID` && el[k]) {
           const projectData = $s.projects.filter(p => p._id == el[k]);
           if (projectData[0] && projectData[0].name) {
             newObj[k] = projectData[0].name;
@@ -706,19 +692,6 @@ const fillCollectionFields = (dropdown, collID) => {
       text: '-- Select Field --'
     })
   );
-
-  if (col[0] && col[0].parentCollectionID) {
-    const parentCollID = col[0].parentCollectionID;
-    const parentColl = $s.collections.filter(col => col.id === parentCollID);
-    if (parentColl[0] && parentColl[0].name) {
-      dropdown.append(
-        $('<option>', {
-          value: 'parentCollectionID',
-          text: `${parentColl[0].label} (required ref.)`
-        })
-      );
-    }
-  }
 
   $.each(fields, function(i, item) {
     const required = item.required ? 'required' : '';

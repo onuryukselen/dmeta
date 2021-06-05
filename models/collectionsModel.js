@@ -54,19 +54,6 @@ const collectionsSchema = new mongoose.Schema(
         message: 'Label exits in the project. It has to be unique in the project!'
       }
     },
-    parentCollectionID: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'Collection',
-      default: null,
-      validate: {
-        validator: async function(v) {
-          if (v === null) return true;
-          const docs = await mongoose.model('Collection').find({ _id: v });
-          return docs.length > 0;
-        },
-        message: 'Collection id is not exist!'
-      }
-    },
     version: {
       type: Number,
       required: [true, 'A collection must have a version'],
@@ -113,6 +100,13 @@ const collectionsSchema = new mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
+
+// remove parentCollectionID from retrieved data
+collectionsSchema.methods.toJSON = function() {
+  let obj = this.toObject();
+  delete obj.parentCollectionID;
+  return obj;
+};
 
 collectionsSchema.index({ slug: 1 });
 

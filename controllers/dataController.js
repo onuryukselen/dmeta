@@ -224,13 +224,6 @@ const parseSummarySchema = async (collectionName, projectName, type) => {
     let col = await collectionsController.getCollectionByName(collectionName, projectName);
     let popObj = '';
     if (col) {
-      if (col.parentCollectionID) {
-        const { fieldName, parentModelName } = await collectionsController.getParentRefField(
-          col.parentCollectionID
-        );
-        if (fieldName && mongoose.connection.models[parentModelName]) popObj = fieldName;
-      }
-
       const fields = await fieldsController.getFieldsByCollectionId(col._id);
       let refFields = [];
       for (let i = 0; i < fields.length; i++) {
@@ -306,7 +299,6 @@ exports.getDataSummaryDoc = async (type, req, res, next) => {
       type
     );
 
-    //const modelName = getModelNameByColId(col.parentCollectionID);
     if (!modelObj[targetCollection]) return null;
     const query = modelObj[targetCollection].find({});
     if (res.locals.Perms) {

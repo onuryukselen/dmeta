@@ -123,7 +123,7 @@ exports.createOne = Model =>
     if (res.locals.Perms) {
       const permCreate = await res.locals.Perms('create');
       if (!permCreate) {
-        return next(new AppError(`Permission denied: no write permission`, 404));
+        return next(new AppError(`Operation not allowed.`, 404));
       }
     }
     // remove fields that has value undefined

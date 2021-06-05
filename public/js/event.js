@@ -32,7 +32,6 @@ const refreshEventTable = async () => {
     $s.collections = collections;
     $s.projects = projects;
     $s.eventlogs = eventlogs;
-    console.log($s.eventlogs);
   } catch {
     $s.events = [];
   }
@@ -41,7 +40,6 @@ const refreshEventTable = async () => {
   let fomatted_data = [];
   if (data.length) {
     fomatted_data = data.map(i => {
-      console.log(i);
       i.creationDate = moment(i.creationDate).format('YYYY-MM-DD hh:mm:ss');
       i.req = JSON.stringify(i.req);
       return i;
