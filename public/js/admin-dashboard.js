@@ -354,7 +354,7 @@ const prepareDataForSingleColumn = async (tableID, projectID) => {
         // custom view for all_collections tab -> parentCollectionID field (show name of the collection)
         if (tableID == `all_collections_${projectID}` && k === `parentCollectionID` && el[k]) {
           const parentColl = $s.collections.filter(col => col._id == el[k]);
-          if (parentColl[0].name) {
+          if (parentColl[0] && parentColl[0].name) {
             newObj[k] = parentColl[0].name;
           } else {
             newObj[k] = el[k];

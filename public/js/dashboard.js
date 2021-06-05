@@ -599,6 +599,7 @@ const refreshEventForm = async (projectID, eventID) => {
       const fieldsOfCollection = $s.fields.filter(f => f.collectionID === collectionID);
       createSelectizeMultiField(dropdownElement, $s.data[collectionID], fieldsOfCollection);
       prepOntologyDropdown(`#${formID}`, {}, $s);
+      prepReferenceDropdown(`#${formID}`, $s);
       if (collectionName == 'run') prepRunForm(`#${formID}`, {}, $s, projectID);
       prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
       activateAllForm(`#${formID}`, 'input, select');

@@ -125,6 +125,8 @@ const getRefFieldDropdown = async (ref, name, required, def, projectData, $scope
       dataField = showFields && showFields[0] ? showFields[0] : '';
     }
 
+    console.log(dataField);
+
     const collDropdown = getDataDropdown(
       '',
       'ref-control select-text-opt data-reference',
@@ -482,7 +484,6 @@ export const prepRunForm = (formId, data, $scope, projectID) => {
 
 export const prepReferenceDropdown = (formId, $scope) => {
   const formValues = $(formId).find('select.ref-control');
-  console.log('formValues', formValues);
   for (var k = 0; k < formValues.length; k++) {
     const collectionID = $(formValues[k]).attr('collectionID');
     if (collectionID && $scope.data && $scope.data[collectionID]) {

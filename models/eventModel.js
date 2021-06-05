@@ -41,11 +41,11 @@ const eventSchema = new mongoose.Schema(
     },
     creationDate: {
       type: Date,
-      default: Date.now()
+      default: Date.now
     },
     lastUpdateDate: {
       type: Date,
-      default: Date.now()
+      default: Date.now
     },
     perms: {
       type: 'Mixed'

@@ -24,7 +24,7 @@ router
   .post(
     authController.requireLogin,
     dataController.setModel,
-    eventLogController.setEventLog,
+    eventLogController.setEventLog('data'),
     dataController.createData
   );
 
@@ -35,13 +35,13 @@ router
     authController.requireLogin,
     dataController.setExcludeFields,
     dataController.setModel,
-    eventLogController.setEventLog,
+    eventLogController.setEventLog('data'),
     dataController.updateData
   )
   .delete(
     authController.requireLogin,
     dataController.setModel,
-    eventLogController.setEventLog,
+    eventLogController.setEventLog('data'),
     dataController.deleteData
   );
 
