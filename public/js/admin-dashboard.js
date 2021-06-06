@@ -434,6 +434,7 @@ const showTableTabs = () => {
     const tableID = $(e.target).attr('tableID');
     const projectID = $(e.target).attr('projectID');
     refreshDataTables(tableID, projectID);
+    $('[data-toggle="tooltip"]').tooltip();
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
     $($.fn.dataTable.tables(true))
@@ -617,7 +618,6 @@ const insertNewField = (projectID, divToAppend, type, counter) => {
     .val();
   const selectField = newFieldRow.find('.select-field');
   fillCollectionFields(selectField, selectedCollID);
-  // $('[data-toggle="tooltip"]').tooltip();
 };
 
 const insertNewEventRow = (projectID, type, newField) => {
@@ -675,9 +675,6 @@ const insertNewEventRow = (projectID, type, newField) => {
     //insertNewField
     newRow.find('.insert-event-field').trigger('click');
   }
-
-  // $('[data-toggle="tooltip"]').tooltip();
-
   return newRow;
 };
 
@@ -765,13 +762,15 @@ const getEventSchema = projectID => {
   return ret;
 };
 
-const getCollectionDropdown = (projectID, name) => {
+const getCollectionDropdown = (projectID, name, exclude) => {
   let dropdown = `<select class="form-control" name="${name}">`;
   dropdown += `<option value="" >--- Select Collection ---</option>`;
   if ($s.collections) {
     const projectCollections = $s.collections.filter(e => e.projectID == projectID);
     projectCollections.forEach(i => {
-      dropdown += `<option  value="${i._id}">${i.name}</option>`;
+      if (!exclude.includes(i._id)) {
+        dropdown += `<option  value="${i._id}">${i.name}</option>`;
+      }
     });
   }
   dropdown += `</select>`;
@@ -780,12 +779,31 @@ const getCollectionDropdown = (projectID, name) => {
 
 const getEditFieldDiv = projectID => {
   let ret = `<p> Please choose target collection and operation type to transfer your data of fields into target collection. </p>`;
-  ret += getFormRow(getCollectionDropdown(projectID, 'targetCollection'), 'Target Collection', {});
+  ret += getFormRow(
+    getCollectionDropdown(projectID, 'targetCollection', []),
+    'Target Collection',
+    {}
+  );
   const operationTypeDropdown = getSimpleDropdown(
     [{ _id: 'move-ref', name: 'Move and Keep Reference' }],
     { name: 'type' }
   );
   ret += getFormRow(operationTypeDropdown, 'Operation Type', {});
+
+  return ret;
+};
+
+const getInsertChildRefDiv = async (projectID, collID) => {
+  let ret = `<p>Please choose a collection to be used for referencing. </p>`;
+  const exclude = [collID];
+  ret += getFormRow(
+    getCollectionDropdown(projectID, 'childRefCollection', exclude),
+    'Parent Collection',
+    {}
+  );
+  const labelField = { name: 'label', label: 'Reference Label', type: 'String' };
+  const labelDiv = await getFormElement(labelField, getProjectData(projectID), $s);
+  ret += getFormRow(labelDiv, labelField.label, labelField);
 
   return ret;
 };
@@ -988,7 +1006,64 @@ const bindEventHandlers = () => {
     }
   });
 
-  //
+  // insert child reference button
+  $(document).on('click', `button.insert-child-ref`, async function(e) {
+    const collID = $(this).attr('collID');
+    const collName = $(this).attr('collName');
+    const projectID = $(this).attr('projectID');
+    const childRefDiv = await getInsertChildRefDiv(projectID, collID);
+    const projectData = $s.projects.filter(p => p._id === projectID);
+    const projectName = projectData[0].name;
+    $('#crudModalYes').text('Save');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(childRefDiv);
+    $('#crudModal').off();
+    $('#crudModalTitle').text(`Insert Reference Field`);
+
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      $('#crudModalError').empty();
+      const formValues = $('#crudModal').find('input,select');
+      const requiredFields = ['label', 'childRefCollection'];
+      let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
+      if (stop === false) {
+        let newFormObj = {};
+        const parentCollectionName = $('#crudModal')
+          .find('select[name*=childRefCollection] option:selected')
+          .text();
+        newFormObj.collectionID = collID;
+        newFormObj.ref = `${projectName}_${parentCollectionName}`;
+        newFormObj.name = `${parentCollectionName}_id`;
+        newFormObj.label = formObj.label;
+        newFormObj.required = true;
+        newFormObj.type = 'mongoose.Schema.ObjectId';
+        console.log('newFormObj', newFormObj);
+        try {
+          const res = await axios({
+            method: 'POST',
+            url: 'api/v1/fields',
+            data: newFormObj
+          });
+          if (res.data.status == 'success') {
+            console.log(res.data);
+            refreshDataTables(collID, projectID);
+            $('#crudModal').modal('hide');
+          }
+        } catch (err) {
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(JSON.stringify(err.response.data.message));
+          } else {
+            showInfoModal(err);
+          }
+        }
+      }
+    });
+
+    $('#crudModal').modal('show');
+  });
+
+  //Transfer Fields Data button
   $(document).on('click', `button.edit-field-data`, async function(e) {
     const collID = $(this).attr('collID');
     const collName = $(this).attr('collName');
@@ -1385,11 +1460,16 @@ const refreshCollectionNavbar = async (projectId, type) => {
         colNavbar = getEventTab(projectId);
       } else {
         let dbEditor = true;
-        if (tabs[i].id == `all_collections_${projectId}`) dbEditor = false;
+        let childRef = true;
+        if (tabs[i].id == `all_collections_${projectId}`) {
+          dbEditor = false;
+          childRef = false;
+        }
         colNavbar = getCollectionTable(collectionId, projectId);
         crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
           excel: false,
-          dbEditor: dbEditor
+          dbEditor: dbEditor,
+          childRef: childRef
         });
       }
 

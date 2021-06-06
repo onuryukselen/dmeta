@@ -2,6 +2,7 @@
 Event History page added.
 Date.now bug fixed.
 ParentCollectionID field and feature removed from collections.
+Insert Reference Field button added to admin page.
 
 02.05.2021 Version 0.0.44
 Selectize support added for reference dropdowns.

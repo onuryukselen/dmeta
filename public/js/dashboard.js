@@ -1415,12 +1415,18 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
   const data = `collLabel="${collLabel}" collID="${collID}" projectID="${projectID}" collName="${collName}"`;
   let tableBut = '';
   let dbEditorBut = '';
+  let childRefBut = '';
   if (settings.dbEditor) {
     dbEditorBut = `
     <button class="btn btn-primary edit-field-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Transfer Fields Data" ${data}>
       <i class="cil-cut"> </i>
     </button>`;
   }
+  if (settings.childRef) {
+    childRefBut = `
+    <button class="btn btn-primary insert-child-ref" type="button" data-toggle="tooltip" data-placement="bottom" title="Insert Reference Field" ${data}><i class="cil-sitemap"> </i></button>`;
+  }
+
   if (settings.excel) {
     tableBut = `
     <button class="btn btn-primary edit-excel-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit in Spreadsheet" ${data}>
@@ -1459,6 +1465,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
         <i class="cil-trash"> </i>
       </button>
       ${tableBut}
+      ${childRefBut}
       ${dbEditorBut}
     </div>
   </div>`;
