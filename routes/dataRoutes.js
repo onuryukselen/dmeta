@@ -9,6 +9,10 @@ router.use(authController.setDefPerms);
 router.use(authController.isLoggedIn);
 
 router
+  .route('/:collectionName/format/:format')
+  .get(dataController.setExcludeFields, dataController.getFormatData);
+
+router
   .route('/:collectionName/summary')
   .get(dataController.setExcludeFields, dataController.getDataSummary);
 router

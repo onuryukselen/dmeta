@@ -451,8 +451,8 @@ export const fillFormByName = (formId, find, data, reset) => {
     const isSelectTextOpt = $(formValues[k]).hasClass('select-text-opt');
     // if selectized
     const isSelectized = $(formValues[k]).hasClass('selectized');
-    console.log('isSelectized', isSelectized, $(formValues[k]));
-    console.log('isSelectTextOpt', isSelectTextOpt, $(formValues[k]));
+    // console.log('isSelectized', isSelectized, $(formValues[k]));
+    // console.log('isSelectTextOpt', isSelectTextOpt, $(formValues[k]));
     if (data[nameAttr]) {
       if (radioCheck) {
         if (data[nameAttr] == $(formValues[k]).val()) {
@@ -521,4 +521,21 @@ export const groupArrayOfObj = key => {
       return acc;
     }, {});
   };
+};
+
+export const IsJsonString = str => {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+export const IsJson5String = str => {
+  try {
+    JSON5.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
 };
