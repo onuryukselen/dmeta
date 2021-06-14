@@ -17,6 +17,7 @@ import { getCrudButtons, crudAjaxRequest } from './dashboard';
 import { getFormElement, getFormRow } from './formModules/crudData';
 import { prepDataPerms } from './formModules/dataPerms';
 import { prepDataRestrictTo } from './formModules/dataRestrictTo';
+import { refreshTreeView } from './treeView';
 const JSON5 = require('json5');
 
 // GLOBAL SCOPE
@@ -436,6 +437,9 @@ const showTableTabs = () => {
     const tableID = $(e.target).attr('tableID');
     const projectID = $(e.target).attr('projectID');
     refreshDataTables(tableID, projectID);
+    if (tableID == `tree_view_${projectID}`) {
+      refreshTreeView(projectID, $s, false);
+    }
     $('[data-toggle="tooltip"]').tooltip();
   });
   $(document).on('shown.coreui.tab', 'a.collection[data-toggle="tab"]', function(e) {
@@ -1705,6 +1709,12 @@ const getAPITab = projectID => {
   `;
   return ret;
 };
+
+const getTreeTab = projectID => {
+  //style="border: 1px black solid; max-width: 900px;"
+  const ret = `<section id="d3-tree-${projectID}" style="height: 500px; max-width:100%;"></section>`;
+  return ret;
+};
 const getEventTab = projectID => {
   const dropdown = getCustomDropdown(projectID, 'event');
   const ret = `
@@ -1764,6 +1774,11 @@ const refreshCollectionNavbar = async (projectId, type) => {
       id: `all_events_${projectId}`
     },
     {
+      name: 'tree_view',
+      label: 'Tree View',
+      id: `tree_view_${projectId}`
+    },
+    {
       name: 'all_apis',
       label: 'API Config',
       id: `all_apis_${projectId}`
@@ -1778,7 +1793,8 @@ const refreshCollectionNavbar = async (projectId, type) => {
       (!projectId && !collectionProjectID) ||
       tabs[i].id == `all_collections_${projectId}` ||
       tabs[i].id == `all_events_${projectId}` ||
-      tabs[i].id == `all_apis_${projectId}`
+      tabs[i].id == `all_apis_${projectId}` ||
+      tabs[i].id == `tree_view_${projectId}`
     ) {
       k++;
       const collectionName = tabs[i].name;
@@ -1798,6 +1814,8 @@ const refreshCollectionNavbar = async (projectId, type) => {
         colNavbar = getEventTab(projectId);
       } else if (tabs[i].id == `all_apis_${projectId}`) {
         colNavbar = getAPITab(projectId);
+      } else if (tabs[i].id == `tree_view_${projectId}`) {
+        colNavbar = getTreeTab(projectId);
       } else {
         let dbEditor = true;
         let childRef = true;
