@@ -1656,7 +1656,7 @@ const getCustomDropdown = (projectID, type) => {
   const idText = projectID ? `id="${idPart}-${projectID}"` : '';
   let dropdown = `<select class="form-control ${idPart}" projectID="${projectID}" ${idText}>`;
   dropdown += `<option value="" >--- ${label} ---</option>`;
-  if ($s.events) {
+  if (data) {
     const subData = data.filter(e => e.projectID == projectID);
     subData.forEach(i => {
       if (type == 'event') {

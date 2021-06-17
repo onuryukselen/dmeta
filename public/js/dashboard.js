@@ -1,6 +1,6 @@
 /* eslint-disable */
 import axios from 'axios';
-import XLSX from 'XLSX';
+import XLSX from 'xlsx';
 const JSON5 = require('json5');
 import { saveAs } from 'file-saver';
 
