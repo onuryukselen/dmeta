@@ -1,6 +1,7 @@
 /* eslint-disable */
 import axios from 'axios';
 import XLSX from 'xlsx';
+import moment from 'moment';
 const JSON5 = require('json5');
 import { saveAs } from 'file-saver';
 
@@ -1119,8 +1120,10 @@ const bindEventHandlers = () => {
     const data = $s.data[collid];
     const collFields = getFieldsOfCollection(collid);
     let refFields = [];
+    let dateFields = [];
     for (var i = 0; i < collFields.length; i++) {
       if (collFields[i].ref) refFields.push(collFields[i].name);
+      if (collFields[i].type == 'Date') dateFields.push(collFields[i].name);
     }
     for (let i = 0; i < columnsObj.length; i++) {
       // skip first column for checkboxes
@@ -1140,6 +1143,16 @@ const bindEventHandlers = () => {
             newObj[`${collName}.${trimmedCol}_id`] = data[i][col]._id;
           } else {
             newObj[`${collName}.${trimmedCol}_DID`] = '';
+          }
+        } else if (dateFields.includes(col) && data[i][col]) {
+          const timestamp = Date.parse(data[i][col]);
+          if (isNaN(timestamp) == false) {
+            newObj[`${collName}.${col}`] = moment(data[i][col])
+              .utc()
+              .format('YYYY-MM-DD');
+          } else {
+            console.log('not valid timestamp', data[i][col]);
+            newObj[`${collName}.${col}`] = data[i][col];
           }
         } else if (
           (typeof data[i][col] === 'object' && data[i][col] !== null) ||
@@ -1648,11 +1661,15 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
   let ret = [];
   if (!collName) return ret;
   let refFields = [];
+  let dateFields = [];
   for (var i = 0; i < collFields.length; i++) {
     if (collFields[i].ref) refFields.push(collFields[i].name);
+    if (collFields[i].type == 'Date') dateFields.push(collFields[i].name);
   }
   const { projectPart, projectName } = getProjectData(projectID);
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}/populated`);
+  console.log(data);
+  console.log(dateFields);
   if (data) {
     $s.data[collectionID] = data;
     const dataCopy = data.slice();
@@ -1673,6 +1690,16 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
             newObj[k] = el[k][showFields[0]];
           } else {
             newObj[k] = el[k]._id;
+          }
+        } else if (dateFields.includes(k) && el[k]) {
+          const timestamp = Date.parse(el[k]);
+          if (isNaN(timestamp) == false) {
+            newObj[k] = moment(el[k])
+              .utc()
+              .format('YYYY-MM-DD');
+          } else {
+            console.log('not valid timestamp', el[k]);
+            newObj[k] = el[k];
           }
         } else if (
           (typeof el[k] === 'object' && el[k] !== null) ||

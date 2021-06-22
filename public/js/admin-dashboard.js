@@ -52,7 +52,6 @@ $s.AdminCollectionFields = [
 $s.AdminAllCollectionFields = [
   'name',
   'label',
-  'slug',
   'version',
   'projectID',
   'id',
@@ -66,7 +65,6 @@ $s.AdminAllCollectionFields = [
 $s.AdminAllProjectFields = [
   'name',
   'label',
-  'slug',
   'id',
   'restrictTo',
   'perms',
@@ -81,11 +79,6 @@ const fieldsOfProjectModel = {
     label: 'Name',
     type: 'String',
     required: true
-  },
-  slug: {
-    name: 'slug',
-    label: 'Slug',
-    type: 'String'
   },
   label: {
     name: 'label',
@@ -111,11 +104,6 @@ const fieldsOfCollectionsModel = {
     label: 'Name',
     type: 'String',
     required: true
-  },
-  slug: {
-    name: 'slug',
-    label: 'Slug',
-    type: 'String'
   },
   label: {
     name: 'label',

@@ -40,7 +40,9 @@ const refreshEventTable = async () => {
   let fomatted_data = [];
   if (data.length) {
     fomatted_data = data.map(i => {
-      i.creationDate = moment(i.creationDate).format('YYYY-MM-DD hh:mm:ss');
+      i.creationDate = moment(i.creationDate)
+        .utc()
+        .format('YYYY-MM-DD hh:mm:ss');
       i.req = JSON.stringify(i.req);
       return i;
     });
