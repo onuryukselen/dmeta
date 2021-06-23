@@ -30,6 +30,7 @@ router
   .patch(
     authController.requireLogin,
     authController.restrictTo('admin', 'project-admin'),
+    fieldsController.setBefore,
     fieldsController.setAfter,
     eventLogController.setAdminEventLog('field'),
     fieldsController.updateField
@@ -37,6 +38,7 @@ router
   .delete(
     authController.requireLogin,
     authController.restrictTo('admin'),
+    fieldsController.setBefore,
     fieldsController.setAfter,
     eventLogController.setAdminEventLog('field'),
     fieldsController.deleteField

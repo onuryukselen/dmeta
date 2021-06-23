@@ -34,7 +34,7 @@ exports.deleteOne = Model =>
     if (!doc || (Array.isArray(doc) && doc.length === 0)) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
-    if (res.locals.Before) res.locals.Before();
+    if (res.locals.Before) await res.locals.Before();
     const delDoc = await Model.findByIdAndDelete(req.params.id);
     if (!delDoc || (Array.isArray(delDoc) && delDoc.length === 0)) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
@@ -89,7 +89,11 @@ exports.updateOne = Model =>
         return next(new AppError(`No permission to update document id:${req.params.id}!`, 404));
       }
     }
-    if (res.locals.Before) res.locals.Before();
+    if (res.locals.Before) {
+      console.log('0');
+      await res.locals.Before();
+      console.log('9');
+    }
 
     const doc = await Model.findByIdAndUpdate(
       req.params.id,
@@ -104,7 +108,7 @@ exports.updateOne = Model =>
     if (!doc) {
       return next(new AppError(`No document found with ${req.params.id}!`, 404));
     }
-    if (res.locals.After) res.locals.After();
+    if (res.locals.After) await res.locals.After();
     if (res.locals.EventLog) res.locals.EventLog('update', doc);
 
     res.status(200).json({

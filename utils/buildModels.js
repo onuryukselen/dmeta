@@ -348,6 +348,7 @@ const buildSchema = (schema, modelName, fields) => {
 
 // Update mongoose models when collection or field changes
 // oldColl -> old collection before query
+// old model will be deleted & new model will be created with new collection and field data
 exports.updateModel = async (collectionId, oldColl) => {
   try {
     console.log('* Update Collection Model ID:', collectionId);

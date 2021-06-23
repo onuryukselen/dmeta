@@ -279,9 +279,6 @@ exports.replaceRunOuts = async (doc, req, res, next) => {
       const file_id = fileIDs[i];
       const file_name = fileNames[i];
       const sample_id = sampleIDs[i];
-      console.log('file_id', file_id);
-      console.log('file_name', file_name);
-      console.log('sample_id', sample_id);
       const queryParams = `?file_id=${file_id}&run_id=${run_id}`;
       // eslint-disable-next-line no-await-in-loop
       let outCollectionDoc = await exports.getDataByQueryParams(

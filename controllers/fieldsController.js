@@ -12,6 +12,10 @@ exports.setCollectionId = (req, res, next) => {
   next();
 };
 
+exports.getFieldById = async id => {
+  return await Fields.findById(id).lean();
+};
+
 exports.getFieldsOfCollection = async collectionID => {
   return await Fields.find({ collectionID }).lean();
 };
@@ -28,25 +32,73 @@ exports.setFilter = (req, res, next) => {
   next();
 };
 
+//if field name has changed -> fields of data should be updated
+exports.updateDataFields = async (oldField, newField) => {
+  if (oldField.collectionID && oldField.name && newField.name) {
+    const collectionID = oldField.collectionID;
+    const oldFieldName = oldField.name;
+    const newFieldName = newField.name;
+    const collData = await collectionsController.getCollectionById(collectionID);
+    const collectionName = collData.name;
+    const projectID = collData.projectID;
+    const projectData = await projectsController.getProjectById(projectID);
+    const projectName = projectData ? projectData.name : '';
+    const modelName = `${projectName}_${collectionName}`;
+    const Model = buildModels.modelObj[modelName];
+
+    let renameObj = {};
+    renameObj[oldFieldName] = newFieldName;
+    try {
+      await Model.updateMany({}, { $rename: renameObj }, { multi: true });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+};
+
 // asign commands to `res.locals.After` which will be executed after query is completed
 exports.setAfter = async (req, res, next) => {
   let collectionID;
   try {
     // for createField
-    if (req.body.collectionID) collectionID = req.body.collectionID;
+    if (req.body.collectionID) {
+      collectionID = req.body.collectionID;
+    }
     // for updateField and deleteField
     else if (req.params.id) {
       const field = await Fields.findById(req.params.id);
       if (field.collectionID) collectionID = field.collectionID;
     }
     if (collectionID) {
-      res.locals.After = () => buildModels.updateModel(collectionID, null);
+      res.locals.After = async () => {
+        // for updateField and deleteField
+        if (req.params.id && res.locals.BeforeQuery) {
+          // if field name is changed -> data field names should be updated
+          const oldField = res.locals.BeforeQuery;
+          const newField = await Fields.findById(req.params.id);
+          await exports.updateDataFields(oldField, newField);
+        }
+        buildModels.updateModel(collectionID, null);
+      };
       return next();
     }
     return next(new AppError(`CollectionID or FieldID is not defined!`, 404));
   } catch {
     return next(new AppError(`Field is not found.`, 404));
   }
+};
+
+// set commands before update/delete query is completed
+exports.setBefore = (req, res, next) => {
+  // for update and delete field
+  if (req.params.id) {
+    res.locals.Before = async function() {
+      const field = await exports.getFieldById(req.params.id);
+      res.locals.BeforeQuery = field;
+    };
+    return next();
+  }
+  return next(new AppError(`Field id not found!`, 404));
 };
 
 // transfer data of fields to targetCollection

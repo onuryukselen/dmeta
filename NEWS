@@ -4,6 +4,7 @@ Slug removed from collection.
 Slug and parentCollectionID removed from documentation.
 Delete button removed from fields section.
 Admin event log added in event history page.
+Field of data will be updated if field name has changed.
 
 
 16.06.2021 Version 0.0.46
