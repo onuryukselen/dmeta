@@ -1,7 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/authController');
-
 const fieldsController = require('../controllers/fieldsController');
+const eventLogController = require('../controllers/eventLogController');
 
 const router = express.Router({ mergeParams: true });
 
@@ -20,6 +20,7 @@ router
     authController.restrictTo('admin', 'project-admin'),
     fieldsController.setCollectionId,
     fieldsController.setAfter,
+    eventLogController.setAdminEventLog('field'),
     fieldsController.createField
   );
 
@@ -30,12 +31,14 @@ router
     authController.requireLogin,
     authController.restrictTo('admin', 'project-admin'),
     fieldsController.setAfter,
+    eventLogController.setAdminEventLog('field'),
     fieldsController.updateField
   )
   .delete(
     authController.requireLogin,
-    authController.restrictTo('admin', 'project-admin'),
+    authController.restrictTo('admin'),
     fieldsController.setAfter,
+    eventLogController.setAdminEventLog('field'),
     fieldsController.deleteField
   );
 

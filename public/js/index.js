@@ -45,6 +45,7 @@ const loginForm = document.querySelector('#loginOuterDiv');
 const allProjectNav = document.querySelector('#allProjectNav');
 const allProfileNav = document.querySelector('#allProfileNav');
 const allEventNav = document.querySelector('#allEventNav');
+const allAdminEventNav = document.querySelector('#allAdminEventNav');
 const adminAllProjectNav = document.querySelector('#admin-allProjectNav');
 const dmetaVersionBut = document.querySelector('#dmetaVersionBut');
 
@@ -166,8 +167,13 @@ if (loginForm) {
     loadProfileTabContent(userRole);
   }
 
+  // first get adminEventNavbar then allEventNav
+  if (allAdminEventNav) {
+    const adminEventNavbar = await getEventNavbar('adminevents');
+    $('#allAdminEventNav').append(adminEventNavbar);
+  }
   if (allEventNav) {
-    const eventNavbar = await getEventNavbar();
+    const eventNavbar = await getEventNavbar('events');
     $('#allEventNav').append(eventNavbar);
     await loadEventContent(userRole);
   }

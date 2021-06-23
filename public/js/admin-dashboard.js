@@ -1807,15 +1807,18 @@ const refreshCollectionNavbar = async (projectId, type) => {
       } else {
         let dbEditor = true;
         let childRef = true;
+        let delBtn = false;
         if (tabs[i].id == `all_collections_${projectId}`) {
           dbEditor = false;
           childRef = false;
+          delBtn = true;
         }
         colNavbar = getCollectionTable(collectionId, projectId);
         crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
           excel: false,
           dbEditor: dbEditor,
-          childRef: childRef
+          childRef: childRef,
+          delBtn: delBtn
         });
       }
 
@@ -1900,7 +1903,8 @@ export const refreshAdminProjectNavbar = async () => {
     if (tabs[i].id == 'all_projects') {
       colNavbar = getCollectionTable(projectId, projectId);
       crudButtons = getCrudButtons(projectId, projectLabel, projectName, projectId, {
-        excel: false
+        excel: false,
+        delBtn: true
       });
     } else {
       colNavbar = await refreshCollectionNavbar(projectId, 'return');

@@ -650,7 +650,8 @@ const refreshCollectionDiv = async (projectID, collectionID, dry) => {
     const colExcelTable = getExcelTable(`spreadsheet-${collectionID}`);
     const colDropzone = getDropzoneTable(collectionID);
     const crudButtons = getCrudButtons(collectionID, collectionLabel, collectionName, projectID, {
-      excel: true
+      excel: true,
+      delBtn: true
     });
     const outerDiv = `#collection-outerdiv-${collectionID}-${projectID}`;
     const isEmptyDiv = $(outerDiv).html() === '';
@@ -1489,6 +1490,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
   let tableBut = '';
   let dbEditorBut = '';
   let childRefBut = '';
+  let delBtn = '';
   if (settings.dbEditor) {
     dbEditorBut = `
     <button class="btn btn-primary edit-field-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Transfer Fields Data" ${data}>
@@ -1525,6 +1527,12 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
     </button>
     `;
   }
+  if (settings.delBtn) {
+    delBtn = `<button class="btn btn-primary delete-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Delete" ${data}>
+  <i class="cil-trash"> </i>
+</button>`;
+  }
+
   const ret = `
   <div class="row" style="margin-top: 20px;">
     <div class="col-sm-12">
@@ -1534,9 +1542,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
       <button class="btn btn-primary edit-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Edit" ${data}>
         <i class="cil-pencil"> </i>
       </button>
-      <button class="btn btn-primary delete-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Delete" ${data}>
-        <i class="cil-trash"> </i>
-      </button>
+      ${delBtn}
       ${tableBut}
       ${childRefBut}
       ${dbEditorBut}
@@ -1956,7 +1962,8 @@ const getCollectionNavbar = async projectId => {
         colExcelTable = getExcelTable(`spreadsheet-${collectionId}`);
         colDropzone = getDropzoneTable(collectionId);
         crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
-          excel: true
+          excel: true,
+          delBtn: true
         });
       }
       const contentDiv = `
