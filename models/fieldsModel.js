@@ -86,6 +86,7 @@ const fieldsSchema = new mongoose.Schema(
     uppercase: { type: 'boolean' },
     trim: { type: 'boolean' },
     header: { type: 'boolean' },
+    identifier: { type: 'boolean' },
     minlength: { type: 'Number' },
     maxlength: { type: 'Number' },
     various: { type: 'Mixed' },

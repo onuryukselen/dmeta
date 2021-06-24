@@ -278,7 +278,7 @@ export const hideFormError = formValues => {
 export const getDropdownFields = (data, fieldsOfCollection) => {
   let header = [];
   if (fieldsOfCollection) {
-    const headerFields = fieldsOfCollection.filter(f => f.header === true);
+    const headerFields = fieldsOfCollection.filter(f => f.identifier === true);
     if (headerFields) {
       header = headerFields.map(field => field.name);
     }

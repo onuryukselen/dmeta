@@ -30,6 +30,7 @@ $s.AdminCollectionFields = [
   'unique',
   'hidden',
   'default',
+  'identifier',
   'enum',
   'ontology',
   'checkvalid',
@@ -40,7 +41,6 @@ $s.AdminCollectionFields = [
   'minlength',
   'maxlength',
   'trim',
-  'header',
   'ref',
   'perms',
   'collectionID',
@@ -210,6 +210,11 @@ const fieldsOfFieldsModel = {
     label: 'Enum',
     type: 'Mixed'
   },
+  identifier: {
+    name: 'identifier',
+    label: 'Identifier',
+    type: 'boolean'
+  },
   min: {
     name: 'min',
     label: 'Min',
@@ -235,11 +240,7 @@ const fieldsOfFieldsModel = {
     label: 'Trim',
     type: 'boolean'
   },
-  header: {
-    name: 'header',
-    label: 'Header',
-    type: 'boolean'
-  },
+  
   minlength: {
     name: 'minlength',
     label: 'Minlength',
