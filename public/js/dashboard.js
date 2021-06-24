@@ -191,27 +191,71 @@ const getExcelNavbar = (collId, tabs) => {
   return ret;
 };
 
-const getKeyValueExcel = (cleanHeader, rowData) => {
+const getRefCollIdentifiers = (projectID, collid) => {
+  let projectName = '';
+  const projectData = $s.projects.filter(p => p._id == projectID);
+  if (projectData && projectData[0] && projectData[0].name) projectName = projectData[0].name;
+  const collFields = getFieldsOfCollection(collid);
+  let refFields = []; // ref field names
+  let refCollectionIDs = []; // extract from ref data
+  let refCollIdentifiers = []; // use  from ref data
+
+  for (let i = 0; i < collFields.length; i++) {
+    if (collFields[i].ref) {
+      let refCollectionID = '';
+      let refFieldIdent = '';
+      refFields.push(collFields[i].name);
+      if (collFields[i].ref.startsWith(projectName + '_')) {
+        const refColName = collFields[i].ref.replace(new RegExp('^' + projectName + '_'), '');
+        if (refColName) {
+          const refCoData = $s.collections.filter(c => c.name == refColName);
+          if (refCoData && refCoData[0] && refCoData[0]._id) {
+            refCollectionID = refCoData[0]._id;
+            const refFieldIdenData = $s.fields.filter(
+              f => f.collectionID == refCollectionID && f.identifier
+            );
+            if (refFieldIdenData && refFieldIdenData[0] && refFieldIdenData[0].name) {
+              refFieldIdent = refFieldIdenData[0].name;
+            }
+          }
+        }
+        refCollectionIDs.push(refCollectionID);
+        refCollIdentifiers.push(refFieldIdent);
+      }
+    }
+  }
+  return { refFields, refCollectionIDs, refCollIdentifiers };
+};
+
+const getKeyValueExcel = (
+  cleanHeader,
+  rowData,
+  refFields,
+  refCollectionIDs,
+  refCollIdentifiers
+) => {
   let key = '';
   let value = '';
-  // if header ends with _DID, get _id from data collections
-  if (cleanHeader.match(/(.*)_DID$/)) {
-    const refCollName = cleanHeader.match(/(.*)_DID$/)[1];
-    key = `${refCollName}_id`;
+  // find reference columns and get their ids
+  console.log('refFields', refFields);
+  console.log('refCollectionIDs', refCollectionIDs);
+  console.log('refCollIdentifiers', refCollIdentifiers);
+  if (refFields.indexOf(cleanHeader) > -1) {
+    const refIndex = refFields.indexOf(cleanHeader);
+    const refCollectionID = refCollectionIDs[refIndex];
+    const refCollIdentifier = refCollIdentifiers[refIndex];
+    key = cleanHeader;
     value = rowData;
     console.log('key', key);
     console.log('value', value);
     // get _id info
-    const refColl = $s.collections.filter(col => col.name === refCollName);
-    if (refColl && refColl[0] && refColl[0]._id) {
-      const collData = $s.data[refColl[0]._id];
-      console.log('$s.data', $s.data);
-      console.log('collData_id', refColl[0]._id);
+    if (refCollectionID) {
+      const collData = $s.data[refCollectionID];
       console.log('collData', collData);
 
-      const selData = collData.filter(d => d.DID == rowData);
+      const selData = collData.filter(d => d[refCollIdentifier] == rowData);
       if (selData && selData[0] && selData[0]._id) {
-        key = `${refCollName}_id`;
+        key = cleanHeader;
         value = selData[0]._id;
       }
     }
@@ -230,31 +274,48 @@ const syncTableData = async (tableID, collid, collName, projectid) => {
   const data = hot.getData();
   const header = hot.getColHeader();
   const { projectPart } = getProjectData(projectid);
+  const { refFields, refCollectionIDs, refCollIdentifiers } = getRefCollIdentifiers(
+    projectid,
+    collid
+  );
   for (let i = 0; i < data.length; i++) {
     let updatedObj = {};
     let insertObj = {};
     const rowData = data[i];
-
     let updtCheck = false;
     for (let k = 0; k < header.length; k++) {
       if (k == 0 || k == 1) continue; // Skip Update status and update log columns
-      const cleanHeader = header[k].replace(`${collName}.`, '');
-      const { key, value } = getKeyValueExcel(cleanHeader, rowData[k]);
-      if (key != '_id' && key != 'DID' && value) insertObj[key] = value;
       const rowProperties = hot.getCellMeta(i, k);
-
-      if (
-        key != '_id' &&
-        key != 'DID' &&
-        rowProperties.className &&
-        rowProperties.className == 'bg-yellow'
-      ) {
+      if (rowProperties.className && rowProperties.className == 'bg-yellow') {
         updtCheck = true;
-        updatedObj[key] = value;
       }
     }
-    console.log('updtCheck', i, updtCheck, updatedObj, insertObj);
+
     if (updtCheck) {
+      for (let k = 0; k < header.length; k++) {
+        if (k == 0 || k == 1) continue; // Skip Update status and update log columns
+        const rowProperties = hot.getCellMeta(i, k);
+        const cleanHeader = header[k].replace(`${collName}.`, '');
+        const { key, value } = getKeyValueExcel(
+          cleanHeader,
+          rowData[k],
+          refFields,
+          refCollectionIDs,
+          refCollIdentifiers
+        );
+        if (key != '_id' && key != 'DID' && value) insertObj[key] = value;
+
+        if (
+          key != '_id' &&
+          key != 'DID' &&
+          rowProperties.className &&
+          rowProperties.className == 'bg-yellow'
+        ) {
+          updatedObj[key] = value;
+        }
+      }
+      console.log('updtCheck', i, updtCheck, updatedObj, insertObj);
+
       try {
         if (!$.isEmptyObject(updatedObj)) {
           const rowID = getExcelRowID(collid, collName, header, rowData);
@@ -366,7 +427,7 @@ const getExcelRowID = (collid, collName, header, rowData) => {
   let idField = '';
   // search for ${collName}_id, or ${collName}.DID
   // get identifier field of collection
-  const identifierField = $s.fields.filter(f => f.identifier);
+  const identifierField = $s.fields.filter(f => f.collectionID == collid && f.identifier);
   if (identifierField && identifierField[0] && identifierField[0].name) {
     idField = identifierField[0].name;
     const idFieldIndex = header.indexOf(`${collName}.${idField}`);
@@ -1120,15 +1181,17 @@ const bindEventHandlers = () => {
     await editDataModal(this);
   });
 
-  const prepExcelData = (collid, rowData, columnsObj, collName, format) => {
+  const prepExcelData = (projectID, collid, rowData, columnsObj, collName, format) => {
     const selColumns = [];
     let reOrderedData = [];
+    const { refFields, refCollectionIDs, refCollIdentifiers } = getRefCollIdentifiers(
+      projectID,
+      collid
+    );
     const data = $s.data[collid];
     const collFields = getFieldsOfCollection(collid);
-    let refFields = [];
-    let dateFields = [];
+    let dateFields = []; // date field names
     for (var i = 0; i < collFields.length; i++) {
-      if (collFields[i].ref) refFields.push(collFields[i].name);
       if (collFields[i].type == 'Date') dateFields.push(collFields[i].name);
     }
     for (let i = 0; i < columnsObj.length; i++) {
@@ -1136,19 +1199,20 @@ const bindEventHandlers = () => {
       if (i === 0 && columnsObj[i].mData == '_id') continue;
       selColumns.push(columnsObj[i].mData);
     }
-
     for (let i = 0; i < data.length; i++) {
       let newObj = {};
       for (let k = 0; k < selColumns.length; k++) {
         const col = selColumns[k];
         if (refFields.includes(col)) {
-          const trimmedCol = col.replace(new RegExp('_id$'), '');
-          if (data[i][col] && data[i][col].DID) {
-            newObj[`${collName}.${trimmedCol}_DID`] = data[i][col].DID;
-          } else if (data[i][col] && data[i][col]._id) {
-            newObj[`${collName}.${trimmedCol}_id`] = data[i][col]._id;
-          } else {
-            newObj[`${collName}.${trimmedCol}_DID`] = '';
+          newObj[`${collName}.${col}`] = '';
+          const refIndex = refFields.indexOf(col);
+          const refCollectionID = refCollectionIDs[refIndex];
+          const refCollIdentifier = refCollIdentifiers[refIndex];
+          if (data[i][col] && data[i][col]._id && $s.data[refCollectionID]) {
+            const refData = $s.data[refCollectionID].filter(d => d._id == data[i][col]._id);
+            if (refData && refData[0] && refData[0][refCollIdentifier]) {
+              newObj[`${collName}.${col}`] = refData[0][refCollIdentifier];
+            }
           }
         } else if (dateFields.includes(col) && data[i][col]) {
           const timestamp = Date.parse(data[i][col]);
@@ -1191,13 +1255,14 @@ const bindEventHandlers = () => {
     const collid = $(this).attr('collid');
     const colllabel = $(this).attr('colllabel');
     const collName = $(this).attr('collname');
+    const projectID = $(this).attr('projectID');
     const datatable = $(`#${collid}`).DataTable();
     const rowData = datatable
       .rows({ order: 'applied' })
       .data()
       .toArray();
     let columnsObj = datatable.init().columns;
-    const excelData = prepExcelData(collid, rowData, columnsObj, collName, 'object');
+    const excelData = prepExcelData(projectID, collid, rowData, columnsObj, collName, 'object');
     if (excelData && excelData[0]) {
       const wb = XLSX.utils.book_new();
       wb.SheetNames.push(colllabel);
@@ -1425,13 +1490,14 @@ const bindEventHandlers = () => {
   $(document).on('click', `button.edit-excel-data`, async function(e) {
     const collid = $(this).attr('collid');
     const collName = $(this).attr('collname');
+    const projectID = $(this).attr('projectID');
     const datatable = $(`#${collid}`).DataTable();
     const rowData = datatable
       .rows()
       .data()
       .toArray();
     let columnsObj = datatable.init().columns;
-    const excelData = prepExcelData(collid, rowData, columnsObj, collName, 'array');
+    const excelData = prepExcelData(projectID, collid, rowData, columnsObj, collName, 'array');
     const statusExcelData = addStatusColumns(excelData);
     let header = statusExcelData.shift();
     $(this)
