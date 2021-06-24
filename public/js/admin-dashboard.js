@@ -174,6 +174,11 @@ const fieldsOfFieldsModel = {
     label: 'Unique',
     type: 'boolean'
   },
+  identifier: {
+    name: 'identifier',
+    label: 'Identifier',
+    type: 'boolean'
+  },
   hidden: {
     name: 'hidden',
     label: 'Hidden',
@@ -185,6 +190,7 @@ const fieldsOfFieldsModel = {
     type: 'Mixed',
     default: false
   },
+
   ontology: {
     name: 'ontology',
     label: 'Ontology',
@@ -210,11 +216,7 @@ const fieldsOfFieldsModel = {
     label: 'Enum',
     type: 'Mixed'
   },
-  identifier: {
-    name: 'identifier',
-    label: 'Identifier',
-    type: 'boolean'
-  },
+
   min: {
     name: 'min',
     label: 'Min',
@@ -240,7 +242,7 @@ const fieldsOfFieldsModel = {
     label: 'Trim',
     type: 'boolean'
   },
-  
+
   minlength: {
     name: 'minlength',
     label: 'Minlength',

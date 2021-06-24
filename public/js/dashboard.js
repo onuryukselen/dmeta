@@ -52,12 +52,12 @@ const ajaxCall = async (method, url) => {
 const getTableHeaders = collID => {
   let ret = '';
   ret += `<th></th>`; // for checkboxes
-  ret += `<th>DID</th>`;
+  // ret += `<th>DID</th>`;
   for (var i = 0; i < $s.fields.length; i++) {
     if ($s.fields[i].collectionID == collID && $s.fields[i].label && $s.fields[i].hidden !== true)
       ret += `<th>${$s.fields[i].label}</th>`;
   }
-  ret += `<th>ID</th>`;
+  // ret += `<th>ID</th>`;
   ret += `<th>Permission</th>`;
   return ret;
 };
@@ -363,15 +363,20 @@ const createDropzone = (id, buttonID, destroy) => {
 
 const getExcelRowID = (collid, collName, header, rowData) => {
   let id = '';
+  let idField = '';
   // search for ${collName}_id, or ${collName}.DID
-  const indexID = header.indexOf(`${collName}._id`);
-  const indexDID = header.indexOf(`${collName}.DID`);
-  if (indexID != -1 && rowData[indexID]) return rowData[indexID];
-  if (indexDID != -1 && rowData[indexDID]) {
-    const data = $s.data[collid];
-    const selData = data.filter(d => d.DID == rowData[indexDID]);
-    if (selData && selData[0] && selData[0]._id) return selData[0]._id;
+  // get identifier field of collection
+  const identifierField = $s.fields.filter(f => f.identifier);
+  if (identifierField && identifierField[0] && identifierField[0].name) {
+    idField = identifierField[0].name;
+    const idFieldIndex = header.indexOf(`${collName}.${idField}`);
+    if (idFieldIndex != -1 && rowData[idFieldIndex]) {
+      const data = $s.data[collid];
+      const selData = data.filter(d => d[idField] == rowData[idFieldIndex]);
+      if (selData && selData[0] && selData[0]._id) return selData[0]._id;
+    }
   }
+
   return id;
 };
 
@@ -1301,7 +1306,7 @@ const bindEventHandlers = () => {
         const splitted = columnName.split('.');
         if (splitted.length !== 2) {
           showInfoModal(
-            'Header format is not recognized. Collection name and field name should separated with dot symbol. e.g. exp.name, exp._id, exp_series.DID'
+            'Header format is not recognized. Collection name and field name should separated with dot symbol. e.g. exp.name, series.name'
           );
         } else {
           const collName = splitted[0];
@@ -1324,7 +1329,6 @@ const bindEventHandlers = () => {
     const projectid = $(this).attr('projectid');
     const tableID = `spreadsheet-${collid}`;
     // format checker -> only one collection should be defined.
-    // _id or DID field should be found
     await syncTableData(tableID, collid, collName, projectid);
     refreshDataTables(collid, collid, collName, projectid);
   });
@@ -1731,11 +1735,11 @@ export const refreshDataTables = async (TableID, collectionID, collName, project
   if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
     let columns = [];
     columns.push({ data: '_id' }); // for checkboxes
-    columns.push({ data: 'DID' }); // dolphin id
+    // columns.push({ data: 'DID' }); // dolphin id
     for (var i = 0; i < collFields.length; i++) {
       columns.push({ data: collFields[i].name });
     }
-    columns.push({ data: '_id' });
+    // columns.push({ data: '_id' });
     columns.push({ data: 'perms' });
     var dataTableObj = {
       columns: columns,

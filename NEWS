@@ -5,7 +5,9 @@ Slug and parentCollectionID removed from documentation.
 Delete button removed from fields section.
 Admin event log added in event history page.
 Field of data will be updated if field name has changed.
-
+Header field renamed as identifier for fields.
+Unique identifier field required for each collection.
+Excel import could be done with unique identifier.
 
 16.06.2021 Version 0.0.46
 Tree view tab added into dashboard and admin page.
