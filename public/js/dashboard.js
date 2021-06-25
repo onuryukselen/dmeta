@@ -93,16 +93,87 @@ const makeReadOnlyUpdate = hot => {
   }
 };
 
-// highlight imported table data
-const makeUpdatedTableData = tableID => {
+const getExcelColumns = collid => {
+  const datatable = $(`#${collid}`).DataTable();
+  let columnsObj = datatable.init().columns;
+  let selColumns = [];
+  for (let i = 0; i < columnsObj.length; i++) {
+    if (i === 0 && columnsObj[i].mData == '_id') continue; // skip first column for checkboxes
+    if (columnsObj[i].mData == 'perms') continue;
+    selColumns.push(columnsObj[i].mData);
+  }
+  return selColumns;
+};
+
+// highlight imported and updated table data
+const makeUpdatedTableData = (tableID, projectid) => {
+  let identifierName = '';
+  let identifierIndex = '';
+  let collName = '';
+  let collid = '';
   const hot = $s.handsontables[tableID];
   const data = hot.getData();
-  for (let r = 0; r < data.length; r++) {
-    for (let c = 0; c < data[r].length; c++) {
-      if (c === 0 || c === 1) continue;
-      hot.setCellMeta(r, c, 'className', 'bg-yellow');
+
+  // 1. get header and detect indentifier column
+  const header = hot.getColHeader();
+  for (let k = 0; k < header.length; k++) {
+    if (k == 0 || k == 1) continue; // Skip Update status and update log columns
+    const headerSplit = header[k].split('.');
+    if (headerSplit[0] && headerSplit[1]) {
+      collName = headerSplit[0];
+      const collData = $s.collections.filter(c => c.name == collName && c.projectID == projectid);
+      if (collData && collData[0] && collData[0]._id) {
+        collid = collData[0]._id;
+        const identifierData = $s.fields.filter(f => f.collectionID == collid && f.identifier);
+        if (identifierData && identifierData[0] && identifierData[0].name) {
+          identifierName = identifierData[0].name;
+          identifierIndex = k;
+          break;
+        }
+      }
     }
   }
+  if (!identifierName) {
+    showInfoModal('Identifier Column Not Found.');
+    return;
+  }
+
+  const fields = $s.fields.filter(f => f.collectionID === collid);
+  const fieldsArr = fields.map(f => f.name);
+  const excelData = prepExcelData(projectid, collid, fieldsArr, collName, 'object', 'short');
+  for (let r = 0; r < data.length; r++) {
+    let existingDataFound = false;
+    const rowData = data[r];
+    const identifierValue = rowData[identifierIndex];
+    // 2. based on identifier column check existing data
+    if (identifierValue && excelData) {
+      const existingData = excelData.filter(d => d[identifierName] == identifierValue);
+      if (existingData && existingData[0]) {
+        existingDataFound = true;
+        for (let c = 0; c < header.length; c++) {
+          if (c == 0 || c == 1 || c == identifierIndex) continue;
+          const key = header[c].replace(`${collName}.`, '');
+          let value = rowData[c];
+          if (rowData[c] === null) {
+            value = '';
+          }
+
+          if (value === '' && existingData[0][key] === undefined) continue;
+          if (value === '' && existingData[0][key] === null) continue;
+          if (existingData[0][key] == value) continue;
+          hot.setCellMeta(r, c, 'className', 'bg-yellow');
+        }
+      }
+      // if existingDataFound not found, then heightlight all of them
+      if (!existingDataFound) {
+        for (let c = 0; c < rowData.length; c++) {
+          if (c === 0 || c === 1) continue;
+          hot.setCellMeta(r, c, 'className', 'bg-yellow');
+        }
+      }
+    }
+  }
+
   hot.render();
 };
 
@@ -330,7 +401,6 @@ const syncTableData = async (tableID, collid, collName, projectid) => {
               collid,
               i
             );
-            console.log(res);
             // insert new document
           } else {
             res = await excelCrudCall(
@@ -728,7 +798,7 @@ const refreshCollectionDiv = async (projectID, collectionID, dry) => {
     const tableID = collectionID;
     const colTable = getCollectionTable(collectionID, 'default');
     const colExcelTable = getExcelTable(`spreadsheet-${collectionID}`);
-    const colDropzone = getDropzoneTable(collectionID);
+    const colDropzone = getDropzoneTable(collectionID, projectID);
     const crudButtons = getCrudButtons(collectionID, collectionLabel, collectionName, projectID, {
       excel: true,
       delBtn: true
@@ -959,6 +1029,77 @@ export const editDataModal = async (button, selectedRows, callback) => {
   } else if (rows_selected.length > 0) {
     $('#crudModal').modal('show');
   }
+};
+
+const prepExcelData = (projectID, collid, selColumns, collName, format, fieldType) => {
+  let reOrderedData = [];
+  const { refFields, refCollectionIDs, refCollIdentifiers } = getRefCollIdentifiers(
+    projectID,
+    collid
+  );
+  const data = $s.data[collid];
+  const collFields = getFieldsOfCollection(collid);
+  let dateFields = []; // date field names
+  for (var i = 0; i < collFields.length; i++) {
+    if (collFields[i].type == 'Date') dateFields.push(collFields[i].name);
+  }
+
+  for (let i = 0; i < data.length; i++) {
+    let newObj = {};
+    for (let k = 0; k < selColumns.length; k++) {
+      const col = selColumns[k];
+      let fields = '';
+      if (fieldType == 'short') {
+        fields = col;
+      } else if (fieldType == 'long') {
+        fields = `${collName}.${col}`;
+      }
+      if (refFields.includes(col)) {
+        newObj[fields] = '';
+        const refIndex = refFields.indexOf(col);
+        const refCollectionID = refCollectionIDs[refIndex];
+        const refCollIdentifier = refCollIdentifiers[refIndex];
+        if (data[i][col] && data[i][col]._id && $s.data[refCollectionID]) {
+          const refData = $s.data[refCollectionID].filter(d => d._id == data[i][col]._id);
+          if (refData && refData[0] && refData[0][refCollIdentifier]) {
+            newObj[fields] = refData[0][refCollIdentifier];
+          }
+        }
+      } else if (dateFields.includes(col) && data[i][col]) {
+        const timestamp = Date.parse(data[i][col]);
+        if (isNaN(timestamp) == false) {
+          newObj[fields] = moment(data[i][col])
+            .utc()
+            .format('YYYY-MM-DD');
+        } else {
+          console.log('not valid timestamp', data[i][col]);
+          newObj[fields] = data[i][col];
+        }
+      } else if (
+        (typeof data[i][col] === 'object' && data[i][col] !== null) ||
+        Array.isArray(data[i][col])
+      ) {
+        newObj[fields] = JSON.stringify(data[i][col]);
+      } else {
+        newObj[fields] = data[i][col];
+      }
+    }
+    reOrderedData.push(newObj);
+  }
+  if (format === 'array') {
+    let arrayData = [];
+    const header = Object.keys(reOrderedData[0]);
+    arrayData.push(header);
+    for (let i = 0; i < reOrderedData.length; i++) {
+      let newArr = [];
+      for (let h = 0; h < header.length; h++) {
+        newArr.push(reOrderedData[i][header[h]]);
+      }
+      arrayData.push(newArr);
+    }
+    reOrderedData = arrayData;
+  }
+  return reOrderedData;
 };
 
 const bindEventHandlers = () => {
@@ -1195,88 +1336,17 @@ const bindEventHandlers = () => {
     await editDataModal(this);
   });
 
-  const prepExcelData = (projectID, collid, rowData, columnsObj, collName, format) => {
-    const selColumns = [];
-    let reOrderedData = [];
-    const { refFields, refCollectionIDs, refCollIdentifiers } = getRefCollIdentifiers(
-      projectID,
-      collid
-    );
-    const data = $s.data[collid];
-    const collFields = getFieldsOfCollection(collid);
-    let dateFields = []; // date field names
-    for (var i = 0; i < collFields.length; i++) {
-      if (collFields[i].type == 'Date') dateFields.push(collFields[i].name);
-    }
-    for (let i = 0; i < columnsObj.length; i++) {
-      // skip first column for checkboxes
-      if (i === 0 && columnsObj[i].mData == '_id') continue;
-      selColumns.push(columnsObj[i].mData);
-    }
-    for (let i = 0; i < data.length; i++) {
-      let newObj = {};
-      for (let k = 0; k < selColumns.length; k++) {
-        const col = selColumns[k];
-        if (refFields.includes(col)) {
-          newObj[`${collName}.${col}`] = '';
-          const refIndex = refFields.indexOf(col);
-          const refCollectionID = refCollectionIDs[refIndex];
-          const refCollIdentifier = refCollIdentifiers[refIndex];
-          if (data[i][col] && data[i][col]._id && $s.data[refCollectionID]) {
-            const refData = $s.data[refCollectionID].filter(d => d._id == data[i][col]._id);
-            if (refData && refData[0] && refData[0][refCollIdentifier]) {
-              newObj[`${collName}.${col}`] = refData[0][refCollIdentifier];
-            }
-          }
-        } else if (dateFields.includes(col) && data[i][col]) {
-          const timestamp = Date.parse(data[i][col]);
-          if (isNaN(timestamp) == false) {
-            newObj[`${collName}.${col}`] = moment(data[i][col])
-              .utc()
-              .format('YYYY-MM-DD');
-          } else {
-            console.log('not valid timestamp', data[i][col]);
-            newObj[`${collName}.${col}`] = data[i][col];
-          }
-        } else if (
-          (typeof data[i][col] === 'object' && data[i][col] !== null) ||
-          Array.isArray(data[i][col])
-        ) {
-          newObj[`${collName}.${col}`] = JSON.stringify(data[i][col]);
-        } else {
-          newObj[`${collName}.${col}`] = data[i][col];
-        }
-      }
-      reOrderedData.push(newObj);
-    }
-    if (format === 'array') {
-      let arrayData = [];
-      const header = Object.keys(reOrderedData[0]);
-      arrayData.push(header);
-      for (let i = 0; i < reOrderedData.length; i++) {
-        let newArr = [];
-        for (let h = 0; h < header.length; h++) {
-          newArr.push(reOrderedData[i][header[h]]);
-        }
-        arrayData.push(newArr);
-      }
-      reOrderedData = arrayData;
-    }
-    return reOrderedData;
-  };
-
   $(document).on('click', `button.export-excel-data`, async function(e) {
     const collid = $(this).attr('collid');
     const colllabel = $(this).attr('colllabel');
     const collName = $(this).attr('collname');
     const projectID = $(this).attr('projectID');
-    const datatable = $(`#${collid}`).DataTable();
     const rowData = datatable
       .rows({ order: 'applied' })
       .data()
       .toArray();
-    let columnsObj = datatable.init().columns;
-    const excelData = prepExcelData(projectID, collid, rowData, columnsObj, collName, 'object');
+    const selColumns = getExcelColumns(collid);
+    const excelData = prepExcelData(projectID, collid, selColumns, collName, 'object', 'long');
     if (excelData && excelData[0]) {
       const wb = XLSX.utils.book_new();
       wb.SheetNames.push(colllabel);
@@ -1467,6 +1537,7 @@ const bindEventHandlers = () => {
 
   $(document).on('click', `button.load-excel-table`, async function(e) {
     const collid = $(this).attr('collid');
+    const projectid = $(this).attr('projectid');
     const dropzoneId = `excelUpload-${collid}`;
     const buttonID = `load-excel-table-${collid}`;
 
@@ -1491,11 +1562,10 @@ const bindEventHandlers = () => {
         // 4. load excel tables
         for (let i = 0; i < tabs.length; i++) {
           const statusExcelData = addStatusColumns(tabData[tabs[i]]);
-          console.log(statusExcelData);
           let header = statusExcelData.shift();
           const tableID = `import-spreadsheet-${collid}-${i}`;
           createHandsonTable(tableID, header, statusExcelData);
-          makeUpdatedTableData(tableID);
+          makeUpdatedTableData(tableID, projectid);
         }
       }
     }
@@ -1505,13 +1575,8 @@ const bindEventHandlers = () => {
     const collid = $(this).attr('collid');
     const collName = $(this).attr('collname');
     const projectID = $(this).attr('projectID');
-    const datatable = $(`#${collid}`).DataTable();
-    const rowData = datatable
-      .rows()
-      .data()
-      .toArray();
-    let columnsObj = datatable.init().columns;
-    const excelData = prepExcelData(projectID, collid, rowData, columnsObj, collName, 'array');
+    const selColumns = getExcelColumns(collid);
+    const excelData = prepExcelData(projectID, collid, selColumns, collName, 'array', 'long');
     const statExcelData = addStatusColumns(excelData);
     const statusExcelData = addEmptyRows(statExcelData, 100);
     console.log(statExcelData);
@@ -1639,14 +1704,14 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
   return ret;
 };
 
-const getDropzoneTable = collID => {
+const getDropzoneTable = (collID, projectID) => {
   const ret = `
   <form id="excelUpload-${collID}" action="/api/v1/misc/fileUpload" method="post" enctype="multipart/form-data" class="dropzone" style="display:none;">
     <div class="fallback ">
       <input name="file" type="file" />
     </div>
   </form>
-  <button style="margin-top:5px; float:right; display:none;" id="load-excel-table-${collID}" class="btn btn-primary load-excel-table" collID="${collID}" type="button"> Load Table </button>
+  <button style="margin-top:5px; float:right; display:none;" id="load-excel-table-${collID}" class="btn btn-primary load-excel-table" projectid="${projectID}" collID="${collID}" type="button"> Load Table </button>
   <div id="import-spreadsheet-div-${collID}"></div>`;
   return ret;
 };
@@ -1762,8 +1827,6 @@ const prepareDataForSingleColumn = async (collName, projectID, collectionID, col
   }
   const { projectPart, projectName } = getProjectData(projectID);
   const data = await ajaxCall('GET', `/api/v1/${projectPart}data/${collName}/populated`);
-  console.log(data);
-  console.log(dateFields);
   if (data) {
     $s.data[collectionID] = data;
     const dataCopy = data.slice();
@@ -2048,7 +2111,7 @@ const getCollectionNavbar = async projectId => {
       } else {
         colTable = getCollectionTable(collectionId, 'default');
         colExcelTable = getExcelTable(`spreadsheet-${collectionId}`);
-        colDropzone = getDropzoneTable(collectionId);
+        colDropzone = getDropzoneTable(collectionId, projectId);
         crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
           excel: true,
           delBtn: true
