@@ -9,6 +9,9 @@ Header field renamed as identifier for fields.
 Unique identifier field required for each collection.
 Excel import could be done with unique identifier. 
 Reference data defined with unique identifier while excel import/export.
+Spreadsheet scroll issue fixed. 
+Empty 100 rows added to end of the spreadsheet.
+
 
 16.06.2021 Version 0.0.46
 Tree view tab added into dashboard and admin page.

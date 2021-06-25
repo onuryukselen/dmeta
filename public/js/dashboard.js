@@ -114,7 +114,9 @@ const createHandsonTable = (tableID, header, statusExcelData) => {
     const hot = new Handsontable(container, {
       data: statusExcelData,
       colHeaders: header,
-      // height: 700,
+      width: '100%',
+      height: 500,
+      minSpareRows: 10,
       rowHeaders: true,
       stretchH: 'all',
       contextMenu: true,
@@ -393,8 +395,21 @@ const addStatusColumns = data => {
   }
   return ret;
 };
+
+const addEmptyRows = (data, numRows) => {
+  const numOfColumns = data[0].length;
+  if (numOfColumns) {
+    let emptyRow = [];
+    for (let i = 0; i < numOfColumns; i++) {
+      emptyRow.push('');
+    }
+    for (let i = 0; i < numRows; i++) {
+      data.push(emptyRow);
+    }
+  }
+  return data;
+};
 const createDropzone = (id, buttonID, destroy) => {
-  console.log('createDropzone');
   if (destroy) {
     $(`#${id}`)[0].dropzone.destroy();
     $(`#${id}`).off();
@@ -1498,7 +1513,11 @@ const bindEventHandlers = () => {
       .toArray();
     let columnsObj = datatable.init().columns;
     const excelData = prepExcelData(projectID, collid, rowData, columnsObj, collName, 'array');
-    const statusExcelData = addStatusColumns(excelData);
+    const statExcelData = addStatusColumns(excelData);
+    const statusExcelData = addEmptyRows(statExcelData, 100);
+    console.log(statExcelData);
+    console.log(statusExcelData);
+
     let header = statusExcelData.shift();
     $(this)
       .closest('.collection-outerdiv')
