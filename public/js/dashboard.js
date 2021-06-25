@@ -116,7 +116,6 @@ const createHandsonTable = (tableID, header, statusExcelData) => {
       colHeaders: header,
       width: '100%',
       height: 500,
-      minSpareRows: 10,
       rowHeaders: true,
       stretchH: 'all',
       contextMenu: true,
