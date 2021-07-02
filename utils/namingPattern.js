@@ -5,7 +5,7 @@ const Projects = require('../models/projectsModel');
 const Collections = require('../models/collectionsModel');
 const Fields = require('../models/fieldsModel');
 const buildModels = require('../utils/buildModels');
-const { getPopulateObj } = require('../controllers/dataController');
+const { getPopulateObj } = require('../utils/misc');
 
 const escapeRegExp = string => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -117,12 +117,8 @@ const getCollectionBranches = async projectID => {
   try {
     //1. get project flat treeData
     treeData = await getProjectTreeFlat(projectID);
-    console.log(treeData);
-
     //2. unflatten treeData
     const unflattenedTreeData = unflattenTreeData(treeData);
-    console.log(unflattenedTreeData);
-
     //3. extractEachBranch
     branchData = getEachBranch({ children: unflattenedTreeData });
   } catch (err) {
@@ -208,13 +204,11 @@ const getPopulatedTargetVal = async (
         //   populate: { path: 'projects_id test_id' }
         // }
         let populateObj = getPopulateObj(popArr);
-        console.log('populateObj', populateObj);
         query.populate(populateObj);
 
         let docPopulated = await query;
         const allFields = allRefFields.split(' ');
         let lastVal = docPopulated[0];
-        console.log(lastVal);
         if (!docPopulated[0]) {
           return new Error(`Parent data not found for ${targetCollField}(${varPat})`);
         }
@@ -228,19 +222,20 @@ const getPopulatedTargetVal = async (
         }
 
         if (countData) {
-          const sel = allRefFields.replace(' ', '.');
+          const matchText = Array(targetBranch.length - 2)
+            .fill('populate')
+            .join('.');
           let findObj = {};
-          console.log('targetVal', targetVal);
-          console.log('populateObj', populateObj);
-          console.log('findObj', findObj);
           // update populateObj to include finding _id:targetVal
-          _.set(populateObj, `${sel}.match._id`, String(targetVal));
-          console.log('populateObj2', populateObj);
-
+          _.set(populateObj, `${matchText}.match._id`, String(targetVal));
           let newQuery = Model.find(findObj);
           newQuery.populate(populateObj);
           let populatedCountData = await newQuery;
-          console.log('populatedCountData', populatedCountData);
+          // filter only populated data (others returned null)
+          const checkDataPath = allRefFields.replace(' ', '.');
+          populatedCountData = populatedCountData.filter(function(d) {
+            return _.get(d, checkDataPath);
+          });
           return populatedCountData.length + 1;
         }
         return targetVal;
@@ -252,8 +247,6 @@ const getPopulatedTargetVal = async (
 };
 
 exports.setNamingPattern = async function(modelID, fields, doc, next) {
-  console.log(modelID);
-  console.log(doc);
   const namingPatterns = fields.filter(f => f.namingPattern);
   for (let n = 0; n < namingPatterns.length; n++) {
     //${patient.name}_${visit.visit_num}_${AUTOINCREMENT}
@@ -261,7 +254,6 @@ exports.setNamingPattern = async function(modelID, fields, doc, next) {
     const fieldName = namingPatterns[n].name;
     const fieldId = namingPatterns[n]._id;
     const collectionID = String(namingPatterns[n].collectionID);
-    console.log(patt);
     let allVarArr = [];
     let replaceWith = [];
     const allVars = patt.match(/\${(.*?)}/g);
@@ -344,15 +336,12 @@ exports.setNamingPattern = async function(modelID, fields, doc, next) {
         return next(new Error(`Unrecognized naming pattern for ${fieldName}(${varPat})`));
       }
     }
-    console.log(allVarArr);
-
     // replace with delivered values
     for (let i = 0; i < allVarArr.length; i++) {
       const varEsc = escapeRegExp(allVarArr[i]);
       patt = patt.replace(new RegExp(`\\\${${varEsc}}`, 'gi'), replaceWith[i]);
     }
     doc[fieldName] = patt;
-    console.log(patt);
   }
   next();
 };

@@ -12,6 +12,7 @@ Reference data defined with unique identifier while excel import/export.
 Spreadsheet scroll issue fixed. 
 Empty 100 rows added to end of the spreadsheet.
 Only updated rows are highlighted in excel import.
+New field option, namingPattern, added for automatic name generation.
 
 
 16.06.2021 Version 0.0.46
