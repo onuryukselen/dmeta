@@ -223,6 +223,39 @@ const getDataSummarySchema = (collectionName, projectName, type) => {
   return null;
 };
 
+// popArr =["experiments_id","experiments_id.projects_id", "experiments_id.test_id"]
+// returns popObj:{
+//   path: 'experiments_id',
+//   populate: { path: 'projects_id test_id' }
+// }
+
+exports.getPopulateObj = popArr => {
+  let popObj = {};
+  // * prepare popObj
+  for (let i = 0; i < popArr.length; i++) {
+    if (!popArr[i].match(/\./)) {
+      // parent fields without dots
+      if (popObj.path) popObj.path += ` ${popArr[i]}`;
+      if (!popObj.path) popObj.path = popArr[i];
+    } else {
+      const fields = popArr[i].split('.');
+      const level = fields.length;
+      const lastfield = fields[level - 1];
+      const populates = `populate${'.populate'.repeat(level - 2)}`; // nested populates
+      // lodash used for setting multiple levels of object with dot notation
+      if (!_.get(popObj, `${populates}.path`)) {
+        // set `path` value with `lastfield`
+        _.set(popObj, `${populates}.path`, lastfield);
+      } else {
+        // get last `path` value and concat with `lastfield`
+        const path = _.get(popObj, `${populates}`).path;
+        _.set(popObj, `${populates}.path`, `${path} ${lastfield}`);
+      }
+    }
+  }
+  return popObj;
+};
+
 const parseSummarySchema = async (collectionName, projectName, format, type) => {
   // e.g. const schema = {
   //    collection: 'sample',
@@ -266,31 +299,9 @@ const parseSummarySchema = async (collectionName, projectName, format, type) => 
     return names.indexOf(item) == pos;
   });
   select = uniqueNames.join(' ');
-  const popObj = {};
-
-  // * prepare popObj
   const popArr = schema.populate.replace(/\s+/g, ' ').split(' ');
-  for (let i = 0; i < popArr.length; i++) {
-    if (!popArr[i].match(/\./)) {
-      // parent fields without dots
-      if (popObj.path) popObj.path += ` ${popArr[i]}`;
-      if (!popObj.path) popObj.path = popArr[i];
-    } else {
-      const fields = popArr[i].split('.');
-      const level = fields.length;
-      const lastfield = fields[level - 1];
-      const populates = `populate${'.populate'.repeat(level - 2)}`; // nested populates
-      // lodash used for setting multiple levels of object with dot notation
-      if (!_.get(popObj, `${populates}.path`)) {
-        // set `path` value with `lastfield`
-        _.set(popObj, `${populates}.path`, lastfield);
-      } else {
-        // get last `path` value and concat with `lastfield`
-        const path = _.get(popObj, `${populates}`).path;
-        _.set(popObj, `${populates}.path`, `${path} ${lastfield}`);
-      }
-    }
-  }
+  // * prepare popObj
+  const popObj = exports.getPopulateObj(popArr);
 
   // * prepare `rename` function
   // e.g. project obj: {
@@ -322,7 +333,9 @@ exports.getDataSummaryDoc = async (type, req, res, next) => {
       req.params.format,
       type
     );
-
+    console.log('targetCollection', targetCollection);
+    console.log('popObj', popObj);
+    console.log('modelObj', modelObj);
     if (!modelObj[targetCollection]) return null;
     const query = modelObj[targetCollection].find({});
     if (res.locals.Perms) {

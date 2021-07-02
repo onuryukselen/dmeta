@@ -90,9 +90,7 @@ exports.updateOne = Model =>
       }
     }
     if (res.locals.Before) {
-      console.log('0');
       await res.locals.Before();
-      console.log('9');
     }
 
     const doc = await Model.findByIdAndUpdate(

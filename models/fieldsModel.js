@@ -71,6 +71,7 @@ const fieldsSchema = new mongoose.Schema(
       }
     },
     description: { type: 'String' },
+    namingPattern: { type: 'String' },
     unique: { type: 'boolean' },
     hidden: { type: 'boolean' },
     required: { type: 'Mixed', default: false },

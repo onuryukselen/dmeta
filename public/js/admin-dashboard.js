@@ -31,6 +31,7 @@ $s.AdminCollectionFields = [
   'hidden',
   'default',
   'identifier',
+  'namingPattern',
   'enum',
   'ontology',
   'checkvalid',
@@ -178,6 +179,11 @@ const fieldsOfFieldsModel = {
     name: 'identifier',
     label: 'Identifier',
     type: 'boolean'
+  },
+  namingPattern: {
+    name: 'namingPattern',
+    label: 'Naming Pattern',
+    type: 'String'
   },
   hidden: {
     name: 'hidden',
