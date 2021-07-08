@@ -77,6 +77,7 @@ const fieldsSchema = new mongoose.Schema(
     required: { type: 'Mixed', default: false },
     checkvalid: { type: 'Mixed' },
     ontology: { type: 'Mixed' },
+    order: { type: 'Number' },
     active: { type: 'boolean', default: true },
     default: { type: 'String' },
     ref: { type: 'String' },

@@ -284,6 +284,7 @@ const ajaxCall = async (method, url) => {
 const getTableHeaders = (collID, projectId) => {
   let ret = '';
   ret += `<th></th>`; // for checkboxes
+  // ret += `<th>Order</th>`; // for order
 
   let headerList;
   if (collID == `all_collections_${projectId}`) {
@@ -341,7 +342,7 @@ const prepareDataForSingleColumn = async (tableID, projectID) => {
   }
   const dataCopy = data.slice();
   if (dataCopy) {
-    ret = dataCopy.map(el => {
+    ret = dataCopy.map((el, index) => {
       let newObj = {};
       $.each(el, function(k) {
         // custom view for all_collections tab -> projectID field (show name of the project)
@@ -362,6 +363,7 @@ const prepareDataForSingleColumn = async (tableID, projectID) => {
           newObj[k] = el[k];
         }
       });
+      // newObj['order'] = index;
       return newObj;
     });
   }
@@ -382,6 +384,7 @@ const refreshDataTables = async (TableID, projectID) => {
       fieldList = $s.AdminCollectionFields;
     }
     columns.push({ data: '_id' }); // for checkboxes
+    // columns.push({ data: 'order' }); // for order
     for (var i = 0; i < fieldList.length; i++) {
       columns.push({ data: fieldList[i] });
     }
@@ -403,7 +406,12 @@ const refreshDataTables = async (TableID, projectID) => {
       select: {
         style: 'multiple'
       }
+      // order: [[1, 'asc']]
     };
+    // if (TableID !== `all_collections_${projectID}` && TableID !== 'all_projects') {
+    //   dataTableObj.rowReorder = { selector: 'tr', dataSrc: 'order' };
+    // }
+
     dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
     dataTableObj.destroy = true;
     dataTableObj.pageLength = 25;
@@ -415,6 +423,20 @@ const refreshDataTables = async (TableID, projectID) => {
     dataTableObj.colReorder = true;
     dataTableObj.scrollX = '500';
     $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
+    // $s.TableID.on('row-reorder', function(e, diff, edit) {
+    //   let result = 'Reorder started on row: ' + edit.triggerRow.data()[1] + '<br>';
+    //   console.log(edit);
+    //   console.log(result);
+    //   console.log(diff);
+
+    //   for (let i = 0, ien = diff.length; i < ien; i++) {
+    //     // let rowData = $s.TableID.row(diff[i].node).data();
+    //     result +=
+    //       ' updated to be in position ' + diff[i].newData + ' (was ' + diff[i].oldData + ')<br>';
+    //   }
+
+    //   console.log('Event result:<br>' + result);
+    // });
   } else {
     $s.collections = await ajaxCall('GET', '/api/v1/collections');
     $s.fields = await ajaxCall('GET', '/api/v1/fields');
