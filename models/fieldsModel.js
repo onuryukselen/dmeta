@@ -128,11 +128,13 @@ fieldsSchema.pre(/^findOneAnd/, async function(next) {
   // When running update validators with the `context` option set to 'query',
   //`this` is query object. `this.r` is query document
   this.r = await this.findOne();
+  if (this.r.identifier) this.getUpdate().$set.unique = true;
   next();
 });
 
 fieldsSchema.pre('save', function(next) {
   this.name = this.name.replace(/\s+/g, '_').toLowerCase();
+  if (this.identifier) this.unique = true;
   next();
 });
 

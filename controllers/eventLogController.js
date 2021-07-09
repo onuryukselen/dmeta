@@ -508,10 +508,6 @@ exports.setAdminEventLog = target => {
           proj = doc[0];
         }
       }
-      console.log('project_id', project_id);
-      console.log('collection_id', collection_id);
-      console.log('field_id', field_id);
-
       let docId;
       let docReq;
       let docRes;

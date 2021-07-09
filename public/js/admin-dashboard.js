@@ -304,6 +304,7 @@ const getTableHeaders = (collID, projectId) => {
 const getCollectionTable = (collID, projectID) => {
   const headers = getTableHeaders(collID, projectID);
   const ret = `
+  <div id="warning-${collID}" style="margin-top:10px;"></div>
   <div class="table-responsive" style="overflow-x:auto; width:100%; ">
     <table id="${collID}" class="table table-striped" style="white-space:nowrap;  width:100%;" cellspacing="0" cellpadding="0" border="0">
         <thead>
@@ -448,6 +449,25 @@ const refreshDataTables = async (TableID, projectID) => {
       .clear()
       .rows.add(data)
       .draw();
+  }
+  if (TableID != `all_collections_${projectID}` && TableID != 'all_projects') {
+    checkIdentifierField(TableID);
+  }
+};
+
+const checkIdentifierField = collID => {
+  const identifierField = $s.fields.filter(f => f.identifier && f.collectionID == collID);
+  let text = '';
+  if (identifierField.length < 1) {
+    text = 'Please define an identifier field for this collection.';
+  } else if (identifierField.length > 1) {
+    text =
+      'More than one identifier field has been defined for this collection. Only one identifier field is allowed for a collection. Please remove the excess field(s).';
+  }
+  if (text) {
+    $(`#warning-${collID}`).html(`<div class="alert alert-danger" role="alert">${text}</div>`);
+  } else {
+    $(`#warning-${collID}`).html('');
   }
 };
 
@@ -1599,6 +1619,29 @@ const bindEventHandlers = () => {
           '#crudModalError'
         );
         if (success) {
+          // create default identifier field on collection insert
+          if (targetUrl == 'collections') {
+            const identifierField = {
+              collectionID: success,
+              identifier: true,
+              label: 'ID',
+              name: 'id',
+              namingPattern: '${AUTOINCREMENT}',
+              required: true,
+              type: 'String',
+              unique: true
+            };
+            await crudAjaxRequest(
+              'fields',
+              'POST',
+              '',
+              projectID,
+              collName,
+              identifierField,
+              formValues,
+              '#crudModalError'
+            );
+          }
           await updateNavbarTables(collID, projectID);
           $('#crudModal').modal('hide');
         }

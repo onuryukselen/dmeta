@@ -26,7 +26,7 @@ exports.dryAutoIncrementModelDID = async function(modelID, doc, next) {
   try {
     const counter = await exports.CounterModel.findById(modelID);
     doc.DID = Number(counter.seq) + 1;
-  } catch (err) {
-    return next(err);
+  } catch {
+    doc.DID = 1;
   }
 };

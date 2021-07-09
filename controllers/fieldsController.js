@@ -35,7 +35,7 @@ exports.setFilter = (req, res, next) => {
 
 //if field name has changed -> fields of data should be updated
 exports.updateDataFields = async (oldField, newField) => {
-  if (oldField.collectionID && oldField.name && newField.name) {
+  if (oldField.collectionID && oldField.name && newField.name && oldField.name != newField.name) {
     const collectionID = oldField.collectionID;
     const oldFieldName = oldField.name;
     const newFieldName = newField.name;

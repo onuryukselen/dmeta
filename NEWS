@@ -16,6 +16,9 @@ A new field option, namingPattern, was added for automatic name generation.
 Refresh namingPattern button for project-admins which allows pattern change.
 A field that is defined as namingPattern removed from form entries.
 Identifier ve naming pattern columns updated after insert for spreadsheet view.
+Create identifier when new collection is created.
+Show warning if identifier is not exist or defined more than once in the collection.
+
 
 16.06.2021 Version 0.0.46
 Tree view tab added into dashboard and admin page.
