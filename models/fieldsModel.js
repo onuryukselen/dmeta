@@ -128,7 +128,9 @@ fieldsSchema.pre(/^findOneAnd/, async function(next) {
   // When running update validators with the `context` option set to 'query',
   //`this` is query object. `this.r` is query document
   this.r = await this.findOne();
-  if (this.r.identifier) this.getUpdate().$set.unique = true;
+  if (this.r.identifier && this.getUpdate && this.getUpdate().$set) {
+    this.getUpdate().$set.unique = true;
+  }
   next();
 });
 
