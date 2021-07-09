@@ -20,15 +20,13 @@ exports.autoIncrementModelDID = async function(modelID, doc, next) {
   } catch (err) {
     return next(err);
   }
+};
 
-  // exports.CounterModel.findByIdAndUpdate(
-  //   modelID,
-  //   { $inc: { seq: 1 } },
-  //   { new: true, upsert: true },
-  //   function(error, counter) {
-  //     doc.DID = counter.seq;
-  //     console.log('1');
-  //     next();
-  //   }
-  // );
+exports.dryAutoIncrementModelDID = async function(modelID, doc, next) {
+  try {
+    const counter = await exports.CounterModel.findById(modelID);
+    doc.DID = Number(counter.seq) + 1;
+  } catch (err) {
+    return next(err);
+  }
 };

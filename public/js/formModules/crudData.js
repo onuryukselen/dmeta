@@ -650,6 +650,7 @@ export const getFieldsDiv = async (collectionID, projectData) => {
   // 2. get all fields of collection
   const fields = getFieldsOfCollection(collectionID);
   for (var k = 0; k < fields.length; k++) {
+    if (fields[k].namingPattern) continue;
     const label = fields[k].label;
     const element = await getFormElement(fields[k], projectData, $s);
     ret += getFormRow(element, label, fields[k]);

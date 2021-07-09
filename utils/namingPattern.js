@@ -246,7 +246,7 @@ const getPopulatedTargetVal = async (
   }
 };
 
-exports.setNamingPattern = async function(modelID, fields, doc, next) {
+exports.setNamingPattern = async function(fields, doc, next) {
   const namingPatterns = fields.filter(f => f.namingPattern);
   for (let n = 0; n < namingPatterns.length; n++) {
     //${patient.name}_${visit.visit_num}_${AUTOINCREMENT}
@@ -343,5 +343,5 @@ exports.setNamingPattern = async function(modelID, fields, doc, next) {
     }
     doc[fieldName] = patt;
   }
-  next();
+  return doc;
 };

@@ -9,7 +9,11 @@ const Project = require('../models/projectsModel');
 const Collection = require('../models/collectionsModel');
 const projectsController = require('../controllers/projectsController');
 const Field = require('../models/fieldsModel');
-const { autoIncrementModelDID, CounterModel } = require('../models/counterModel');
+const {
+  autoIncrementModelDID,
+  dryAutoIncrementModelDID,
+  CounterModel
+} = require('../models/counterModel');
 const { setNamingPattern } = require('../utils/namingPattern');
 const AppError = require('./appError');
 
@@ -244,6 +248,14 @@ const buildSchema = (schema, modelName, fields) => {
   // { minimize: false } => allows saving empty objects
   const Schema = new mongoose.Schema(schema, { minimize: false, strict: 'throw' });
   Schema.plugin(uniqueValidator);
+  // validate triggers when inserting new record
+  Schema.pre(/^(validate)/, async function(next) {
+    if (this.isNew) {
+      await dryAutoIncrementModelDID(modelName, this, next);
+    }
+    await setNamingPattern(fields, this, next);
+    next();
+  });
   // eslint-disable-next-line no-loop-func
   Schema.pre('save', async function(next) {
     if (!this.isNew) {
@@ -251,7 +263,7 @@ const buildSchema = (schema, modelName, fields) => {
       return;
     }
     await autoIncrementModelDID(modelName, this, next);
-    await setNamingPattern(modelName, fields, this, next);
+    next();
   });
   // check if schema has ontology field -> before save check if item is valid
   const ontologyFields = fields.filter(f => f.ontology);

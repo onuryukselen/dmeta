@@ -5,6 +5,7 @@ const factory = require('./handlerFactory');
 const AppError = require('./../utils/appError');
 const buildModels = require('./../utils/buildModels');
 const dbbackup = require('./../utils/dbbackup');
+const { setNamingPattern } = require('./../utils/namingPattern');
 
 // for post/patch requests
 exports.setCollectionId = (req, res, next) => {
@@ -99,6 +100,43 @@ exports.setBefore = (req, res, next) => {
     return next();
   }
   return next(new AppError(`Field id not found!`, 404));
+};
+
+//
+exports.refreshIdentifier = async (req, res, next) => {
+  const { fieldID } = req.body;
+  if (!fieldID) return next(new AppError('FieldID is not defined', 404));
+  const field = await exports.getFieldById(fieldID);
+  const collectionID = field.collectionID;
+  const collData = await collectionsController.getCollectionById(collectionID);
+  const collectionName = collData.name;
+  const projectID = collData.projectID;
+  const projectData = await projectsController.getProjectById(projectID);
+  const projectName = projectData ? projectData.name : '';
+  const modelName = `${projectName}_${collectionName}`;
+  const Model = buildModels.modelObj[modelName];
+  const allData = await Model.find({});
+
+  for (let i = 0; i < allData.length; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    const fields = await exports.getFieldsOfCollection(collectionID);
+    const namingPatterns = fields.filter(f => f.namingPattern).map(f => f.name);
+
+    let doc = allData[i];
+    // eslint-disable-next-line no-await-in-loop
+    doc = await setNamingPattern(fields, doc, next);
+    let updateObj = {};
+    for (let k = 0; k < namingPatterns.length; k++) {
+      updateObj[namingPatterns[k]] = doc[namingPatterns[k]];
+    }
+    console.log('updateObj', updateObj);
+    // eslint-disable-next-line no-await-in-loop
+    await Model.findOneAndUpdate({ _id: doc._id }, { $set: updateObj }, { runValidators: true });
+  }
+
+  res.status(200).json({
+    status: 'success'
+  });
 };
 
 // transfer data of fields to targetCollection

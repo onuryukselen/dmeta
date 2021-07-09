@@ -346,6 +346,10 @@ const syncTableData = async (tableID, collid, collName, projectid) => {
   const data = hot.getData();
   const header = hot.getColHeader();
   const { projectPart } = getProjectData(projectid);
+  // identifierAndNamingPatterns
+  const updateOnInsert = $s.fields.filter(
+    f => (f.identifier || f.namingPattern) && f.collectionID == collid
+  );
   const { refFields, refCollectionIDs, refCollIdentifiers } = getRefCollIdentifiers(
     projectid,
     collid
@@ -426,6 +430,17 @@ const syncTableData = async (tableID, collid, collName, projectid) => {
               hot.setDataAtCell(i, indexPerms, JSON.stringify(newPerms));
             } else {
               hot.setDataAtCell(i, indexPerms, newPerms);
+            }
+          }
+          // update identifier and namingpattern columns
+          for (let m = 0; m < updateOnInsert.length; m++) {
+            let fieldName = updateOnInsert[m].name;
+            if (fieldName && res[fieldName]) {
+              const newData = res[fieldName];
+              const indexData = header.indexOf(`${collName}.${fieldName}`);
+              if (indexData != -1 && newData) {
+                hot.setDataAtCell(i, indexData, newData);
+              }
             }
           }
         }
@@ -1644,6 +1659,13 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
   let dbEditorBut = '';
   let childRefBut = '';
   let delBtn = '';
+  let refreshIdentifierBut = '';
+  if (settings.refreshIdentifier) {
+    refreshIdentifierBut = `
+    <button class="btn btn-primary refresh-namingPattern-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Refresh Naming Patterns" ${data}>
+      <i class="cil-badge"> </i>
+    </button>`;
+  }
   if (settings.dbEditor) {
     dbEditorBut = `
     <button class="btn btn-primary edit-field-data" type="button" data-toggle="tooltip" data-placement="bottom" title="Transfer Fields Data" ${data}>
@@ -1699,6 +1721,7 @@ export const getCrudButtons = (collID, collLabel, collName, projectID, settings)
       ${tableBut}
       ${childRefBut}
       ${dbEditorBut}
+      ${refreshIdentifierBut}
     </div>
   </div>`;
   return ret;

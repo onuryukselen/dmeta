@@ -898,6 +898,14 @@ const getCollectionDropdown = (projectID, name, exclude, disable) => {
   return dropdown;
 };
 
+const getRefreshNamingPatternDiv = namingPatternData => {
+  let ret = `<p > Please choose the field below to refresh all values of the selected field according to the naming pattern. </p>`;
+  const dropdown = getSimpleDropdown(namingPatternData, { name: 'fieldID' });
+  ret += getFormRow(dropdown, 'Field', {});
+
+  return ret;
+};
+
 const getEditFieldDiv = projectID => {
   let ret = `<p> Please choose target collection and operation type to transfer your data of fields into target collection. </p>`;
   ret += getFormRow(
@@ -1339,6 +1347,49 @@ const bindEventHandlers = () => {
       }
     });
 
+    $('#crudModal').modal('show');
+  });
+
+  //Refresh Identifier Data
+  $(document).on('click', `button.refresh-namingPattern-data`, async function(e) {
+    const collID = $(this).attr('collID');
+    const collName = $(this).attr('collName');
+    const namingPatternData = $s.fields.filter(f => f.namingPattern && f.collectionID == collID);
+    let div = await getRefreshNamingPatternDiv(namingPatternData);
+    $('#crudModalYes').text('Refresh');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(div);
+    $('#crudModal').off();
+    $('#crudModalTitle').text(`Refresh Naming Patterns`);
+
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      $('#crudModalError').empty();
+      const formValues = $('#crudModal').find('input,select');
+      const requiredFields = ['fieldID'];
+      let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
+      if (stop === false) {
+        console.log('formObj', formObj);
+        try {
+          const res = await axios({
+            method: 'POST',
+            url: 'api/v1/fields/refreshIdentifier',
+            data: formObj
+          });
+          if (res.data.status == 'success') {
+            console.log(res.data);
+            $('#crudModal').modal('hide');
+          }
+        } catch (err) {
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(JSON.stringify(err.response.data.message));
+          } else {
+            showInfoModal(err);
+          }
+        }
+      }
+    });
     $('#crudModal').modal('show');
   });
 
@@ -1837,9 +1888,11 @@ const refreshCollectionNavbar = async (projectId, type) => {
         colNavbar = getTreeTab(projectId);
       } else {
         let dbEditor = true;
+        let refreshIdentifier = true;
         let childRef = true;
         let delBtn = false;
         if (tabs[i].id == `all_collections_${projectId}`) {
+          refreshIdentifier = false;
           dbEditor = false;
           childRef = false;
           delBtn = true;
@@ -1847,6 +1900,7 @@ const refreshCollectionNavbar = async (projectId, type) => {
         colNavbar = getCollectionTable(collectionId, projectId);
         crudButtons = getCrudButtons(collectionId, collectionLabel, collectionName, projectId, {
           excel: false,
+          refreshIdentifier: refreshIdentifier,
           dbEditor: dbEditor,
           childRef: childRef,
           delBtn: delBtn

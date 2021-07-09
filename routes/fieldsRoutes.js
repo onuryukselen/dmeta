@@ -13,6 +13,14 @@ router
   .post(authController.requireLogin, authController.restrictTo('admin'), fieldsController.transfer);
 
 router
+  .route('/refreshIdentifier')
+  .post(
+    authController.requireLogin,
+    authController.restrictTo('admin', 'project-admin'),
+    fieldsController.refreshIdentifier
+  );
+
+router
   .route('/')
   .get(fieldsController.getAllFields)
   .post(

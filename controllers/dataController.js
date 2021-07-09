@@ -50,6 +50,7 @@ exports.setExcludeFields = async (req, res, next) => {
   let exclude = allFieldNames.filter(x => !validFieldNames.includes(x));
   exclude = exclude.map(i => `-${i}`);
   res.locals.ExcludeFields = exclude.join(' ');
+  res.locals.AllFields = allFields;
   next();
 };
 

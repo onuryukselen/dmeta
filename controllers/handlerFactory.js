@@ -56,11 +56,20 @@ exports.updateOne = Model =>
     req.body.lastUpdatedUser = req.user.id;
 
     let excludeFields = '';
+    let AllFields = [];
+    let identifierNames = [];
     let select = '';
+    // don't allow to change identifier value
+    if (res.locals.AllFields) {
+      AllFields = res.locals.AllFields;
+      identifierNames = AllFields.filter(f => f.identifier).map(f => f.name);
+    }
+
     if (res.locals.ExcludeFields) excludeFields = res.locals.ExcludeFields;
     const excludeFieldsArr = excludeFields.split(' ').map(v => v.slice(1));
     const defaultExcludedFields = ['owner', 'creationDate', 'lastUpdateDate', 'lastUpdatedUser'];
-    const allExcludeArr = excludeFieldsArr.concat(defaultExcludedFields);
+    let allExcludeArr = excludeFieldsArr.concat(defaultExcludedFields);
+    allExcludeArr = allExcludeArr.concat(identifierNames);
     // don't allow to change internal parameters such as owner, creationDate etc.
     allExcludeArr.forEach(function(key) {
       if (key) delete req.body[key];
