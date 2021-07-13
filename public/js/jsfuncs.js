@@ -213,11 +213,13 @@ export const createFormObj = (formValues, requiredFields, warn, visible) => {
 };
 
 export const getSimpleDropdown = (options, settings) => {
+  let idAttr = '';
   let nameAttr = '';
   let classAttr = '';
+  if (settings.id) idAttr = `id="${settings.id}"`;
   if (settings.name) nameAttr = settings.name;
   if (settings.class) classAttr = settings.class;
-  let dropdown = `<select class="form-control ${classAttr}" name="${nameAttr}" >`;
+  let dropdown = `<select class="form-control ${classAttr}" name="${nameAttr}" ${idAttr}>`;
   if (settings.placeholder) {
     dropdown += `<option value="" >${settings.placeholder}</option>`;
   }
@@ -400,11 +402,11 @@ export const prepareClickToActivateModal = (formId, formBodyId, find, data) => {
     const nameAttr = $(formValues[k]).attr('name');
     const isSelectized = $(formValues[k]).hasClass('selectized');
     const isCustomized = $(formValues[k]).hasClass('customized');
-    const isNoSet = $(formValues[k]).hasClass('no-set');
+    const isNoHide = $(formValues[k]).hasClass('no-hide');
     const isDataPerms = $(formValues[k]).hasClass('data-perms');
     const isDataRestrictTo = $(formValues[k]).hasClass('data-restrictTo');
 
-    if (!isRequired && nameAttr && !isNoSet) {
+    if (!isRequired && nameAttr && !isNoHide) {
       // value not filled
       if (!(nameAttr in data) || data[nameAttr] === null) {
         $(formValues[k]).before(`<div class="multi-value" > Click to Set Field </div>`);

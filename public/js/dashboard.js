@@ -28,6 +28,7 @@ import {
   getFormRow,
   createSelectizeMultiField
 } from './formModules/crudData';
+import { prepFileForm } from './formModules/fileForm';
 import { prepDataPerms } from './formModules/dataPerms';
 import { refreshTreeView } from './treeView';
 import Handsontable from 'handsontable';
@@ -744,6 +745,7 @@ const refreshEventForm = async (projectID, eventID) => {
       prepOntologyDropdown(`#${formID}`, {}, $s);
       prepReferenceDropdown(`#${formID}`, $s);
       if (collectionName == 'run') prepRunForm(`#${formID}`, {}, $s, projectID);
+      // if (collectionName == 'file') prepFileForm(`#${formID}`, {}, $s, projectID);
       prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
       activateAllForm(`#${formID}`, 'input, select');
     }
@@ -919,6 +921,7 @@ export const insertDataModal = async (button, clickToActivateModal, callbackOnSu
   $('#crudModalBody').append(collectionFields);
   $('#crudModal').off();
   if (collName == 'run') prepRunForm('#crudModal', {}, $s, projectID);
+  // if (collName == 'file') prepFileForm('#crudModal', {}, $s, projectID);
   prepReferenceDropdown('#crudModal', $s);
   prepOntologyDropdown('#crudModal', {}, $s);
   await prepDataPerms('#crudModal', {});
