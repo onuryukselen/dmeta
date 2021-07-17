@@ -1626,7 +1626,7 @@ const bindEventHandlers = () => {
               identifier: true,
               label: 'ID',
               name: 'id',
-              namingPattern: '${AUTOINCREMENT}',
+              namingPattern: formObj.name.charAt(0).toUpperCase() + '-${AUTOINCREMENT}',
               required: true,
               type: 'String',
               unique: true
