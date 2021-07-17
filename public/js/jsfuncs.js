@@ -221,7 +221,7 @@ export const getSimpleDropdown = (options, settings) => {
   if (settings.class) classAttr = settings.class;
   let dropdown = `<select class="form-control ${classAttr}" name="${nameAttr}" ${idAttr}>`;
   if (settings.placeholder) {
-    dropdown += `<option value="" >${settings.placeholder}</option>`;
+    dropdown += `<option disabled selected value="" >${settings.placeholder}</option>`;
   }
   options.forEach(i => {
     dropdown += `<option  value="${i._id}">${i.name}</option>`;
@@ -540,4 +540,33 @@ export const IsJson5String = str => {
     return false;
   }
   return true;
+};
+
+export const createElement = (type, fields, options) => {
+  var element = document.createElement(type);
+  for (var x = 0; x < fields.length; x++) {
+    if (fields[x] == 'OPTION') {
+      var opt = document.createElement('option');
+      opt.value = options[x];
+      opt.innerHTML = options[x];
+      element.appendChild(opt);
+    } else if (fields[x] == 'OPTION_DIS_SEL') {
+      var opt = document.createElement('option');
+      opt.value = options[x];
+      opt.innerHTML = options[x];
+      opt.disabled = true;
+      opt.selected = true;
+      element.appendChild(opt);
+    } else if (fields[x] == 'TEXTNODE') {
+      element.appendChild(document.createTextNode(options[x]));
+    } else if (fields[x] == 'type' && options[x] == 'button') {
+      element.setAttribute(fields[x], options[x]);
+      element.innerHTML = element.value;
+    } else if (fields[x] == 'INNERHTML') {
+      element.innerHTML = options[x];
+    } else {
+      element.setAttribute(fields[x], options[x]);
+    }
+  }
+  return element;
 };

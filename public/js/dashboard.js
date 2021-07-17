@@ -28,7 +28,7 @@ import {
   getFormRow,
   createSelectizeMultiField
 } from './formModules/crudData';
-import { prepFileForm } from './formModules/fileForm';
+import { prepFileForm, convertFileFormObj } from './formModules/fileForm';
 import { prepDataPerms } from './formModules/dataPerms';
 import { refreshTreeView } from './treeView';
 import Handsontable from 'handsontable';
@@ -745,7 +745,7 @@ const refreshEventForm = async (projectID, eventID) => {
       prepOntologyDropdown(`#${formID}`, {}, $s);
       prepReferenceDropdown(`#${formID}`, $s);
       if (collectionName == 'run') prepRunForm(`#${formID}`, {}, $s, projectID);
-      // if (collectionName == 'file') prepFileForm(`#${formID}`, {}, $s, projectID);
+      if (collectionName == 'file') prepFileForm(`#${formID}`, {}, $s, projectID);
       prepareClickToActivateModal(`#${formID}`, '', 'input, select', {});
       activateAllForm(`#${formID}`, 'input, select');
     }
@@ -756,7 +756,6 @@ const convertRunFormObj = formObj => {
   if (formObj.out) {
     const outputs = formObj.out;
     Object.keys(outputs).forEach((k, i) => {
-      console.log(k);
       if (outputs[k]) {
         outputs[k] = {};
       } else {
@@ -768,7 +767,6 @@ const convertRunFormObj = formObj => {
 };
 
 const saveDataEventForm = async (type, formID, collID, collName, projectID, oldData) => {
-  let success = '';
   const formValues = $(formID).find('input,select');
   const requiredValues = formValues.filter('[required]');
   const requiredFields = $.map(requiredValues, function(el) {
@@ -786,22 +784,47 @@ const saveDataEventForm = async (type, formID, collID, collName, projectID, oldD
     id = '';
     [formObj, stop] = createFormObj(formValues, requiredFields, true, false);
     formObj = convertFormObj(formObj);
-    if (collName == 'run') formObj = convertRunFormObj(formObj);
+    if (stop === false && collName == 'run') formObj = convertRunFormObj(formObj);
+    // convertFileFormObjL converts object to array
+    if (stop === false && collName == 'file') formObj = convertFileFormObj(formObj);
   }
 
   if (stop === false && collName) {
-    success = await crudAjaxRequest(
-      'data',
-      method,
-      id,
-      projectID,
-      collName,
-      formObj,
-      formValues,
-      `#crudModalError-${projectID}-${collID}`
-    );
-    if (success) {
-      refreshDataTables(collID, collID, collName, projectID);
+    let success;
+    if (Array.isArray(formObj)) {
+      for (let i = 0; i < formObj.length; i++) {
+        success = await crudAjaxRequest(
+          'data',
+          method,
+          id,
+          projectID,
+          collName,
+          formObj[i],
+          formValues,
+          `#crudModalError-${projectID}-${collID}`
+        );
+        if (!success) {
+          refreshDataTables(collID, collID, collName, projectID);
+          break;
+        }
+        if (success && formObj.length - 1 === i) {
+          refreshDataTables(collID, collID, collName, projectID);
+        }
+      }
+    } else {
+      success = await crudAjaxRequest(
+        'data',
+        method,
+        id,
+        projectID,
+        collName,
+        formObj,
+        formValues,
+        `#crudModalError-${projectID}-${collID}`
+      );
+      if (success) {
+        refreshDataTables(collID, collID, collName, projectID);
+      }
     }
   }
   return success;
@@ -921,7 +944,7 @@ export const insertDataModal = async (button, clickToActivateModal, callbackOnSu
   $('#crudModalBody').append(collectionFields);
   $('#crudModal').off();
   if (collName == 'run') prepRunForm('#crudModal', {}, $s, projectID);
-  // if (collName == 'file') prepFileForm('#crudModal', {}, $s, projectID);
+  if (collName == 'file') prepFileForm('#crudModal', {}, $s, projectID);
   prepReferenceDropdown('#crudModal', $s);
   prepOntologyDropdown('#crudModal', {}, $s);
   await prepDataPerms('#crudModal', {});
@@ -939,24 +962,50 @@ export const insertDataModal = async (button, clickToActivateModal, callbackOnSu
     });
     let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
     formObj = convertFormObj(formObj);
-    if (collName == 'run') formObj = convertRunFormObj(formObj);
+    if (stop === false && collName == 'run') formObj = convertRunFormObj(formObj);
+    if (stop === false && collName == 'file') formObj = convertFileFormObj(formObj);
 
     if (stop === false && collName) {
-      const success = await crudAjaxRequest(
-        'data',
-        'POST',
-        '',
-        projectID,
-        collName,
-        formObj,
-        formValues,
-        '#crudModalError'
-      );
-      if (success) {
-        console.log(success);
-        await refreshDataTables(collID, collID, collName, projectID);
-        if (callbackOnSuccess) callbackOnSuccess($s, collID, success);
-        $('#crudModal').modal('hide');
+      let success;
+      if (Array.isArray(formObj)) {
+        for (let i = 0; i < formObj.length; i++) {
+          success = await crudAjaxRequest(
+            'data',
+            'POST',
+            '',
+            projectID,
+            collName,
+            formObj[i],
+            formValues,
+            '#crudModalError'
+          );
+          if (!success) {
+            refreshDataTables(collID, collID, collName, projectID);
+            break;
+          }
+          if (success && formObj.length - 1 === i) {
+            await refreshDataTables(collID, collID, collName, projectID);
+            if (callbackOnSuccess) callbackOnSuccess($s, collID, success);
+            $('#crudModal').modal('hide');
+          }
+        }
+      } else {
+        success = await crudAjaxRequest(
+          'data',
+          'POST',
+          '',
+          projectID,
+          collName,
+          formObj,
+          formValues,
+          '#crudModalError'
+        );
+        if (success) {
+          console.log(success);
+          await refreshDataTables(collID, collID, collName, projectID);
+          if (callbackOnSuccess) callbackOnSuccess($s, collID, success);
+          $('#crudModal').modal('hide');
+        }
       }
     }
   });
