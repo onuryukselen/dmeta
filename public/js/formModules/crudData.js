@@ -173,7 +173,7 @@ export const getFormElement = async (field, projectData, $scope) => {
     if (field.ref) {
       ret = await getRefFieldDropdown(field.ref, field.name, required, def, projectData, $scope);
     }
-  } else if (type == 'Boolean') {
+  } else if (type == 'Boolean' || type == 'boolean') {
     const checked = def == true ? 'checked' : '';
     ret = `<input ${dbType} style="margin-left:0rem; margin-top:0.70rem;" type="checkbox" name="${field.name}" ${required} ${checked}></input>`;
   }
