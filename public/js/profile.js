@@ -6,7 +6,7 @@ import { showInfoModal, createFormObj, fillFormByName } from './jsfuncs';
 import { getFormRow } from './formModules/crudData';
 
 // GLOBAL SCOPE
-let $s = { usergroups: {} };
+let $s = { usergroups: {}, server: [] };
 
 const ajaxCall = async (method, url) => {
   console.log(method, url);
@@ -48,6 +48,18 @@ const getAdminTableOptions = (active, role) => {
     </div>`;
   return button;
 };
+
+const getServerTableOptions = () => {
+  var button = `<div class="btn-group">
+      <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-expanded="true">Options <span class="fa fa-caret-down"></span></button>
+      <ul class="dropdown-menu dropdown-menu-right" role="menu">
+        <li><a class="dropdown-item editServer">Edit Server</a></li>
+        <li><a class="dropdown-item deleteServer">Delete Server</a></li>
+      </ul>
+    </div>`;
+  return button;
+};
+
 const getGroupTableOptions = (owner_id, u_id) => {
   if (owner_id === u_id) {
     //if user is the owner of the group
@@ -146,6 +158,55 @@ const refreshGroupTable = async () => {
       data: null,
       fnCreatedCell: function(nTd, sData, oData, iRow, iCol) {
         $(nTd).html(getGroupTableOptions(oData.owner, oData.user_id));
+      }
+    });
+    var dataTableObj = {
+      columns: columns,
+      columnDefs: [
+        { defaultContent: '', targets: '_all' } //hides undefined error,
+      ]
+    };
+    dataTableObj.dom = '<"pull-left"f>lrt<"pull-left"i><"bottom"p><"clear">';
+    dataTableObj.destroy = true;
+    dataTableObj.pageLength = 10;
+    dataTableObj.data = fomatted_data;
+    dataTableObj.hover = true;
+    // speed up the table loading
+    dataTableObj.deferRender = true;
+    dataTableObj.scroller = true;
+    dataTableObj.scrollCollapse = true;
+    // dataTableObj.sScrollX = true; // dropdown remains under the datatable div
+    $s.TableID = $(`#${TableID}`).DataTable(dataTableObj);
+  }
+};
+
+const refreshServerTable = async () => {
+  const TableID = 'table-servers';
+  try {
+    let [server] = await Promise.all([ajaxCall('GET', '/api/v1/server')]);
+    $s.server = server;
+  } catch {
+    $s.server = [];
+  }
+  console.log($s.server);
+  const fomatted_data = $s.server;
+  if ($.fn.DataTable.isDataTable(`#${TableID}`)) {
+    $(`#${TableID}`)
+      .DataTable()
+      .destroy();
+  }
+
+  if (!$.fn.DataTable.isDataTable(`#${TableID}`)) {
+    let columns = [];
+    columns.push({ data: '_id' });
+    columns.push({ data: 'name' });
+    columns.push({ data: 'type' });
+    columns.push({ data: 'url_client' });
+    columns.push({ data: 'url_server' });
+    columns.push({
+      data: null,
+      fnCreatedCell: function(nTd, sData, oData, iRow, iCol) {
+        $(nTd).html(getServerTableOptions());
       }
     });
     var dataTableObj = {
@@ -268,6 +329,40 @@ const getGroupsTab = id => {
   return groups;
 };
 
+const getServersTab = id => {
+  const headers = getTableHeaders(['ID', 'Name', 'Type', 'URL Client', 'URL Server', 'Options']);
+  const tableID = `table-${id}`;
+  const table = `
+  <div class="table-responsive" style="overflow-x:auto; width:100%; ">
+    <table id="${tableID}" class="table table-striped" style='white-space: nowrap; width:100%;' cellspacing="0" >
+        <thead>
+            <tr>
+            ${headers}
+            </tr>
+        <tbody>
+        </tbody>
+    </thead>
+    </table>
+  </div>`;
+  const button = `<button class="btn btn-primary admin-add-server" type="button">Add a Server</button>`;
+  const groups = `
+  <div style="margin-top:10px;" class="row">
+    <div class="col-sm-12">
+      <div class="card">
+        <div class="card-header"> 
+        <span style="font-size:large; font-weight:600;"><i class="cil-sitemap"> </i> Server Panel</span>
+          <div style="float:right;" class="card-header-actions">
+            ${button}
+          </div>
+        </div>
+      <div class="card-body">
+        ${table}
+      </div>
+    </div>
+    </div>
+  </div>`;
+  return groups;
+};
 const getAdminTab = id => {
   const headers = getTableHeaders([
     'ID',
@@ -292,7 +387,7 @@ const getAdminTab = id => {
     </thead>
     </table>
   </div>`;
-  const button = `<button class="btn btn-primary admin-add-user" type="button">Add an User</button>`;
+  const button = `<button class="btn btn-primary admin-add-user" type="button">Add a User</button>`;
   const groups = `
   <div style="margin-top:10px;" class="row">
     <div class="col-sm-12">
@@ -314,7 +409,10 @@ const getAdminTab = id => {
 
 export const loadProfileTabContent = userRole => {
   refreshGroupTable();
-  if (userRole == 'admin') refreshAdminTable();
+  if (userRole == 'admin') {
+    refreshServerTable();
+    refreshAdminTable();
+  }
 };
 
 const getGroupForm = () => {
@@ -350,7 +448,145 @@ const getAdminUserForm = () => {
   return ret;
 };
 
+const getServerUserForm = () => {
+  let ret = `<form id="serverForm">`;
+  ret += getFormRow(getInputElement('name', 'required'), 'Name', {});
+  ret += getFormRow(getDropdown('type', ['dnext', 'dmeta', 'dportal', 'dsso']), 'Type', {});
+  ret += getFormRow(getInputElement('url_client', 'required'), 'URL Client', {});
+  ret += getFormRow(getInputElement('url_server', 'required'), 'URL Server', {});
+  ret += '</form>';
+  return ret;
+};
+
 const bindEventHandlers = () => {
+  // -------- SERVERS ------------------------------
+  $(document).on('click', `button.admin-add-server`, async function(e) {
+    $('#crudModalError').empty();
+    const form = getServerUserForm();
+    $('#crudModalTitle').text(`Insert Server`);
+    $('#crudModalYes').text('Save');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(form);
+    $('#crudModal').off();
+
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      $('#crudModalError').empty();
+      const formValues = $('#crudModal').find('input,select');
+      const requiredValues = formValues.filter('[required]');
+      const requiredFields = $.map(requiredValues, function(el) {
+        return $(el).attr('name');
+      });
+      let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
+      if (stop === false) {
+        try {
+          const res = await axios({
+            method: 'POST',
+            url: '/api/v1/server',
+            data: formObj
+          });
+          if (res.data.status == 'success') {
+            await refreshServerTable();
+            $('#crudModal').modal('hide');
+          } else {
+            showInfoModal('Error occured.');
+          }
+        } catch (err) {
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+          } else {
+            showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+          }
+        }
+      }
+    });
+    $('#crudModal').modal('show');
+  });
+  $(document).on('click', `a.deleteServer`, async function(e) {
+    const clickedRow = $(this).closest('tr');
+    const table = $('#table-servers').DataTable();
+    const data = table.row(clickedRow).data();
+    const user_id = data._id;
+
+    $('#crudModalTitle').text(`Remove Server`);
+    $('#crudModalYes').text('Remove');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(`<p>Are you sure you want to delete server (${data.name})?</p>`);
+    $('#crudModal').off();
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      if (user_id) {
+        try {
+          const res = await axios({
+            method: 'DELETE',
+            url: `/api/v1/server/${user_id}`
+          });
+          await refreshServerTable();
+          $('#crudModal').modal('hide');
+        } catch (err) {
+          console.log(err);
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+          } else {
+            showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+          }
+        }
+      }
+    });
+    $('#crudModal').modal('show');
+  });
+
+  $(document).on('click', `a.editServer`, async function(e) {
+    const clickedRow = $(this).closest('tr');
+    const table = $('#table-servers').DataTable();
+    const userData = table.row(clickedRow).data();
+    const user_id = userData._id;
+
+    $('#crudModalError').empty();
+    const form = getServerUserForm();
+    $('#crudModalTitle').text(`Edit Server`);
+    $('#crudModalYes').text('Save');
+    $('#crudModalBody').empty();
+    $('#crudModalBody').append(getErrorDiv());
+    $('#crudModalBody').append(form);
+    $('#crudModal').off();
+    fillFormByName('#serverForm', 'input, select', userData, true);
+
+    $('#crudModal').on('click', '#crudModalYes', async function(e) {
+      e.preventDefault();
+      $('#crudModalError').empty();
+      const formValues = $('#crudModal').find('input,select');
+      const requiredValues = formValues.filter('[required]');
+      const requiredFields = $.map(requiredValues, function(el) {
+        return $(el).attr('name');
+      });
+      let [formObj, stop] = createFormObj(formValues, requiredFields, true, true);
+      console.log(formObj);
+      if (stop === false) {
+        try {
+          const res = await axios({
+            method: 'PATCH',
+            url: `/api/v1/server/${user_id}`,
+            data: formObj
+          });
+          console.log(res);
+          if (res.data.status == 'success') {
+            await refreshServerTable();
+            $('#crudModal').modal('hide');
+          } else {
+            showInfoModal('Error occured.');
+          }
+        } catch (err) {
+          if (err.response && err.response.data && err.response.data.message) {
+            showInfoModal(`Error occured.(${JSON.stringify(err.response.data.message)})`);
+          } else {
+            showInfoModal(`Error occured.(${JSON.stringify(err)})`);
+          }
+        }
+      }
+    });
+    $('#crudModal').modal('show');
+  });
   // -------- USERS -----------
   $(document).on('click', `button.admin-add-user`, async function(e) {
     $('#crudModalError').empty();
@@ -718,6 +954,7 @@ export const getProfileNavbar = async userRole => {
   tabs.push({ label: 'Groups', id: 'groups' });
   if (userRole == 'admin') {
     tabs.push({ label: 'Admin', id: 'admin' });
+    tabs.push({ label: 'Servers', id: 'servers' });
   }
   let header = '<ul class="nav nav-tabs" role="tablist">';
   let content = '<div class="tab-content">';
@@ -737,6 +974,8 @@ export const getProfileNavbar = async userRole => {
       tabContent = getGroupsTab(id);
     } else if (id == 'admin') {
       tabContent = getAdminTab(id);
+    } else if (id == 'servers') {
+      tabContent = getServersTab(id);
     }
     const contentDiv = `
     <div role="tabpanel" class="tab-pane ${active}" searchtab="true" id="${tabID}">
