@@ -1,0 +1,1 @@
+cd .. && git stash && git pull 2>&1
