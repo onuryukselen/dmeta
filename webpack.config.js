@@ -21,7 +21,7 @@ module.exports = {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendors',
           chunks: 'all',
-          maxSize: 1000000 //or whatever size you want
+          maxSize: 1000000 //10MB
         }
       }
     }
