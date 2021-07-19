@@ -1516,6 +1516,11 @@ const bindEventHandlers = () => {
           selectedData[0]
         );
       }
+      if (collID == 'all_projects') {
+        $('#crudModal')
+          .find("[name='name']")
+          .prop('disabled', true);
+      }
     });
 
     $('#crudModal').on('click', '#crudModalYes', async function(e) {
@@ -2032,7 +2037,7 @@ export const refreshAdminProjectNavbar = async () => {
       colNavbar = getCollectionTable(projectId, projectId);
       crudButtons = getCrudButtons(projectId, projectLabel, projectName, projectId, {
         excel: false,
-        delBtn: true
+        delBtn: false
       });
     } else {
       colNavbar = await refreshCollectionNavbar(projectId, 'return');
